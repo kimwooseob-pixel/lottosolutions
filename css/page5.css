@@ -1,0 +1,107 @@
+.prediction-item {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 15px;
+    margin: 10px 0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.user-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.user-name {
+    font-size: 16px;
+    color: #fff;
+    font-weight: bold;
+}
+
+.prediction-time {
+    font-size: 14px;
+    color: #aaa;
+}
+
+.match-count {
+    font-size: 14px;
+    color: #2ecc71;
+    font-weight: bold;
+}
+
+.prediction-numbers {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.number-ball {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s;
+}
+
+.number-ball:hover {
+    transform: scale(1.1);
+}
+
+.number-ball.winning-number {
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    animation: glow 1.5s ease-in-out infinite alternate;
+}
+
+.round-group {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.round-header {
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 15px;
+}
+
+.round-header h3 {
+    color: #3498db;
+    margin: 0 0 10px 0;
+    font-size: 20px;
+}
+
+.winning-numbers {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    color: #aaa;
+}
+
+@keyframes glow {
+    from {
+        box-shadow: 0 0 5px #2ecc71,
+                    0 0 10px #2ecc71,
+                    0 0 15px #2ecc71;
+    }
+    to {
+        box-shadow: 0 0 10px #2ecc71,
+                    0 0 20px #2ecc71,
+                    0 0 30px #2ecc71;
+    }
+}
+
+#currentPredictions, #allPredictions {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+} 

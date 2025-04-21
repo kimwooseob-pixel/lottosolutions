@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2196F3">
+    <meta name="description" content="로또 당첨번호 패턴을 분석하고 예측하는 앱">
+    <title>로또 패턴 분석</title>
+    <link rel="manifest" href="../manifest.json">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="icon" type="image/png" sizes="192x192" href="../images/icons/icon-192x192.png">
+    <link rel="apple-touch-icon" href="../images/icons/icon-192x192.png">
+    <style>
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(16, 30px);
+            gap: 2px;
+            margin: 20px auto;
+            justify-content: center;
+            max-width: 520px;
+            padding: 10px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .grid-cell {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            border: 1px solid #ddd;
+            background: white;
+            position: relative;
+        }
+
+        .grid-cell.header {
+            font-weight: bold;
+            background-color: #f8f9fa;
+            border: none;
+            font-size: 10px;
+        }
+
+        .grid-cell.prediction-column {
+            background-color: #f8f9fa;
+            border-left: 2px solid #3498db;
+            cursor: pointer;
+        }
+
+        .grid-cell.selected {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .grid-cell.pattern::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 24px;
+            height: 24px;
+            border: 2px solid #e74c3c;
+            border-radius: 50%;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .hint-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .hint-button:first-child {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(2) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(3) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(4) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .complete-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #dc3545;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .complete-button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.65;
+        }
+
+        .turn-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .turn-button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            background: #3498db;
+            color: white;
+            cursor: pointer;
+        }
+
+        #턴표시 {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .nav-button {
+            padding: 10px 20px;
+            font-size: 1em;
+            background: linear-gradient(to right, #3498db, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 150px;
+        }
+
+        .nav-button:hover {
+            background: linear-gradient(to right, #2980b9, #2c3e50);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .turn-display {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+            padding: 10px 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .score-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            text-align: center;
+            min-width: 320px;
+            max-width: 90%;
+            z-index: 1000;
+        }
+
+        .result-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .score-text {
+            font-size: 1.3em;
+            color: #2c3e50;
+            white-space: nowrap;
+            background: #f8f9fa;
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .score-text span {
+            font-weight: bold;
+            color: #e74c3c;
+            font-size: 1.4em;
+        }
+
+        .numbers-column {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .number-ball {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #f8f9fa;
+            border: 2px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 5px;
+            font-weight: bold;
+            animation: fadeIn 0.5s ease-in-out forwards;
+        }
+
+        .number-ball.matched {
+            background-color: #e74c3c;
+            border-color: #c0392b;
+            color: white;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4);
+            }
+            70% {
+                transform: scale(1.1);
+                box-shadow: 0 0 0 10px rgba(231, 76, 60, 0);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(231, 76, 60, 0);
+            }
+        }
+
+        .animal-container {
+            position: relative;
+            height: 280px;
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            overflow: visible;
+        }
+
+        .animal-image {
+            height: 250px;
+            object-fit: contain;
+            transform: translateY(100%);
+            opacity: 0;
+            animation: bounceIn 1s cubic-bezier(0.36, 0, 0.66, -0.56) 0.5s forwards;
+        }
+
+        .speech-bubble {
+            position: absolute;
+            top: 20px;
+            right: -20px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-size: 1.1em;
+            max-width: 220px;
+            opacity: 0;
+            animation: fadeIn 0.5s ease-out 1.2s forwards;
+        }
+
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            left: 20px;
+            bottom: -10px;
+            border-width: 10px 10px 0;
+            border-style: solid;
+            border-color: white transparent transparent;
+        }
+
+        .close-button {
+            padding: 12px 40px;
+            background: linear-gradient(to right, #3498db, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+
+        .close-button:hover {
+            background: linear-gradient(to right, #2980b9, #2c3e50);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            50% {
+                transform: translateY(-10%);
+                opacity: 0.8;
+            }
+            75% {
+                transform: translateY(5%);
+                opacity: 0.9;
+            }
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .next-turn-button {
+            background-color: #6c5ce7 !important;
+            color: white !important;
+            transition: all 0.3s ease;
+        }
+
+        .next-turn-button:hover {
+            background-color: #5541d8 !important;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>로또 패턴 분석</h1>
+        <div class="controls">
+            <button class="hint-button" onclick="힌트1()">힌트1</button>
+            <button class="hint-button" onclick="힌트2()">힌트2</button>
+            <button class="hint-button" onclick="힌트3()">힌트3</button>
+            <button class="hint-button" onclick="힌트4()">힌트4</button>
+            <button class="hint-button next-turn-button" onclick="다음턴()">다음턴</button>
+        </div>
+        <div class="navigation">
+            <button class="nav-button" onclick="location.href='page4.html'">이번주번호 도전</button>
+            <div class="turn-display">1턴 (1000회-1014회)</div>
+            <button class="nav-button" onclick="location.href='page5.html'">랭킹 확인</button>
+        </div>
+        <div class="game-container">
+            <div class="grid-container"></div>
+        </div>
+    </div>
+    <template id="score-popup-template">
+        <div class="score-popup">
+            <div class="result-container">
+                <div class="score-text">
+                    맞춘 개수: <span class="match-count">0</span>개&nbsp;&nbsp;/&nbsp;&nbsp;획득 점수: <span class="score-value">0</span>점
+                </div>
+                <div class="numbers-column">
+                    <!-- Numbers will be inserted here by JavaScript -->
+                </div>
+            </div>
+            <div class="animal-container">
+                <img src="../images/fa2.png" alt="동물 캐릭터" class="animal-image">
+                <div class="speech-bubble">
+                    다시 한번 확인해 보고<br>
+                    패턴을 찾아볼까요!!
+                </div>
+            </div>
+            <button class="close-button" onclick="closeScorePopup()">닫기</button>
+        </div>
+    </template>
+    <script src="../js/script.js"></script>
+</body>
+</html> 

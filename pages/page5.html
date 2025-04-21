@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로또 예상번호 순위표</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #1a1f2e;
+            color: white;
+        }
+
+        h1 {
+            text-align: left;
+            color: white;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .admin-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #e74c3c;
+            border-radius: 50%;
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            cursor: pointer;
+        }
+
+        .user-id-input {
+            padding: 8px 15px;
+            border: 2px solid #e74c3c;
+            border-radius: 5px;
+            background-color: #1a1f2e;
+            color: white;
+            font-size: 16px;
+            width: 150px;
+            margin-right: 10px;
+        }
+
+        .confirm-button {
+            padding: 8px 15px;
+            background-color: #e74c3c;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 20px;
+        }
+
+        .confirm-button:hover {
+            background-color: #c0392b;
+        }
+
+        .user-id-input:focus {
+            outline: none;
+            border-color: #c0392b;
+            box-shadow: 0 0 5px rgba(231, 76, 60, 0.5);
+        }
+
+        .prediction-container {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .prediction-numbers {
+            display: flex;
+            gap: 10px;
+            margin-left: 20px;
+        }
+
+        .number-ball {
+            width: 40px;
+            height: 40px;
+            background-color: #e74c3c;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 18px;
+        }
+
+        .timestamp {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .comparison-title {
+            color: #3498db;
+            font-size: 20px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        .previous-predictions {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .prediction-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .prediction-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 5px;
+        }
+
+        .match-count {
+            color: #2ecc71;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .winning-number {
+            background-color: #2ecc71 !important;
+        }
+
+        .last-week-numbers {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .section-title {
+            color: #3498db;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .prediction-section {
+            margin-bottom: 30px;
+        }
+
+        .section-header {
+            color: #3498db;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .prediction-row {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .user-name {
+            color: #3498db;
+            font-weight: bold;
+            margin-right: 20px;
+            min-width: 100px;
+        }
+
+        @media (max-width: 768px) {
+            .prediction-container {
+                padding: 15px;
+            }
+
+            .user-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .prediction-numbers {
+                margin-left: 0;
+                margin-top: 10px;
+            }
+
+            .number-ball {
+                width: 35px;
+                height: 35px;
+                font-size: 16px;
+            }
+
+            .prediction-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        .admin-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #2c3e50;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            width: 300px;
+        }
+
+        .admin-popup.show {
+            display: block;
+        }
+
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+        }
+
+        .popup-overlay.show {
+            display: block;
+        }
+
+        .admin-popup input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 2px solid #e74c3c;
+            border-radius: 5px;
+            background-color: #1a1f2e;
+            color: white;
+        }
+
+        .admin-popup .number-input-container {
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .admin-popup .number-input-container.show {
+            display: grid;
+        }
+
+        .admin-popup input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            background-color: #1a1f2e;
+            color: white;
+            text-align: center;
+        }
+
+        .admin-popup button {
+            width: 100%;
+            padding: 10px;
+            background-color: #e74c3c;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .admin-popup button:hover {
+            background-color: #c0392b;
+        }
+
+        .admin-popup .error-message {
+            color: #e74c3c;
+            margin-bottom: 10px;
+            font-size: 14px;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>로또 예상번호 순위표<div class="admin-dot"></div></h1>
+    <div class="prediction-container">
+        <div class="user-info">
+            <input type="text" class="user-id-input" placeholder="아이디" maxlength="20">
+            <button class="confirm-button">확인</button>
+            <div class="prediction-numbers">
+                <div class="number-ball">9</div>
+                <div class="number-ball">11</div>
+                <div class="number-ball">13</div>
+                <div class="number-ball">16</div>
+                <div class="number-ball">18</div>
+                <div class="number-ball">22</div>
+            </div>
+            <div class="timestamp">2025. 4. 20. 오후 5:29:55</div>
+        </div>
+    </div>
+
+    <div class="prediction-section">
+        <div class="section-header">이번 주 예측번호</div>
+        <div id="thisWeekPredictions">
+            <!-- 이번 주 예측 결과들이 여기에 동적으로 추가됩니다 -->
+        </div>
+    </div>
+
+    <div class="prediction-section">
+        <div class="section-header">1167회 당첨번호</div>
+        <div class="last-week-numbers">
+            <div class="number-ball">3</div>
+            <div class="number-ball">11</div>
+            <div class="number-ball">14</div>
+            <div class="number-ball">18</div>
+            <div class="number-ball">26</div>
+            <div class="number-ball">27</div>
+        </div>
+    </div>
+
+    <div class="prediction-section">
+        <div class="section-header">지난 주 예측 결과</div>
+        <div id="previousPredictions">
+            <!-- 지난 주 예측 결과들이 여기에 동적으로 추가됩니다 -->
+        </div>
+    </div>
+
+    <div class="popup-overlay"></div>
+    <div class="admin-popup">
+        <div class="password-section">
+            <input type="password" placeholder="관리자 비밀번호" id="adminPassword">
+            <div class="error-message">비밀번호가 일치하지 않습니다.</div>
+            <button id="passwordSubmit">확인</button>
+        </div>
+        <div class="number-input-container">
+            <input type="number" min="1" max="45" placeholder="1번">
+            <input type="number" min="1" max="45" placeholder="2번">
+            <input type="number" min="1" max="45" placeholder="3번">
+            <input type="number" min="1" max="45" placeholder="4번">
+            <input type="number" min="1" max="45" placeholder="5번">
+            <input type="number" min="1" max="45" placeholder="6번">
+            <button id="saveWinningNumbers">당첨번호 저장</button>
+        </div>
+    </div>
+
+    <script>
+        const 당첨번호 = [3, 11, 14, 18, 26, 27]; // 1167회 당첨번호
+
+        function 맞은개수계산(예측번호들) {
+            return 예측번호들.filter(번호 => 당첨번호.includes(번호)).length;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const userIdInput = document.querySelector('.user-id-input');
+            const confirmButton = document.querySelector('.confirm-button');
+            const savedUserId = localStorage.getItem('userId');
+            const thisWeekPredictions = document.getElementById('thisWeekPredictions');
+            const adminDot = document.querySelector('.admin-dot');
+            const adminPopup = document.querySelector('.admin-popup');
+            const popupOverlay = document.querySelector('.popup-overlay');
+            const passwordInput = document.getElementById('adminPassword');
+            const passwordSubmit = document.getElementById('passwordSubmit');
+            const numberInputContainer = document.querySelector('.number-input-container');
+            const errorMessage = document.querySelector('.error-message');
+            const saveWinningNumbers = document.getElementById('saveWinningNumbers');
+            const numberInputs = document.querySelectorAll('.number-input-container input');
+
+            // 이번 주 예측 데이터 표시
+            function displayThisWeekPredictions() {
+                const currentPredictions = JSON.parse(localStorage.getItem('currentWeekPredictions') || '[]');
+                thisWeekPredictions.innerHTML = '';
+
+                currentPredictions.forEach(prediction => {
+                    const predictionElement = document.createElement('div');
+                    predictionElement.className = 'prediction-row';
+                    
+                    const numbersHtml = prediction.numbers.map(num => 
+                        `<div class="number-ball">${num}</div>`
+                    ).join('');
+
+                    predictionElement.innerHTML = `
+                        <div class="user-name">${prediction.userName || '익명'}</div>
+                        <div class="prediction-numbers">
+                            ${numbersHtml}
+                        </div>
+                        <div class="timestamp">${new Date(prediction.timestamp).toLocaleString()}</div>
+                    `;
+                    thisWeekPredictions.appendChild(predictionElement);
+                });
+            }
+
+            // 예측 번호 저장
+            function savePrediction() {
+                const userId = userIdInput.value.trim();
+                if (!userId) {
+                    alert('아이디를 입력해주세요.');
+                    return;
+                }
+
+                const numbers = Array.from(document.querySelectorAll('.prediction-container .number-ball'))
+                    .map(ball => parseInt(ball.textContent));
+
+                const prediction = {
+                    userName: userId,
+                    numbers: numbers,
+                    timestamp: new Date().getTime()
+                };
+
+                const currentPredictions = JSON.parse(localStorage.getItem('currentWeekPredictions') || '[]');
+                currentPredictions.push(prediction);
+                localStorage.setItem('currentWeekPredictions', JSON.stringify(currentPredictions));
+                localStorage.setItem('userId', userId);
+
+                displayThisWeekPredictions();
+                alert('예측번호가 저장되었습니다.');
+            }
+
+            // 이벤트 리스너 설정
+            if (savedUserId) {
+                userIdInput.value = savedUserId;
+            }
+
+            confirmButton.addEventListener('click', savePrediction);
+            userIdInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    savePrediction();
+                }
+            });
+
+            // 초기 데이터 표시
+            displayThisWeekPredictions();
+
+            // 관리자 버튼 클릭 이벤트
+            adminDot.addEventListener('click', function() {
+                adminPopup.classList.add('show');
+                popupOverlay.classList.add('show');
+                passwordInput.value = '';
+                errorMessage.style.display = 'none';
+                numberInputContainer.classList.remove('show');
+            });
+
+            // 오버레이 클릭 시 팝업 닫기
+            popupOverlay.addEventListener('click', function() {
+                adminPopup.classList.remove('show');
+                popupOverlay.classList.remove('show');
+            });
+
+            // 비밀번호 확인
+            passwordSubmit.addEventListener('click', function() {
+                const ADMIN_PASSWORD = 'knue2000';
+                if (passwordInput.value === ADMIN_PASSWORD) {
+                    numberInputContainer.classList.add('show');
+                    errorMessage.style.display = 'none';
+                    passwordInput.style.display = 'none';
+                    passwordSubmit.style.display = 'none';
+                } else {
+                    errorMessage.style.display = 'block';
+                }
+            });
+
+            // 당첨번호 저장
+            saveWinningNumbers.addEventListener('click', function() {
+                const numbers = Array.from(numberInputs).map(input => parseInt(input.value));
+                
+                // 유효성 검사
+                if (numbers.some(num => isNaN(num) || num < 1 || num > 45)) {
+                    alert('1부터 45 사이의 숫자를 입력해주세요.');
+                    return;
+                }
+                
+                if (new Set(numbers).size !== 6) {
+                    alert('중복되지 않는 6개의 숫자를 입력해주세요.');
+                    return;
+                }
+
+                // 당첨번호 정렬
+                numbers.sort((a, b) => a - b);
+
+                // 당첨번호 저장
+                const winningNumber = {
+                    numbers: numbers,
+                    timestamp: new Date().getTime(),
+                    round: getCurrentRound() // 회차 계산 함수 필요
+                };
+
+                const winningNumbers = JSON.parse(localStorage.getItem('winningNumbers') || '[]');
+                winningNumbers.push(winningNumber);
+                localStorage.setItem('winningNumbers', JSON.stringify(winningNumbers));
+
+                // 화면 업데이트
+                updateWinningNumbersDisplay();
+
+                // 팝업 닫기
+                adminPopup.classList.remove('show');
+                popupOverlay.classList.remove('show');
+                
+                alert('당첨번호가 저장되었습니다.');
+            });
+
+            function getCurrentRound() {
+                // 현재 회차 계산 로직 (필요에 따라 수정)
+                const winningNumbers = JSON.parse(localStorage.getItem('winningNumbers') || '[]');
+                return winningNumbers.length > 0 ? winningNumbers[winningNumbers.length - 1].round + 1 : 1167;
+            }
+
+            function updateWinningNumbersDisplay() {
+                const winningNumbers = JSON.parse(localStorage.getItem('winningNumbers') || '[]');
+                if (winningNumbers.length > 0) {
+                    const latestWinning = winningNumbers[winningNumbers.length - 1];
+                    const numberBalls = document.querySelectorAll('.last-week-numbers .number-ball');
+                    latestWinning.numbers.forEach((num, index) => {
+                        if (numberBalls[index]) {
+                            numberBalls[index].textContent = num;
+                        }
+                    });
+                }
+            }
+
+            // 초기 당첨번호 표시
+            updateWinningNumbersDisplay();
+
+            const predictions = Object.keys(localStorage)
+                .filter(key => key.startsWith('prediction_'))
+                .map(key => JSON.parse(localStorage.getItem(key)))
+                .sort((a, b) => b.timestamp - a.timestamp);
+
+            // 이전 예측 결과들 표시
+            const previousPredictionsContainer = document.getElementById('previousPredictions');
+            predictions.forEach(prediction => {
+                const matchCount = 맞은개수계산(prediction.numbers);
+                const predictionElement = document.createElement('div');
+                predictionElement.className = 'prediction-item';
+                
+                const numbersHtml = prediction.numbers.map(num => {
+                    const isWinning = 당첨번호.includes(num);
+                    return `<div class="number-ball ${isWinning ? 'winning-number' : ''}">${num}</div>`;
+                }).join('');
+
+                predictionElement.innerHTML = `
+                    <div class="prediction-info">
+                        <div class="user-name">${prediction.userName || '익명'}</div>
+                        <div class="prediction-numbers">
+                            ${numbersHtml}
+                        </div>
+                    </div>
+                    <div class="match-count">${matchCount}개 일치</div>
+                `;
+                previousPredictionsContainer.appendChild(predictionElement);
+            });
+        });
+    </script>
+</body>
+</html> 

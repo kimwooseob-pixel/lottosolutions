@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>게임 결과</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .result-container {
+            max-width: 600px;
+            margin: 1rem auto;
+            padding: 1rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .turn-result {
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background: #f8f9fa;
+            font-size: 0.9rem;
+        }
+
+        .number-display {
+            display: flex;
+            gap: 0.3rem;
+            margin: 0.3rem 0;
+            flex-wrap: wrap;
+        }
+
+        .number-ball {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #3498db;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .matched {
+            background: #2ecc71;
+        }
+
+        .result-summary {
+            margin-top: 1rem;
+            text-align: center;
+            font-size: 1rem;
+            padding: 0.5rem;
+            background: #f1c40f;
+            border-radius: 4px;
+            color: #34495e;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 0.8rem;
+            margin-top: 1rem;
+        }
+
+        .nav-button {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 4px;
+            background: #3498db;
+            color: white;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .nav-button:hover {
+            background: #2980b9;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin: 0.5rem 0;
+            text-align: center;
+        }
+
+        h3 {
+            font-size: 1rem;
+            margin: 0.3rem 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e90ff, #4b0082);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .result-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .score-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .total-score {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2196F3;
+            margin: 20px 0;
+        }
+        .turn-scores {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .turn-score {
+            background: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .button-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        .button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .restart-button {
+            background: #4CAF50;
+            color: white;
+        }
+        .continue-button {
+            background: #2196F3;
+            color: white;
+        }
+        .ranking-button {
+            background: #9C27B0;
+            color: white;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .checkpoint-info {
+            margin: 20px 0;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            font-size: 18px;
+            color: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <div class="result-container">
+        <h1>로또 게임 결과</h1>
+        <div class="checkpoint-info">
+            체크포인트: <span id="checkpoint-number">1</span>
+        </div>
+        <div class="score-section">
+            <div class="total-score">총점: <span id="total-score">0</span>점</div>
+            <div class="turn-scores" id="turn-scores">
+                <!-- 턴별 점수는 JavaScript로 동적 생성됨 -->
+            </div>
+        </div>
+        <div class="button-container">
+            <button onclick="location.href='page4.html'" class="button restart-button">이번주번호 예상해보기</button>
+            <button onclick="startFromTurn(1)" class="button continue-button">1턴부터 다시</button>
+            <button onclick="startFromTurn(11)" class="button continue-button">11턴부터 다시</button>
+            <button onclick="startFromTurn(21)" class="button continue-button">21턴부터 다시</button>
+            <button onclick="location.href='page5.html'" class="button ranking-button">랭킹 확인</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 현재 체크포인트 계산 (1-3)
+            const lastTurn = parseInt(localStorage.getItem('next_turn_start')) - 1 || 10;
+            const currentCheckpoint = Math.ceil(lastTurn / 10);
+            
+            // 체크포인트 표시
+            document.getElementById('checkpoint-number').textContent = currentCheckpoint;
+            
+            // 점수 계산
+            let totalScore = 0;
+            const turnScoresDiv = document.getElementById('turn-scores');
+            
+            // 현재 체크포인트의 시작 턴
+            const startTurn = (currentCheckpoint - 1) * 10 + 1;
+            const endTurn = Math.min(currentCheckpoint * 10, lastTurn);
+            
+            // 턴별 점수 표시
+            for (let i = startTurn; i <= endTurn; i++) {
+                const turnScore = parseInt(localStorage.getItem(`turn${i}_score`)) || 0;
+                totalScore += turnScore;
+                
+                const turnDiv = document.createElement('div');
+                turnDiv.className = 'turn-score';
+                turnDiv.textContent = `${i}턴: ${turnScore}점`;
+                turnScoresDiv.appendChild(turnDiv);
+            }
+            
+            // 총점 표시
+            document.getElementById('total-score').textContent = totalScore;
+            
+            // 마지막 체크포인트인 경우 다음회부터 연습 버튼 비활성화
+            if (currentCheckpoint >= 3) {
+                const continueButton = document.querySelector('.continue-button');
+                continueButton.style.display = 'none';
+            }
+        });
+        
+        function startFromTurn(turnNumber) {
+            // 시작할 턴 번호를 localStorage에 저장
+            localStorage.setItem('현재턴', turnNumber.toString());
+            // page2로 이동
+            window.location.href = 'page2.html';
+        }
+    </script>
+</body>
+</html> 

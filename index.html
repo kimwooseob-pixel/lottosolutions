@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lotto Solutions - 로또 번호 예측 시스템</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #1a1f2e;
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        .description {
+            font-size: 1.2em;
+            color: #888;
+            margin-bottom: 40px;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .menu-item {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: white;
+        }
+
+        .menu-item:hover {
+            transform: translateY(-5px);
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .menu-item h3 {
+            margin: 0 0 10px 0;
+            color: #3498db;
+        }
+
+        .menu-item p {
+            margin: 0;
+            color: #888;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 60px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Lotto Solutions</h1>
+            <div class="description">AI 기반 로또 번호 예측 시스템</div>
+        </header>
+
+        <div class="menu-grid">
+            <a href="pages/page1.html" class="menu-item">
+                <h3>번호 생성기</h3>
+                <p>AI가 분석한 로또 번호를 생성합니다</p>
+            </a>
+            <a href="pages/page2.html" class="menu-item">
+                <h3>번호 분석기</h3>
+                <p>선택한 번호의 패턴을 분석합니다</p>
+            </a>
+            <a href="pages/page3.html" class="menu-item">
+                <h3>연습 게임</h3>
+                <p>실전처럼 번호를 연습해보세요</p>
+            </a>
+            <a href="pages/page4.html" class="menu-item">
+                <h3>당첨 분석</h3>
+                <p>당첨 번호와 비교 분석합니다</p>
+            </a>
+            <a href="pages/page5.html" class="menu-item">
+                <h3>순위표</h3>
+                <p>예상 번호 순위를 확인하세요</p>
+            </a>
+        </div>
+
+        <footer>
+            <p>© 2024 Lotto Solutions. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html> 
