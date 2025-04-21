@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2196F3">
+    <meta name="description" content="로또 당첨번호 패턴을 분석하고 예측하는 앱">
+    <title>로또 패턴 분석</title>
+    <link rel="manifest" href="../manifest.json">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="icon" type="image/png" sizes="192x192" href="../images/icons/icon-192x192.png">
+    <link rel="apple-touch-icon" href="../images/icons/icon-192x192.png">
+    <style>
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(16, 30px);
+            gap: 2px;
+            margin: 20px auto;
+            justify-content: center;
+            max-width: 520px;
+            padding: 10px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            min-height: 100vh;
+            background: #f5f5f5;
+        }
+
+        .grid-cell {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            border: 1px solid #ddd;
+            background: white;
+            position: relative;
+        }
+
+        .grid-cell.header {
+            font-weight: bold;
+            background-color: #f8f9fa;
+            border: none;
+            font-size: 10px;
+        }
+
+        .grid-cell.prediction-cell {
+            background-color: #f8f9fa;
+            border-left: 2px solid #3498db;
+            cursor: pointer;
+        }
+
+        .grid-cell.selected {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .grid-cell.marked {
+            background: transparent;
+            border: 1px solid #ddd;
+            position: relative;
+        }
+
+        .connection-line {
+            position: absolute;
+            height: 8px;
+            background-color: #007bff;
+            transform-origin: left center;
+            z-index: 2;
+            opacity: 0.7;
+            transition: all 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .gradient-circle {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            background: radial-gradient(circle, rgba(255, 140, 0, 0.4) 0%, rgba(255, 140, 0, 0) 90%);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .angle-connection {
+            position: absolute;
+            height: 4px;
+            background-color: rgba(76, 175, 80, 0.8);
+            transform-origin: left center;
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+
+        .hint-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hint-button::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
+
+        .hint-button:hover::after {
+            left: 100%;
+        }
+
+        .hint-button.active {
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .hint-button:first-child {
+            background: linear-gradient(to right, #28a745, #218838);
+            color: white;
+        }
+
+        .hint-button:nth-child(2) {
+            background: linear-gradient(to right, #dc3545, #c82333);
+            color: white;
+        }
+
+        .hint-button:nth-child(3) {
+            background: linear-gradient(to right, #ffc107, #e0a800);
+            color: black;
+        }
+
+        .hint-button:nth-child(4) {
+            background: linear-gradient(to right, #17a2b8, #138496);
+            color: white;
+        }
+
+        .hint-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .hint-button:active {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .grid-cell.prediction-cell:hover {
+            background-color: #e3f2fd;
+            transform: scale(1.05);
+            transition: all 0.3s ease;
+        }
+
+        .grid-cell.marked .number-circle {
+            animation: popIn 0.3s ease-out;
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            70% {
+                transform: translate(-50%, -50%) scale(1.1);
+                opacity: 0.7;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .turn-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        #턴표시 {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+            padding: 10px 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .user-input {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .user-input input {
+            padding: 10px 15px;
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 200px;
+            transition: all 0.3s ease;
+        }
+
+        .user-input input:focus {
+            outline: none;
+            border-color: #2980b9;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+        }
+
+        @media (max-width: 768px) {
+            .grid-container {
+                padding: 5px;
+                gap: 1px;
+            }
+
+            .grid-cell {
+                width: 25px;
+                height: 25px;
+                font-size: 10px;
+            }
+
+            .hint-button {
+                padding: 8px 15px;
+                font-size: 14px;
+            }
+
+            .user-input input {
+                width: 180px;
+                font-size: 14px;
+            }
+        }
+
+        /* 스크롤바 스타일링 */
+        .grid-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .grid-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .grid-container::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        .grid-container::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>로또 패턴 분석</h1>
+        <div class="controls">
+            <button class="hint-button" onclick="힌트1()">힌트1</button>
+            <button class="hint-button" onclick="힌트2()">힌트2</button>
+            <button class="hint-button" onclick="힌트3()">힌트3</button>
+            <button class="hint-button" onclick="힌트4()">힌트4</button>
+        </div>
+        <div class="turn-controls">
+            <span id="턴표시">1턴 (1153회-1167회)</span>
+        </div>
+        
+        <div class="grid-container"></div>
+    </div>
+    <script defer src="../js/page4.js"></script>
+</body>
+</html> 

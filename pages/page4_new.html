@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2196F3">
+    <meta name="description" content="로또 당첨번호 패턴을 분석하고 예측하는 앱">
+    <title>로또 패턴 분석</title>
+    <link rel="manifest" href="../manifest.json">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="icon" type="image/png" sizes="192x192" href="../images/icons/icon-192x192.png">
+    <link rel="apple-touch-icon" href="../images/icons/icon-192x192.png">
+    <style>
+        .grid-container {
+            display: flex;
+            flex-direction: column;
+            margin: 20px auto;
+            max-width: 520px;
+            padding: 10px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .grid-header-row {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 5px;
+        }
+
+        .grid-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+        }
+
+        .grid-cell {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            border: 1px solid #ddd;
+            background: white;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .grid-cell.header {
+            font-weight: bold;
+            background-color: #f8f9fa;
+            border: none;
+            font-size: 10px;
+        }
+
+        .grid-cell.prediction-column {
+            background-color: #f8f9fa;
+            border-left: 2px solid #3498db;
+            cursor: pointer;
+        }
+
+        .grid-cell.selected {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .number-circle {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: #e74c3c;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .grid-header {
+            font-weight: bold;
+            background-color: #f8f9fa;
+            border: none;
+            font-size: 10px;
+        }
+
+        .prediction-column {
+            background-color: #f8f9fa;
+            border-left: 2px solid #3498db !important;
+        }
+
+        .turn-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .turn-button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            background: #3498db;
+            color: white;
+            cursor: pointer;
+        }
+
+        .turn-button:hover {
+            background: #2980b9;
+        }
+
+        #턴표시 {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>로또 패턴 분석</h1>
+        <div class="controls">
+            <button class="hint-button" onclick="힌트1()">힌트1</button>
+            <button class="hint-button" onclick="힌트2()">힌트2</button>
+            <button class="hint-button" onclick="힌트3()">힌트3</button>
+            <button class="hint-button" onclick="힌트4()">힌트4</button>
+            <button class="complete-button" onclick="턴완료()" disabled>완료</button>
+        </div>
+        <div class="turn-controls">
+            <button class="turn-button" onclick="이전턴()" style="visibility: hidden;">◀ 이전</button>
+            <span id="턴표시">1턴 (1102회-1116회)</span>
+            <button class="turn-button" onclick="다음턴()" style="visibility: hidden;">다음 ▶</button>
+        </div>
+        <div class="game-container">
+            <div class="grid-container">
+                <!-- 그리드는 JavaScript로 동적 생성됩니다 -->
+            </div>
+        </div>
+    </div>
+    <script src="../js/script.js"></script>
+    <script>
+        // 전역 변수 선언
+        let 현재턴 = 1;
+        const 총턴수 = 1; // 턴을 1개로 제한
+        let 선택된번호들 = [];
+        let 최신회차 = 1116; // 기본값 설정
+        let 시작회차 = 1102; // 기본값 설정
+
+        // 당첨번호 표시를 위한 함수
+        function 당첨번호표시(cell, 회차, 번호) {
+            // 임의의 당첨번호 생성 (고정된 회차별 랜덤 번호)
+            const 랜덤시드 = 회차 * 번호; // 같은 회차+번호 조합은 항상 같은 결과 반환
+            const 랜덤값 = (랜덤시드 * 123456789) % 100;
+            
+            // 약 15% 확률로 당첨번호 표시
+            if (랜덤값 < 15) {
+                cell.classList.add('marked');
+                const circle = document.createElement('div');
+                circle.className = 'number-circle';
+                circle.textContent = 번호;
+                cell.innerHTML = '';
+                cell.appendChild(circle);
+            }
+        }
+
+        // 그리드 초기화
+        function 초기화() {
+            선택된번호들 = [];
+            const gridContainer = document.querySelector('.grid-container');
+            gridContainer.innerHTML = '';
+
+            // 회차 번호 배열
+            const 회차번호 = [
+                1116, 1115, 1114, 1113, 1112, 
+                1111, 1110, 1109, 1108, 1107, 
+                1106, 1105, 1104, 1103, 1102
+            ];
+            
+            // 헤더 행 생성
+            const headerRow = document.createElement('div');
+            headerRow.className = 'grid-header-row';
+            
+            // 회차 헤더 추가
+            회차번호.forEach(회차 => {
+                const header = document.createElement('div');
+                header.className = 'grid-cell header';
+                header.textContent = 회차;
+                headerRow.appendChild(header);
+            });
+            
+            // 예상 헤더 추가
+            const 예상헤더 = document.createElement('div');
+            예상헤더.className = 'grid-cell header prediction-column';
+            예상헤더.textContent = '예상';
+            headerRow.appendChild(예상헤더);
+            
+            gridContainer.appendChild(headerRow);
+
+            // 1-45까지의 행 생성
+            for (let num = 1; num <= 45; num++) {
+                const row = document.createElement('div');
+                row.className = 'grid-row';
+                
+                // 15개의 데이터 셀 생성
+                회차번호.forEach(회차 => {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell';
+                    당첨번호표시(cell, 회차, num);
+                    row.appendChild(cell);
+                });
+                
+                // 예상 열 추가
+                const predictionCell = document.createElement('div');
+                predictionCell.className = 'grid-cell prediction-column';
+                predictionCell.setAttribute('data-number', num);
+                predictionCell.onclick = () => 번호선택(num);
+                predictionCell.textContent = num;
+                row.appendChild(predictionCell);
+                
+                gridContainer.appendChild(row);
+            }
+        }
+
+        // 힌트 함수들
+        function 힌트1() {
+            // 힌트1 로직 구현
+        }
+
+        function 힌트2() {
+            // 힌트2 로직 구현
+        }
+
+        function 힌트3() {
+            // 힌트3 로직 구현
+        }
+        
+        function 힌트4() {
+            // 힌트4 버튼 토글
+            const 힌트4버튼 = document.querySelector('.hint-button:nth-child(4)');
+            힌트4버튼.classList.toggle('active');
+            
+            // showPredictionHeatmap 함수 호출 (script.js에 정의됨)
+            if (typeof showPredictionHeatmap === 'function') {
+                showPredictionHeatmap();
+            }
+        }
+
+        // 이전/다음 턴 (사용하지 않음)
+        function 이전턴() {}
+        function 다음턴() {}
+
+        // 턴 완료
+        function 턴완료() {
+            if (선택된번호들.length !== 8) {
+                alert('8개의 번호를 선택해주세요.');
+                return;
+            }
+
+            // 결과 저장
+            const 저장데이터 = {
+                턴: 현재턴,
+                회차: 최신회차 + 1,
+                선택번호: 선택된번호들.sort((a, b) => a - b),
+                저장일시: new Date().toISOString()
+            };
+
+            const 기존데이터 = JSON.parse(localStorage.getItem('실제번호기록') || '[]');
+            기존데이터.push(저장데이터);
+            localStorage.setItem('실제번호기록', JSON.stringify(기존데이터));
+
+            // 페이지5로 바로 이동
+            window.location.href = 'page5.html';
+        }
+
+        // 번호 선택 처리 함수 복원
+        function 번호선택(번호) {
+            const cell = document.querySelector(`.grid-cell[data-number="${번호}"]`);
+            if (!cell) return;
+
+            if (선택된번호들.includes(번호)) {
+                선택된번호들 = 선택된번호들.filter(n => n !== 번호);
+                cell.classList.remove('selected');
+            } else if (선택된번호들.length < 8) {
+                선택된번호들.push(번호);
+                cell.classList.add('selected');
+            }
+
+            document.querySelector('.complete-button').disabled = 선택된번호들.length !== 8;
+        }
+
+        // 페이지 로드 시 초기화
+        window.onload = function() {
+            // 페이지 제목 강제 설정
+            document.getElementById('턴표시').textContent = '1턴 (1102회-1116회)';
+            
+            // URL에 파라미터 추가하여 캐시 무효화
+            if (!window.location.href.includes('refresh=true')) {
+                window.location.href = window.location.pathname + '?refresh=true';
+                return;
+            }
+            
+            초기화();
+            
+            // 완료 버튼 텍스트 변경
+            const 완료버튼 = document.querySelector('.complete-button');
+            완료버튼.textContent = '예상번호 저장';
+            완료버튼.disabled = true; // 초기에는 비활성화
+        };
+
+        // 서비스 워커 등록
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('../sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker 등록 성공:', registration.scope);
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker 등록 실패:', err);
+                    });
+            });
+        }
+    </script>
+</body>
+</html> 

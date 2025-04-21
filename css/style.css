@@ -1,0 +1,672 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f5f5f5;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 100%;
+    padding: 15px;
+    margin: 0 auto;
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    padding: 10px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.hint-button {
+    padding: 12px 20px;
+    font-size: 0.9rem;
+    border: none;
+    border-radius: 25px;
+    background: linear-gradient(145deg, #2196F3, #1976D2);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    min-width: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hint-button:active {
+    transform: scale(0.95);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(33, 20px);
+    grid-template-rows: repeat(47, 20px);
+    gap: 2px;
+    padding: 10px;
+    background-color: transparent;
+    position: relative;
+    overflow: auto;
+    max-width: 100%;
+    max-height: 80vh;
+}
+
+.grid-cell {
+    width: 25px;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f5f5f5;
+    position: relative;
+    font-size: 12px;
+    font-weight: bold;
+    color: black;
+    overflow: visible !important;
+}
+
+.grid-cell[data-type="번호"] {
+    background-color: #f0f0f0;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    font-size: 12px;
+    color: black;
+}
+
+.grid-cell.marked {
+    position: relative;
+    color: black;
+}
+
+.grid-cell.marked::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 4px solid red;
+    border-radius: 50%;
+    background-color: white;
+    z-index: 1;
+}
+
+.grid-cell span {
+    position: relative;
+    z-index: 3;
+    color: black;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.connection-line {
+    position: absolute;
+    background-color: #007bff;
+    transform-origin: left center;
+    border-radius: 4px;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.connection-line.strong {
+    height: 4px;
+    background-color: #1976D2;
+    box-shadow: 0 0 4px rgba(33, 150, 243, 0.5);
+}
+
+.connection-line.weak {
+    height: 2px;
+    background-color: #90CAF9;
+    opacity: 0.7;
+}
+
+.prediction-button {
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #333;
+}
+
+.prediction-button:hover {
+    transform: scale(1.1);
+    z-index: 2;
+}
+
+.prediction-button.selected {
+    background-color: #2196F3;
+    color: white;
+    border-radius: 50%;
+}
+
+.prediction-button.completed {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.prediction-button span {
+    position: relative;
+    z-index: 2;
+}
+
+.loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1rem;
+    color: #666;
+    text-align: center;
+}
+
+/* 모바일 최적화 */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+
+    h1 {
+        font-size: 1.2rem;
+        margin-bottom: 15px;
+    }
+
+    .grid-cell {
+        min-width: 22px;
+        min-height: 22px;
+        font-size: 10px;
+    }
+
+    .grid-cell.marked::before {
+        width: 16px;
+        height: 16px;
+    }
+
+    .prediction-button {
+        width: 22px;
+        height: 22px;
+        font-size: 10px;
+    }
+
+    .hint-button {
+        padding: 10px 15px;
+        font-size: 0.8rem;
+        min-width: 90px;
+    }
+
+    .grid-container {
+        grid-template-columns: 25px repeat(31, minmax(22px, 25px));
+        grid-template-rows: 25px repeat(45, minmax(22px, 25px));
+    }
+
+    .hand-drawn-circle::before,
+    .wrong-answer::before {
+        top: -8px;
+        left: -8px;
+        right: -8px;
+        bottom: -8px;
+        background-size: 85% 85%;
+    }
+}
+
+/* 스크롤바 스타일링 */
+.grid-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.grid-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.grid-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.grid-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.analysis-container {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.prediction-container {
+    flex: 1;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+}
+
+.prediction-container h3 {
+    margin-top: 0;
+    color: #333;
+    text-align: center;
+}
+
+.prediction-grid {
+    display: grid;
+    grid-template-columns: 30px;
+    grid-template-rows: repeat(45, 20px);
+    gap: 1px;
+    background-color: #ddd;
+    padding: 5px;
+    border-radius: 5px;
+    position: relative;
+    overflow: auto;
+    max-height: 800px;
+}
+
+.number-buttons {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.number-button {
+    width: 30px;
+    height: 30px;
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 12px;
+    transition: background-color 0.3s;
+}
+
+.number-button:hover {
+    background-color: #1976D2;
+}
+
+.number-button.selected {
+    background-color: #ff4444;
+}
+
+.number-button.selected:hover {
+    background-color: #ff4444;
+}
+
+.stats-container {
+    flex: 1;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+}
+
+.stats-container h3 {
+    margin-top: 0;
+    color: #333;
+}
+
+.number-balls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.number-ball {
+    width: 30px;
+    height: 30px;
+    background-color: #ff4444;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* 회차 행 스타일 */
+.grid-cell[data-type="회차"] {
+    background-color: #f0f0f0;
+    font-weight: bold;
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    width: 35px;
+    font-size: 8px;
+}
+
+.grid-cell.marked.connected {
+    /* border 속성 제거 */
+}
+
+.grid-cell.marked.connected::before {
+    border-color: #ff4444;
+}
+
+.grid-cell.highlight {
+    background-color: #44ff44;
+}
+
+.analysis-result {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: #f8f8f8;
+    border-radius: 5px;
+}
+
+.result-box {
+    margin: 15px 0;
+}
+
+.result-box p {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.number-list {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 16px;
+    color: #666;
+    text-align: center;
+}
+
+.turn-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin: 10px 0 20px;
+}
+
+.turn-button {
+    padding: 8px 15px;
+    font-size: 0.9rem;
+    border: none;
+    border-radius: 20px;
+    background: linear-gradient(145deg, #1976D2, #2196F3);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.turn-button:hover {
+    background: linear-gradient(145deg, #1565C0, #1976D2);
+    transform: translateY(-1px);
+}
+
+.turn-button:active {
+    transform: translateY(1px);
+}
+
+#턴표시 {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #333;
+    padding: 5px 15px;
+    background-color: #f0f0f0;
+    border-radius: 15px;
+    min-width: 180px;
+    text-align: center;
+}
+
+.result-container {
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.result-container h2 {
+    color: #2196F3;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.total-score {
+    font-size: 32px;
+    font-weight: bold;
+    color: #4CAF50;
+    margin: 20px 0;
+    padding: 10px;
+    background-color: #f5f5f5;
+    border-radius: 5px;
+}
+
+.turn-scores {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.turn-score {
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+    font-size: 16px;
+    color: #333;
+}
+
+.restart-button {
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.restart-button:hover {
+    background-color: #1976D2;
+}
+
+.complete-button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin: 10px;
+}
+
+.complete-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.complete-button:hover:not(:disabled) {
+    background-color: #388E3C;
+}
+
+/* 손글씨 스타일의 원과 X 표시 */
+.hand-drawn-circle {
+    position: relative;
+    background-color: #f5f5f5 !important;
+    border: none !important;
+    color: #4CAF50 !important;
+}
+
+.hand-drawn-circle::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    background-image: url('C:/LOTTO GAME/circle.png');
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 2;
+}
+
+.wrong-answer {
+    position: relative;
+    background-color: #f5f5f5 !important;
+    border: none !important;
+}
+
+.wrong-answer::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    background-image: url('C:/LOTTO GAME/no.png');
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 1;
+}
+
+.hand-drawn-circle span {
+    color: #4CAF50 !important;
+    font-weight: bold;
+}
+
+/* SVG 필터 추가 */
+.grid-container::before {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+}
+
+.grid-container svg {
+    position: absolute;
+    width: 0;
+    height: 0;
+}
+
+.game-container {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 20px;
+    padding: 20px;
+    flex-wrap: wrap;
+}
+
+.heatmap-container {
+    background-color: #f5f5f5;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    margin-left: 20px;
+    min-width: 300px;
+}
+
+.heatmap-container h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 18px;
+}
+
+.heatmap-grid {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 5px;
+    background-color: #f5f5f5;
+    padding: 10px;
+}
+
+.heatmap-cell {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(30, 144, 255, 0.1);
+    border-radius: 50%;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.heatmap-cell:hover,
+.heatmap-cell.highlighted {
+    transform: scale(1.1);
+    z-index: 2;
+    box-shadow: 0 0 10px rgba(33, 150, 243, 0.3);
+}
+
+.prediction-button.highlighted {
+    transform: scale(1.1);
+    z-index: 2;
+    box-shadow: 0 0 10px rgba(33, 150, 243, 0.5);
+}
+
+@media (max-width: 768px) {
+    .game-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .heatmap-container {
+        margin-left: 0;
+        margin-top: 20px;
+        width: 100%;
+        max-width: 400px;
+    }
+}
+
+.angle-connection {
+    position: absolute;
+    background-color: #4CAF50;
+    transform-origin: left center;
+    border-radius: 4px;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.gradient-circle {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    transition: all 0.3s ease;
+} 
