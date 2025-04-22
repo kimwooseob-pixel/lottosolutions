@@ -40,6 +40,9 @@
             font-size: 16px;
             width: 150px;
             margin-right: 10px;
+            outline: none;
+            z-index: 100;
+            position: relative;
         }
 
         .confirm-button {
@@ -51,6 +54,8 @@
             font-size: 16px;
             cursor: pointer;
             margin-right: 20px;
+            z-index: 100;
+            position: relative;
         }
 
         .confirm-button:hover {
@@ -58,7 +63,6 @@
         }
 
         .user-id-input:focus {
-            outline: none;
             border-color: #c0392b;
             box-shadow: 0 0 5px rgba(231, 76, 60, 0.5);
         }
@@ -140,6 +144,31 @@
 
         .winning-number {
             background-color: #2ecc71 !important;
+            border: 2px solid #27ae60 !important;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .prediction-item .number-ball {
+            width: 35px;
+            height: 35px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .prediction-item .winning-number {
+            transform: scale(1.1);
         }
 
         .last-week-numbers {
@@ -159,12 +188,29 @@
 
         .prediction-section {
             margin-bottom: 30px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
         }
 
         .section-header {
             color: #3498db;
-            font-size: 18px;
-            margin-bottom: 15px;
+            font-size: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(52, 152, 219, 0.3);
+        }
+
+        .results-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .winning-numbers-section {
+            background-color: rgba(52, 152, 219, 0.1);
+            border-radius: 10px;
+            padding: 15px;
         }
 
         .prediction-row {
@@ -174,6 +220,20 @@
             background-color: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
             margin-bottom: 10px;
+            animation: fadeIn 0.5s ease-in-out;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .user-name {
@@ -297,45 +357,33 @@
             text-align: center;
             display: none;
         }
+
+        .section-divider {
+            border-top: 2px solid #3498db;
+            margin: 30px 0;
+            opacity: 0.3;
+        }
     </style>
 </head>
 <body>
     <h1>로또 예상번호 순위표<div class="admin-dot"></div></h1>
-    <div class="prediction-container">
-        <div class="user-info">
-            <input type="text" class="user-id-input" placeholder="아이디" maxlength="20">
-            <button class="confirm-button">확인</button>
-            <div class="prediction-numbers">
+    
+    <!-- 1. 당첨번호 섹션 -->
+    <div class="prediction-section">
+        <div class="section-header">1168회차 당첨번호</div>
+        <div class="winning-numbers-section">
+            <div class="last-week-numbers">
                 <div class="number-ball">9</div>
-                <div class="number-ball">11</div>
-                <div class="number-ball">13</div>
-                <div class="number-ball">16</div>
-                <div class="number-ball">18</div>
-                <div class="number-ball">22</div>
+                <div class="number-ball">21</div>
+                <div class="number-ball">24</div>
+                <div class="number-ball">30</div>
+                <div class="number-ball">33</div>
+                <div class="number-ball">37</div>
             </div>
-            <div class="timestamp">2025. 4. 20. 오후 5:29:55</div>
         </div>
     </div>
 
-    <div class="prediction-section">
-        <div class="section-header">이번 주 예측번호</div>
-        <div id="thisWeekPredictions">
-            <!-- 이번 주 예측 결과들이 여기에 동적으로 추가됩니다 -->
-        </div>
-    </div>
-
-    <div class="prediction-section">
-        <div class="section-header">1167회 당첨번호</div>
-        <div class="last-week-numbers">
-            <div class="number-ball">3</div>
-            <div class="number-ball">11</div>
-            <div class="number-ball">14</div>
-            <div class="number-ball">18</div>
-            <div class="number-ball">26</div>
-            <div class="number-ball">27</div>
-        </div>
-    </div>
-
+    <!-- 2. 지난주 예측 결과 섹션 -->
     <div class="prediction-section">
         <div class="section-header">지난 주 예측 결과</div>
         <div id="previousPredictions">
@@ -343,6 +391,25 @@
         </div>
     </div>
 
+    <div class="section-divider"></div>
+
+    <!-- 3. 이번 주 예측번호 목록 -->
+    <div class="prediction-section">
+        <div class="section-header">이번 주 예측번호 목록</div>
+        <div id="thisWeekPredictions">
+            <!-- 입력 폼 -->
+            <div id="predictionInputForm" class="prediction-row">
+                <input type="text" class="user-id-input" placeholder="아이디" maxlength="20" autocomplete="off">
+                <button class="confirm-button">확인</button>
+                <div class="prediction-numbers">
+                    <!-- 페이지4에서 가져온 번호들이 여기에 표시됩니다 -->
+                </div>
+            </div>
+            <!-- 저장된 예측들이 여기에 추가됩니다 -->
+        </div>
+    </div>
+
+    <!-- 관리자 팝업 -->
     <div class="popup-overlay"></div>
     <div class="admin-popup">
         <div class="password-section">
@@ -362,7 +429,7 @@
     </div>
 
     <script>
-        const 당첨번호 = [3, 11, 14, 18, 26, 27]; // 1167회 당첨번호
+        const 당첨번호 = [9, 21, 24, 30, 33, 37]; // 1168회 당첨번호
 
         function 맞은개수계산(예측번호들) {
             return 예측번호들.filter(번호 => 당첨번호.includes(번호)).length;
@@ -383,28 +450,29 @@
             const saveWinningNumbers = document.getElementById('saveWinningNumbers');
             const numberInputs = document.querySelectorAll('.number-input-container input');
 
-            // 이번 주 예측 데이터 표시
-            function displayThisWeekPredictions() {
-                const currentPredictions = JSON.parse(localStorage.getItem('currentWeekPredictions') || '[]');
-                thisWeekPredictions.innerHTML = '';
+            // 페이지4에서 선택한 번호 표시
+            function displayPage4Selection() {
+                const predictionNumbers = document.querySelector('#predictionInputForm .prediction-numbers');
+                if (!predictionNumbers) return;
 
-                currentPredictions.forEach(prediction => {
-                    const predictionElement = document.createElement('div');
-                    predictionElement.className = 'prediction-row';
-                    
-                    const numbersHtml = prediction.numbers.map(num => 
-                        `<div class="number-ball">${num}</div>`
-                    ).join('');
+                // localStorage에서 가장 최근의 prediction 찾기
+                const keys = Object.keys(localStorage).filter(key => key.startsWith('prediction_'));
+                if (keys.length > 0) {
+                    // 가장 최근의 키 찾기 (timestamp가 가장 큰 것)
+                    const latestKey = keys.reduce((a, b) => {
+                        const timeA = parseInt(a.split('_')[1]);
+                        const timeB = parseInt(b.split('_')[1]);
+                        return timeA > timeB ? a : b;
+                    });
 
-                    predictionElement.innerHTML = `
-                        <div class="user-name">${prediction.userName || '익명'}</div>
-                        <div class="prediction-numbers">
-                            ${numbersHtml}
-                        </div>
-                        <div class="timestamp">${new Date(prediction.timestamp).toLocaleString()}</div>
-                    `;
-                    thisWeekPredictions.appendChild(predictionElement);
-                });
+                    const prediction = JSON.parse(localStorage.getItem(latestKey));
+                    if (prediction && prediction.source === 'page4') {
+                        // 예측 번호 표시 업데이트
+                        predictionNumbers.innerHTML = prediction.numbers.map(num => 
+                            `<div class="number-ball">${num}</div>`
+                        ).join('');
+                    }
+                }
             }
 
             // 예측 번호 저장
@@ -415,8 +483,14 @@
                     return;
                 }
 
-                const numbers = Array.from(document.querySelectorAll('.prediction-container .number-ball'))
+                const predictionNumbers = document.querySelector('#predictionInputForm .prediction-numbers');
+                const numbers = Array.from(predictionNumbers.querySelectorAll('.number-ball'))
                     .map(ball => parseInt(ball.textContent));
+
+                if (numbers.length !== 6) {
+                    alert('6개의 번호를 모두 선택해주세요.');
+                    return;
+                }
 
                 const prediction = {
                     userName: userId,
@@ -429,8 +503,38 @@
                 localStorage.setItem('currentWeekPredictions', JSON.stringify(currentPredictions));
                 localStorage.setItem('userId', userId);
 
+                // 입력 폼을 숨기고 예측 목록에 추가
+                document.getElementById('predictionInputForm').style.display = 'none';
                 displayThisWeekPredictions();
-                alert('예측번호가 저장되었습니다.');
+            }
+
+            // 이번 주 예측 데이터 표시
+            function displayThisWeekPredictions() {
+                const currentPredictions = JSON.parse(localStorage.getItem('currentWeekPredictions') || '[]');
+                const predictionsContainer = document.getElementById('thisWeekPredictions');
+                
+                // 기존 예측들만 표시 (입력 폼 제외)
+                const predictions = Array.from(predictionsContainer.children)
+                    .filter(child => child.id !== 'predictionInputForm');
+                predictions.forEach(pred => pred.remove());
+
+                currentPredictions.forEach(prediction => {
+                    const predictionElement = document.createElement('div');
+                    predictionElement.className = 'prediction-row';
+                    
+                    const numbersHtml = prediction.numbers.map(num => 
+                        `<div class="number-ball">${num}</div>`
+                    ).join('');
+
+                    predictionElement.innerHTML = `
+                        <div class="user-name">${prediction.userName}</div>
+                        <div class="prediction-numbers">
+                            ${numbersHtml}
+                        </div>
+                        <div class="timestamp">${new Date(prediction.timestamp).toLocaleString()}</div>
+                    `;
+                    predictionsContainer.appendChild(predictionElement);
+                });
             }
 
             // 이벤트 리스너 설정
@@ -446,6 +550,7 @@
             });
 
             // 초기 데이터 표시
+            displayPage4Selection();
             displayThisWeekPredictions();
 
             // 관리자 버튼 클릭 이벤트
@@ -494,77 +599,123 @@
                 // 당첨번호 정렬
                 numbers.sort((a, b) => a - b);
 
+                // 현재 회차 정보 가져오기
+                const currentDrawInfo = JSON.parse(localStorage.getItem('currentDrawInfo') || '{"drawNumber": 1168}');
+                const nextDrawNumber = currentDrawInfo.drawNumber + 1;
+
                 // 당첨번호 저장
                 const winningNumber = {
+                    drawNumber: nextDrawNumber,
                     numbers: numbers,
-                    timestamp: new Date().getTime(),
-                    round: getCurrentRound() // 회차 계산 함수 필요
+                    timestamp: new Date().getTime()
                 };
 
-                const winningNumbers = JSON.parse(localStorage.getItem('winningNumbers') || '[]');
-                winningNumbers.push(winningNumber);
-                localStorage.setItem('winningNumbers', JSON.stringify(winningNumbers));
+                // 당첨번호 저장
+                localStorage.setItem('latestWinningNumber', JSON.stringify(winningNumber));
+                
+                // 현재 회차 정보 업데이트
+                localStorage.setItem('currentDrawInfo', JSON.stringify({
+                    drawNumber: nextDrawNumber,
+                    timestamp: new Date().getTime()
+                }));
 
-                // 화면 업데이트
-                updateWinningNumbersDisplay();
+                // 이전 예측 결과를 지난주 예측 결과로 이동
+                const currentPredictions = JSON.parse(localStorage.getItem('currentWeekPredictions') || '[]');
+                
+                // 예측 결과에 맞은 개수 계산 추가
+                const scoredPredictions = currentPredictions.map(prediction => ({
+                    ...prediction,
+                    matchCount: prediction.numbers.filter(num => numbers.includes(num)).length
+                }));
+
+                // 지난주 예측 결과 저장
+                localStorage.setItem('lastWeekPredictions', JSON.stringify(scoredPredictions));
+                
+                // 현재 예측 초기화
+                localStorage.setItem('currentWeekPredictions', '[]');
+
+                // 페이지 업데이트
+                updatePageContent(winningNumber);
 
                 // 팝업 닫기
                 adminPopup.classList.remove('show');
                 popupOverlay.classList.remove('show');
-                
+
                 alert('당첨번호가 저장되었습니다.');
+                
+                // 페이지4의 회차 범위 업데이트
+                localStorage.setItem('drawRange', JSON.stringify({
+                    start: nextDrawNumber - 14,
+                    end: nextDrawNumber,
+                    prediction: nextDrawNumber + 1
+                }));
             });
 
-            function getCurrentRound() {
-                // 현재 회차 계산 로직 (필요에 따라 수정)
-                const winningNumbers = JSON.parse(localStorage.getItem('winningNumbers') || '[]');
-                return winningNumbers.length > 0 ? winningNumbers[winningNumbers.length - 1].round + 1 : 1167;
+            // 페이지 컨텐츠 업데이트 함수
+            function updatePageContent(winningNumber) {
+                // 당첨번호 섹션 제목 업데이트
+                const winningNumberTitle = document.querySelector('.section-header');
+                winningNumberTitle.textContent = `${winningNumber.drawNumber}회차 당첨번호`;
+
+                // 당첨번호 표시 업데이트
+                const lastWeekNumbers = document.querySelector('.last-week-numbers');
+                lastWeekNumbers.innerHTML = winningNumber.numbers.map(num => 
+                    `<div class="number-ball">${num}</div>`
+                ).join('');
+
+                // 예측 섹션 초기화
+                displayThisWeekPredictions();
             }
 
-            function updateWinningNumbersDisplay() {
-                const winningNumbers = JSON.parse(localStorage.getItem('winningNumbers') || '[]');
-                if (winningNumbers.length > 0) {
-                    const latestWinning = winningNumbers[winningNumbers.length - 1];
-                    const numberBalls = document.querySelectorAll('.last-week-numbers .number-ball');
-                    latestWinning.numbers.forEach((num, index) => {
-                        if (numberBalls[index]) {
-                            numberBalls[index].textContent = num;
-                        }
-                    });
+            // 페이지 로드 시 최신 정보로 업데이트
+            function initializePageContent() {
+                const currentDrawInfo = JSON.parse(localStorage.getItem('currentDrawInfo') || '{"drawNumber": 1168}');
+                const latestWinningNumber = JSON.parse(localStorage.getItem('latestWinningNumber'));
+                if (latestWinningNumber) {
+                    updatePageContent(latestWinningNumber);
+                } else {
+                    // 초기 상태에서는 1168회차 당첨번호로 표시
+                    const winningNumberTitle = document.querySelector('.section-header');
+                    winningNumberTitle.textContent = '1168회차 당첨번호';
                 }
             }
 
-            // 초기 당첨번호 표시
-            updateWinningNumbersDisplay();
-
-            const predictions = Object.keys(localStorage)
-                .filter(key => key.startsWith('prediction_'))
-                .map(key => JSON.parse(localStorage.getItem(key)))
-                .sort((a, b) => b.timestamp - a.timestamp);
+            // 초기화 함수 호출
+            initializePageContent();
 
             // 이전 예측 결과들 표시
-            const previousPredictionsContainer = document.getElementById('previousPredictions');
-            predictions.forEach(prediction => {
-                const matchCount = 맞은개수계산(prediction.numbers);
-                const predictionElement = document.createElement('div');
-                predictionElement.className = 'prediction-item';
-                
-                const numbersHtml = prediction.numbers.map(num => {
-                    const isWinning = 당첨번호.includes(num);
-                    return `<div class="number-ball ${isWinning ? 'winning-number' : ''}">${num}</div>`;
-                }).join('');
+            function displayPreviousPredictions() {
+                const previousPredictionsContainer = document.getElementById('previousPredictions');
+                previousPredictionsContainer.innerHTML = '';
 
-                predictionElement.innerHTML = `
-                    <div class="prediction-info">
-                        <div class="user-name">${prediction.userName || '익명'}</div>
-                        <div class="prediction-numbers">
-                            ${numbersHtml}
+                const predictions = JSON.parse(localStorage.getItem('lastWeekPredictions') || '[]');
+                
+                predictions.forEach(prediction => {
+                    const predictionElement = document.createElement('div');
+                    predictionElement.className = 'prediction-item';
+                    
+                    const numbersHtml = prediction.numbers.map(num => {
+                        const isWinning = 당첨번호.includes(num);
+                        return `<div class="number-ball ${isWinning ? 'winning-number' : ''}">${num}</div>`;
+                    }).join('');
+
+                    const matchCount = prediction.numbers.filter(num => 당첨번호.includes(num)).length;
+
+                    predictionElement.innerHTML = `
+                        <div class="prediction-info">
+                            <div class="user-name">${prediction.userName || '익명'}</div>
+                            <div class="prediction-numbers">
+                                ${numbersHtml}
+                            </div>
                         </div>
-                    </div>
-                    <div class="match-count">${matchCount}개 일치</div>
-                `;
-                previousPredictionsContainer.appendChild(predictionElement);
-            });
+                        <div class="match-count">${matchCount}개 일치</div>
+                    `;
+                    previousPredictionsContainer.appendChild(predictionElement);
+                });
+            }
+
+            // 초기화 시 이전 예측 결과 표시
+            displayPreviousPredictions();
         });
     </script>
 </body>

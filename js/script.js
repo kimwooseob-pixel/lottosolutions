@@ -1739,4 +1739,12 @@ function showHeatmap(markedCells) {
             cell.style.backgroundColor = `rgba(255, 140, 0, ${alpha})`;
         }
     });
-} 
+}
+
+function 이번주번호도전() {
+    window.location.href = '../pages/page4.html';
+}
+
+function 랭킹확인() {
+    window.location.href = '../pages/page5.html';
+}

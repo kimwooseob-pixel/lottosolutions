@@ -13,8 +13,8 @@ let 격자컨테이너;
 let 힌트버튼들;
 let 턴표시엘리먼트;
 
-// 실제 당첨번호 데이터
-const 실제당첨번호 = {
+// 실제 당첨번호 데이터 (기본 데이터)
+const 기본당첨번호 = {
     '1153': [2, 8, 19, 22, 32, 42],
     '1154': [6, 10, 12, 14, 20, 42],
     '1155': [17, 25, 33, 35, 38, 45],
@@ -36,11 +36,38 @@ const 실제당첨번호 = {
 const 동물이미지들 = ['fa1.png', 'fa2.png', 'fa3.png'];
 
 function get턴정보() {
+    // localStorage에서 회차 범위 정보 가져오기
+    const drawRange = JSON.parse(localStorage.getItem('drawRange'));
+    
+    if (drawRange) {
+        return {
+            시작회차: drawRange.start,
+            종료회차: drawRange.end,
+            예측회차: drawRange.prediction
+        };
+    }
+    
+    // 기본값 반환
     return {
         시작회차: 1153,
         종료회차: 1167,
         예측회차: 1168
     };
+}
+
+function get실제당첨번호() {
+    // localStorage에서 최신 당첨번호 가져오기
+    const latestWinningNumber = JSON.parse(localStorage.getItem('latestWinningNumber'));
+    
+    // 기본 당첨번호 데이터 복사
+    const 실제당첨번호 = {...기본당첨번호};
+    
+    // 최신 당첨번호가 있으면 추가
+    if (latestWinningNumber) {
+        실제당첨번호[latestWinningNumber.drawNumber] = latestWinningNumber.numbers;
+    }
+    
+    return 실제당첨번호;
 }
 
 function 업데이트턴표시() {
@@ -91,6 +118,7 @@ function 초기화() {
     선택된번호들 = [];
     
     const 턴정보 = get턴정보();
+    const 실제당첨번호 = get실제당첨번호();
     const fragment = document.createDocumentFragment();
 
     // 헤더 행 추가
