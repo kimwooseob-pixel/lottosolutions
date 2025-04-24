@@ -103,6 +103,9 @@ let 힌트2활성화 = false;
 // 힌트3 토글 상태
 let 힌트3활성화 = false;
 
+// 힌트5 토글 상태 변수 추가
+let 힌트5활성화 = false;
+
 // 연결선 표시 함수들
 function showHorizontalConnections() {
     if (힌트1활성화) {
@@ -114,67 +117,112 @@ function showHorizontalConnections() {
     clearConnections();
     힌트1활성화 = true;
     
-    // 모든 당첨번호 셀 찾기
+    const 격자 = document.querySelector('.grid-container');
+    const 격자Rect = 격자.getBoundingClientRect();
     const 모든당첨셀 = document.querySelectorAll('.grid-cell.marked');
     const 셀배열 = Array.from(모든당첨셀);
-    const 원반지름 = 10;  // 원의 실제 반지름
     
-    // 각 당첨번호 셀에 대해 가까운 셀 찾기
+    // 셀 크기와 간격 정의
+    const 셀크기 = 30;
+    const 가로간격 = 8;
+    
     셀배열.forEach((셀1, 인덱스) => {
-        const 셀1Rect = 셀1.getBoundingClientRect();
-        const 셀1중심X = 셀1Rect.left + 셀1Rect.width / 2;
-        const 셀1중심Y = 셀1Rect.top + 셀1Rect.height / 2;
-        
         셀배열.slice(인덱스 + 1).forEach(셀2 => {
+            const 셀1Rect = 셀1.getBoundingClientRect();
             const 셀2Rect = 셀2.getBoundingClientRect();
-            const 셀2중심X = 셀2Rect.left + 셀2Rect.width / 2;
-            const 셀2중심Y = 셀2Rect.top + 셀2Rect.height / 2;
             
-            // 두 셀 사이의 거리 계산
-            const 거리 = Math.sqrt(
-                Math.pow(셀2중심X - 셀1중심X, 2) + 
-                Math.pow(셀2중심Y - 셀1중심Y, 2)
-            );
+            const x1 = 셀1Rect.left + 셀1Rect.width / 2;
+            const y1 = 셀1Rect.top + 셀1Rect.height / 2;
+            const x2 = 셀2Rect.left + 셀2Rect.width / 2;
+            const y2 = 셀2Rect.top + 셀2Rect.height / 2;
             
-            // 거리가 60px 이하인 경우에만 연결
-            if (거리 <= 60) {
-                셀1.classList.add('connected');
-                셀2.classList.add('connected');
+            // 격자 위치 차이 계산
+            const col1 = Math.floor((셀1Rect.left - 격자Rect.left) / (셀크기 + 가로간격));
+            const row1 = Math.floor((셀1Rect.top - 격자Rect.top) / (셀크기 + 가로간격));
+            const col2 = Math.floor((셀2Rect.left - 격자Rect.left) / (셀크기 + 가로간격));
+            const row2 = Math.floor((셀2Rect.top - 격자Rect.top) / (셀크기 + 가로간격));
+            
+            // 격자 단위로 거리 계산
+            const colDiff = Math.abs(col2 - col1);
+            const rowDiff = Math.abs(row2 - row1);
+            
+            // 인접한 셀들만 연결 (가로로 한 칸 차이)
+            if (colDiff === 1 && rowDiff === 0) {
+                const 각도 = Math.atan2(y2 - y1, x2 - x1);
                 
-                // 각도 계산
-                const 각도 = Math.atan2(셀2중심Y - 셀1중심Y, 셀2중심X - 셀1중심X);
-                
-                // 원의 경계에서 시작하는 위치 계산
-                const 시작X = 셀1중심X + Math.cos(각도) * 원반지름;
-                const 시작Y = 셀1중심Y + Math.sin(각도) * 원반지름;
-                const 끝X = 셀2중심X - Math.cos(각도) * 원반지름;
-                const 끝Y = 셀2중심Y - Math.sin(각도) * 원반지름;
-                
-                // 수정된 길이 계산
-                const 길이 = Math.sqrt(
-                    Math.pow(끝X - 시작X, 2) + 
-                    Math.pow(끝Y - 시작Y, 2)
-                );
-                
-                // 연결선 생성
+                // 연결선 생성 (가로 간격만큼의 길이)
                 const 연결선 = document.createElement('div');
                 연결선.className = 'connection-line';
                 연결선.style.cssText = `
-                    width: ${길이}px;
-                    height: 8px;
+                    width: ${가로간격}px;
+                    height: 4px;
                     background-color: #007bff;
                     position: absolute;
-                    left: ${시작X}px;
-                    top: ${시작Y}px;
-                    transform: rotate(${각도 * 180 / Math.PI}deg)`;
-                연결선.style.transformOrigin = 'left center';
-                연결선.style.zIndex = '2';
-                연결선.style.position = 'absolute';
-                
+                    left: ${x1 + 셀크기/2}px;
+                    top: ${y1}px;
+                    transform-origin: left center;
+                    z-index: 1;
+                `;
                 격자.appendChild(연결선);
+
+                // 움직이는 점들을 위한 컨테이너
+                const 점컨테이너 = document.createElement('div');
+                점컨테이너.className = 'dot-container';
+                점컨테이너.style.cssText = `
+                    width: ${가로간격}px;
+                    height: 4px;
+                    position: absolute;
+                    left: ${x1 + 셀크기/2}px;
+                    top: ${y1}px;
+                    transform-origin: left center;
+                    z-index: 2;
+                `;
+
+                // 3개의 움직이는 점 생성
+                for (let i = 0; i < 3; i++) {
+                    const 점 = document.createElement('div');
+                    점.className = 'moving-dot';
+                    점.style.cssText = `
+                        width: 8px;
+                        height: 8px;
+                        background-color: #00ff00;
+                        border-radius: 50%;
+                        position: absolute;
+                        top: -2px;
+                        left: 0;
+                        box-shadow: 0 0 4px #00ff00;
+                        animation: moveDot 2s linear infinite;
+                        animation-delay: ${i * 0.6}s;
+                    `;
+                    점컨테이너.appendChild(점);
+                }
+
+                격자.appendChild(점컨테이너);
             }
         });
     });
+
+    // 애니메이션 스타일 추가
+    const 스타일 = document.createElement('style');
+    스타일.textContent = `
+        @keyframes moveDot {
+            0% {
+                left: -8px;
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                left: calc(100% + 8px);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(스타일);
 }
 
 function showVerticalConnections() {
@@ -190,9 +238,13 @@ function showDiagonalConnections() {
 }
 
 function clearConnections() {
-    currentConnectionType = null;
-    const lines = document.querySelectorAll('.connection-line');
-    lines.forEach(line => line.remove());
+    힌트1활성화 = false;
+    document.querySelectorAll('.connection-line, .dot-container').forEach(element => element.remove());
+    document.querySelectorAll('style').forEach(style => {
+        if (style.textContent.includes('moveDot')) {
+            style.remove();
+        }
+    });
 }
 
 function showConnections() {
@@ -474,19 +526,23 @@ function 격자초기화() {
     
     gridContainer.innerHTML = '';
     
+    // 셀 크기와 원 크기를 30% 감소
+    const 셀크기 = 21;
+    const 원크기 = 17;
+    const 폰트크기 = 7;  // 폰트 크기도 조정
+    
     // 그리드 컨테이너 스타일 설정
     gridContainer.style.cssText = `
         display: grid;
-        grid-template-columns: repeat(16, 30px);
-        gap: 2px;
-        margin: 20px auto;
+        grid-template-columns: repeat(16, ${셀크기}px);
+        grid-auto-rows: ${셀크기}px;
+        column-gap: 0;
+        row-gap: 1px;
+        margin: 14px auto;
         justify-content: center;
         width: fit-content;
         height: fit-content;
-        padding: 10px;
-        background: #fff;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 7px;
         position: relative;
         overflow: visible;
     `;
@@ -505,21 +561,21 @@ function 격자초기화() {
             const 회차번호 = 턴정보.시작회차 + i;
             header.textContent = 회차번호;
             header.style.cssText = `
-                height: 40px;
+                height: ${셀크기}px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 transform: rotate(-45deg);
-                font-size: 12px;
+                font-size: 8px;
                 font-weight: bold;
                 white-space: nowrap;
-                padding-bottom: 15px;
+                padding: 0;
                 color: #333;
             `;
         } else {
             header.textContent = '예상';
             header.style.cssText = `
-                border-left: 2px solid #3498db;
+                border-left: 1px solid #3498db;
                 background-color: #f8f9fa;
                 font-weight: bold;
                 color: #3498db;
@@ -527,14 +583,15 @@ function 격자초기화() {
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                height: 30px;
-                width: 30px;
+                height: ${셀크기}px;
+                width: ${셀크기}px;
                 padding: 0;
                 margin: 0;
                 white-space: nowrap;
                 overflow: visible;
                 position: relative;
                 z-index: 2;
+                font-size: 8px;
             `;
         }
         gridContainer.appendChild(header);
@@ -554,72 +611,77 @@ function 격자초기화() {
                 cell.textContent = num;
                 cell.classList.add('prediction-cell');
                 cell.style.cssText = `
-                    border-left: 2px solid #3498db;
+                    border-left: 1px solid #3498db;
                     background-color: #f8f9fa;
                     cursor: pointer;
                     transition: all 0.3s ease;
-                    height: 30px;
-                    width: 30px;
-                    line-height: 30px;
+                    height: ${셀크기}px;
+                    width: ${셀크기}px;
+                    line-height: ${셀크기}px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     font-weight: bold;
                     position: relative;
-                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-                    border-radius: 4px;
+                    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+                    border-radius: 3px;
                     margin: 0;
                     padding: 0;
                     z-index: 3;
+                    font-size: 8px;
                 `;
                 
-                // 선택된 번호인 경우 스타일 적용
                 if (선택된번호들.includes(num)) {
                     cell.classList.add('selected');
                     cell.style.backgroundColor = '#3498db';
                     cell.style.color = '#fff';
                 }
                 
-                // 클릭 이벤트 추가
                 cell.addEventListener('click', () => 셀클릭(cell));
             } else {
                 cell.style.cssText = `
-                    height: 30px;
-                    width: 30px;
+                    height: ${셀크기}px;
+                    width: ${셀크기}px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     margin: 0;
                     padding: 0;
+                    font-size: ${폰트크기}px;
+                    position: relative;
                 `;
                 
-                // 당첨 번호 데이터 표시
                 const 현재회차 = 턴정보.시작회차 + col;
-                
-                // 실제 당첨번호 데이터에서 해당 회차의 번호 가져오기
                 const 해당회차번호들 = 실제당첨번호[현재회차];
                 
                 if (해당회차번호들 && 해당회차번호들.includes(num)) {
-                        cell.classList.add('marked');
-                        const circle = document.createElement('div');
-                        circle.className = 'number-circle';
-                        circle.textContent = num;
-                        circle.style.cssText = `
-                            width: 24px;
-                            height: 24px;
-                            border: 2px solid #e74c3c;
-                            border-radius: 50%;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            font-size: 12px;
-                            color: #e74c3c;
-                            position: relative;
-                            z-index: 1;
-                            margin: 0;
-                            padding: 0;
-                        `;
-                        cell.appendChild(circle);
+                    cell.classList.add('marked');
+                    const circle = document.createElement('div');
+                    circle.className = 'number-circle';
+                    circle.textContent = num;
+                    
+                    // 원 스타일을 명시적으로 설정
+                    circle.style.cssText = `
+                        width: ${원크기}px;
+                        height: ${원크기}px;
+                        border: 1px solid #e74c3c;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: ${폰트크기}px;
+                        color: #e74c3c;
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        z-index: 1;
+                        margin: 0;
+                        padding: 0;
+                        box-sizing: border-box;
+                        background: transparent;
+                    `;
+                    cell.appendChild(circle);
                 }
             }
             
@@ -1003,7 +1065,10 @@ function 턴표시업데이트() {
     const 턴정보 = get턴정보();
     const 턴표시엘리먼트 = document.querySelector('.turn-display');
     if (턴표시엘리먼트) {
-        턴표시엘리먼트.textContent = `${현재턴}턴 (${턴정보.시작회차}회-${턴정보.종료회차}회)`;
+        턴표시엘리먼트.innerHTML = `
+            <div>${현재턴}턴</div>
+            <div>${턴정보.시작회차}-${턴정보.종료회차}</div>
+        `;
     }
 }
 
@@ -1747,4 +1812,171 @@ function 이번주번호도전() {
 
 function 랭킹확인() {
     window.location.href = '../pages/page5.html';
+}
+
+// 기본 상태 저장 함수
+function saveBaseState() {
+    const baseState = {
+        현재턴: 현재턴,
+        힌트1활성화: 힌트1활성화,
+        힌트2활성화: 힌트2활성화,
+        힌트3활성화: 힌트3활성화,
+        currentConnectionType: currentConnectionType
+    };
+    localStorage.setItem('gameBaseState', JSON.stringify(baseState));
+}
+
+// 기본 상태 불러오기 함수
+function loadBaseState() {
+    const savedState = localStorage.getItem('gameBaseState');
+    if (savedState) {
+        const state = JSON.parse(savedState);
+        현재턴 = state.현재턴 || 1;
+        힌트1활성화 = state.힌트1활성화 || false;
+        힌트2활성화 = state.힌트2활성화 || false;
+        힌트3활성화 = state.힌트3활성화 || false;
+        currentConnectionType = state.currentConnectionType || null;
+    }
+}
+
+// 초기화 시 상태 불러오기
+document.addEventListener('DOMContentLoaded', function() {
+    loadBaseState();
+    격자초기화();
+});
+
+function 힌트5() {
+    힌트5활성화 = !힌트5활성화;  // 상태 토글
+    
+    // 이전 점수와 그라데이션 원 표시 제거
+    clearScoreDisplay();
+    
+    // 비활성화 상태면 여기서 종료
+    if (!힌트5활성화) {
+        return;
+    }
+    
+    // 모든 셀과 marked 셀 가져오기
+    const allCells = document.querySelectorAll('.grid-cell');
+    const markedCells = document.querySelectorAll('.grid-cell.marked');
+    
+    // 각 빈칸에 대해 점수 계산
+    allCells.forEach(cell => {
+        if (!cell.classList.contains('marked') && !cell.classList.contains('prediction-cell')) {
+            let totalScore = 0;
+            const cellPos = getCellPosition(cell);
+            
+            // 각 marked 셀에 대해 점수 계산
+            markedCells.forEach(markedCell => {
+                const markedPos = getCellPosition(markedCell);
+                const score = calculatePositionScore(cellPos, markedPos);
+                totalScore += score;
+            });
+            
+            // 모든 점수(0 포함) 표시
+            displayScore(cell, totalScore);
+        }
+    });
+}
+
+function clearScoreDisplay() {
+    // 점수 표시와 그라데이션 원 모두 제거
+    document.querySelectorAll('.score-display').forEach(el => el.remove());
+    document.querySelectorAll('.hint5-gradient-circle').forEach(el => el.remove());
+    
+    // 혹시 모를 남은 그라데이션 원들도 제거
+    document.querySelectorAll('[style*="radial-gradient"]').forEach(el => {
+        if (el.parentElement && el.parentElement.classList.contains('grid-cell')) {
+            el.remove();
+        }
+    });
+}
+
+function getCellPosition(cell) {
+    const gridSize = 16; // 실제 그리드 크기로 수정
+    const cells = Array.from(document.querySelectorAll('.grid-cell'));
+    const index = cells.indexOf(cell);
+    const row = Math.floor((index - gridSize) / gridSize); // 헤더 행을 제외
+    const col = index % gridSize;
+    return { row, col };
+}
+
+function calculatePositionScore(pos1, pos2) {
+    const rowDiff = Math.abs(pos1.row - pos2.row);
+    const colDiff = Math.abs(pos1.col - pos2.col);
+    
+    // 상하좌우 인접
+    if ((rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1)) {
+        return 2;
+    }
+    // 대각선 인접
+    if (rowDiff === 1 && colDiff === 1) {
+        return 1.5;
+    }
+    // 2칸 떨어진 상하좌우
+    if ((rowDiff === 2 && colDiff === 0) || (rowDiff === 0 && colDiff === 2)) {
+        return 1;
+    }
+    
+    return 0;
+}
+
+function displayScore(cell, score) {
+    // 그라데이션 원 생성
+    if (score <= 1.5) {
+        const gradientCircle = document.createElement('div');
+        gradientCircle.className = 'hint5-gradient-circle';  // 클래스 이름 추가
+        let size;
+        let gradientColor;
+        
+        // 점수에 따른 원 크기 설정 (역순, 3배 크기)
+        if (score === 0) {
+            size = 72;  // 24 * 3 (가장 큰 원)
+            gradientColor = 'rgba(0, 0, 0, 0.7)';
+        } else if (score === 1) {
+            size = 60;  // 20 * 3 (중간 크기 원)
+            gradientColor = 'rgba(128, 128, 0, 0.7)';
+        } else if (score === 1.5) {
+            size = 48;  // 16 * 3 (가장 작은 원)
+            gradientColor = 'rgba(255, 255, 0, 0.7)';
+        }
+
+        gradientCircle.style.cssText = `
+            position: absolute;
+            width: ${size}px;
+            height: ${size}px;
+            background: radial-gradient(circle, ${gradientColor} 0%, transparent 70%);
+            border-radius: 50%;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+        `;
+        cell.appendChild(gradientCircle);
+    }
+
+    // 점수 표시
+    const scoreDisplay = document.createElement('div');
+    scoreDisplay.className = 'score-display';
+    scoreDisplay.textContent = score.toFixed(1);
+    scoreDisplay.style.cssText = `
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: ${score > 0 ? '#1976D2' : '#999'};
+        font-weight: bold;
+        font-size: 7px;
+        z-index: 2;
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 2px;
+        padding: 1px;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+    `;
+    cell.style.position = 'relative';
+    cell.appendChild(scoreDisplay);
 }
