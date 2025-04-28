@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>자유게시판</title>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    const firebaseConfig = {
+      apiKey: "AIzaSyAwh55rLOQkY8ZVCzaC4ZF3iaUVU5Vu0GM",
+      authDomain: "ai-lottosolutions.firebaseapp.com",
+      projectId: "ai-lottosolutions",
+      storageBucket: "ai-lottosolutions.appspot.com",
+      messagingSenderId: "616782090306",
+      appId: "1:616782090306:web:688c710998dfce8e4d5ddb",
+      measurementId: "G-NEXMN4FFJG"
+    };
+    window.app = initializeApp(firebaseConfig);
+    window.db = getFirestore(window.app);
+  </script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', 'Arial', sans-serif;
+      background: #f6f8fa;
+      color: #222;
+    }
+    h1 {
+      text-align: center;
+      margin: 30px 0 20px 0;
+      font-size: 2em;
+      color: #1976d2;
+    }
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    form#postForm {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+    form#postForm input[type="text"],
+    form#postForm textarea {
+      padding: 10px;
+      border: 1px solid #cfd8dc;
+      border-radius: 6px;
+      font-size: 1em;
+    }
+    form#postForm textarea {
+      min-height: 60px;
+      resize: vertical;
+    }
+    form#postForm button {
+      background: #1976d2;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    form#postForm button:hover {
+      background: #1565c0;
+    }
+    #postList {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .post-card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .post-card h3 {
+      margin: 0 0 6px 0;
+      font-size: 1.1em;
+      color: #1976d2;
+    }
+    .post-card p {
+      margin: 0 0 8px 0;
+      font-size: 1em;
+      color: #333;
+    }
+    .post-card .commentForm {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .post-card .commentForm input[type="text"] {
+      flex: 1;
+      padding: 7px;
+      border: 1px solid #cfd8dc;
+      border-radius: 6px;
+      font-size: 1em;
+    }
+    .post-card .commentForm button {
+      background: #43a047;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 14px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .post-card .commentForm button:hover {
+      background: #388e3c;
+    }
+    .post-card .commentList {
+      list-style: none;
+      padding: 0;
+      margin: 8px 0 0 0;
+    }
+    .post-card .commentList li {
+      background: #f1f8e9;
+      border-radius: 5px;
+      padding: 6px 10px;
+      margin-bottom: 4px;
+      font-size: 0.97em;
+    }
+    @media (max-width: 600px) {
+      .container {
+        max-width: 100vw;
+        padding: 6px;
+      }
+      form#postForm, .post-card {
+        padding: 10px;
+      }
+      h1 {
+        font-size: 1.3em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>자유게시판</h1>
+  <div class="container">
+    <form id="postForm">
+      <input type="text" id="postTitle" placeholder="제목" required />
+      <textarea id="postContent" placeholder="내용" required></textarea>
+      <button type="submit">글쓰기</button>
+    </form>
+    <div id="postList"></div>
+  </div>
+  <script type="module">
+    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    const db = window.db;
+    // 글쓰기
+    const postForm = document.getElementById('postForm');
+    postForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const title = document.getElementById('postTitle').value;
+      const content = document.getElementById('postContent').value;
+      await addDoc(collection(db, 'free-posts'), {
+        title,
+        content,
+        createdAt: new Date().toISOString(),
+        comments: []
+      });
+      postForm.reset();
+    };
+    // 글 목록 및 댓글 표시
+    const postList = document.getElementById('postList');
+    onSnapshot(query(collection(db, 'free-posts'), orderBy('createdAt', 'desc')), (snapshot) => {
+      postList.innerHTML = '';
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const div = document.createElement('div');
+        div.className = 'post-card';
+        div.innerHTML = `
+          <h3>${data.title}</h3>
+          <p>${data.content}</p>
+          <div>
+            <form class="commentForm">
+              <input type="text" placeholder="댓글 입력" required />
+              <button type="submit">댓글 달기</button>
+            </form>
+            <ul class="commentList">
+              ${(data.comments||[]).map(c=>`<li>${c}</li>`).join('')}
+            </ul>
+          </div>
+        `;
+        // 댓글 폼 이벤트
+        div.querySelector('.commentForm').onsubmit = async (e) => {
+          e.preventDefault();
+          const input = e.target.querySelector('input');
+          const comment = input.value;
+          if (!comment) return;
+          await updateDoc(doc(db, 'free-posts', docSnap.id), {
+            comments: arrayUnion(comment)
+          });
+          input.value = '';
+        };
+        postList.appendChild(div);
+      });
+    });
+  </script>
+</body>
+</html> 

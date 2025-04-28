@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2196F3">
+    <meta name="description" content="로또 당첨번호 패턴을 분석하고 예측하는 앱">
+    <title>화살표 게임</title>
+    <link rel="manifest" href="../manifest.json">
+    <link rel="stylesheet" href="../css/arrow-game.css">
+    <link rel="icon" type="image/png" sizes="192x192" href="../images/icons/icon-192x192.png">
+    <link rel="apple-touch-icon" href="../images/icons/icon-192x192.png">
+    <style>
+        // ... existing code ...
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>화살표 게임</h1>
+        <div class="controls">
+            <button class="hint-button" onclick="힌트5()">경로계산 원리합계</button>
+            <button class="hint-button" onclick="다음턴()">다음턴</button>
+        </div>
+        <div class="game-container">
+            <div class="grid-container"></div>
+        </div>
+    </div>
+    <template id="score-popup-template">
+        <div class="score-popup">
+            <div class="result-container">
+                <div class="score-text">
+                    맞춘 개수: <span class="match-count">0</span>개&nbsp;&nbsp;/&nbsp;&nbsp;획득 점수: <span class="score-value">0</span>점
+                </div>
+                <div class="numbers-column">
+                    <!-- Numbers will be inserted here by JavaScript -->
+                </div>
+            </div>
+            <div class="animal-container">
+                <img src="../images/fa2.png" alt="동물 캐릭터" class="animal-image">
+                <div class="speech-bubble">
+                    다시 한번 확인해 보고<br>
+                    패턴을 찾아볼까요!!
+                </div>
+            </div>
+            <button class="close-button" onclick="closeScorePopup()">닫기</button>
+        </div>
+    </template>
+    <script src="../js/arrow-game.js"></script>
+</body>
+</html> 

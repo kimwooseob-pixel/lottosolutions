@@ -94,17 +94,13 @@ function get턴정보() {
 // 연결선 표시 상태
 let currentConnectionType = null;
 
-// 힌트1 토글 상태
+// 힌트 활성화 상태 변수들
 let 힌트1활성화 = false;
-
-// 힌트2 토글 상태
 let 힌트2활성화 = false;
-
-// 힌트3 토글 상태
 let 힌트3활성화 = false;
-
-// 힌트5 토글 상태 변수 추가
+let 힌트4활성화 = false;
 let 힌트5활성화 = false;
+let 힌트6활성화 = false;
 
 // 연결선 표시 함수들
 function showHorizontalConnections() {
@@ -122,78 +118,63 @@ function showHorizontalConnections() {
     const 모든당첨셀 = document.querySelectorAll('.grid-cell.marked');
     const 셀배열 = Array.from(모든당첨셀);
     
-    // 셀 크기와 간격 정의
-    const 셀크기 = 30;
-    const 가로간격 = 8;
-    
     셀배열.forEach((셀1, 인덱스) => {
         셀배열.slice(인덱스 + 1).forEach(셀2 => {
             const 셀1Rect = 셀1.getBoundingClientRect();
             const 셀2Rect = 셀2.getBoundingClientRect();
             
-            const x1 = 셀1Rect.left + 셀1Rect.width / 2;
-            const y1 = 셀1Rect.top + 셀1Rect.height / 2;
-            const x2 = 셀2Rect.left + 셀2Rect.width / 2;
-            const y2 = 셀2Rect.top + 셀2Rect.height / 2;
+            const x1 = 셀1Rect.left - 격자Rect.left;
+            const y1 = 셀1Rect.top - 격자Rect.top;
+            const x2 = 셀2Rect.left - 격자Rect.left;
+            const y2 = 셀2Rect.top - 격자Rect.top;
             
             // 격자 위치 차이 계산
-            const col1 = Math.floor((셀1Rect.left - 격자Rect.left) / (셀크기 + 가로간격));
-            const row1 = Math.floor((셀1Rect.top - 격자Rect.top) / (셀크기 + 가로간격));
-            const col2 = Math.floor((셀2Rect.left - 격자Rect.left) / (셀크기 + 가로간격));
-            const row2 = Math.floor((셀2Rect.top - 격자Rect.top) / (셀크기 + 가로간격));
-            
-            // 격자 단위로 거리 계산
-            const colDiff = Math.abs(col2 - col1);
-            const rowDiff = Math.abs(row2 - row1);
+            const col1 = Math.floor(x1 / (셀1Rect.width + 2));
+            const col2 = Math.floor(x2 / (셀2Rect.width + 2));
+            const rowDiff = Math.abs(
+                Math.floor(y1 / (셀1Rect.height + 2)) - 
+                Math.floor(y2 / (셀2Rect.height + 2))
+            );
             
             // 인접한 셀들만 연결 (가로로 한 칸 차이)
-            if (colDiff === 1 && rowDiff === 0) {
+            if (Math.abs(col2 - col1) === 1 && rowDiff === 0) {
+                const 거리 = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
                 const 각도 = Math.atan2(y2 - y1, x2 - x1);
                 
-                // 연결선 생성 (가로 간격만큼의 길이)
+                // 연결선 생성
                 const 연결선 = document.createElement('div');
                 연결선.className = 'connection-line';
                 연결선.style.cssText = `
-                    width: ${가로간격}px;
-                    height: 4px;
-                    background-color: #007bff;
+                    width: ${거리}px;
+                    height: 6px;
                     position: absolute;
-                    left: ${x1 + 셀크기/2}px;
-                    top: ${y1}px;
+                    left: ${x1 + 셀1Rect.width/2}px;
+                    top: ${y1 + 셀1Rect.height/2 - 3}px;
                     transform-origin: left center;
-                    z-index: 1;
+                    transform: rotate(${각도}rad);
+                    z-index: 3;
                 `;
                 격자.appendChild(연결선);
 
-                // 움직이는 점들을 위한 컨테이너
+                // 점 컨테이너 생성
                 const 점컨테이너 = document.createElement('div');
                 점컨테이너.className = 'dot-container';
                 점컨테이너.style.cssText = `
-                    width: ${가로간격}px;
-                    height: 4px;
+                    width: ${거리}px;
+                    height: 6px;
                     position: absolute;
-                    left: ${x1 + 셀크기/2}px;
-                    top: ${y1}px;
+                    left: ${x1 + 셀1Rect.width/2}px;
+                    top: ${y1 + 셀1Rect.height/2 - 3}px;
                     transform-origin: left center;
-                    z-index: 2;
+                    transform: rotate(${각도}rad);
+                    z-index: 5;
                 `;
 
-                // 3개의 움직이는 점 생성
+                // 움직이는 점들 생성 (3개로 증가)
                 for (let i = 0; i < 3; i++) {
                     const 점 = document.createElement('div');
                     점.className = 'moving-dot';
-                    점.style.cssText = `
-                        width: 8px;
-                        height: 8px;
-                        background-color: #00ff00;
-                        border-radius: 50%;
-                        position: absolute;
-                        top: -2px;
-                        left: 0;
-                        box-shadow: 0 0 4px #00ff00;
-                        animation: moveDot 2s linear infinite;
-                        animation-delay: ${i * 0.6}s;
-                    `;
+                    점.style.animationDelay = `${i * 1.0}s`;  // 간격 조정
                     점컨테이너.appendChild(점);
                 }
 
@@ -201,28 +182,6 @@ function showHorizontalConnections() {
             }
         });
     });
-
-    // 애니메이션 스타일 추가
-    const 스타일 = document.createElement('style');
-    스타일.textContent = `
-        @keyframes moveDot {
-            0% {
-                left: -8px;
-                opacity: 0;
-            }
-            10% {
-                opacity: 1;
-            }
-            90% {
-                opacity: 1;
-            }
-            100% {
-                left: calc(100% + 8px);
-                opacity: 0;
-            }
-        }
-    `;
-    document.head.appendChild(스타일);
 }
 
 function showVerticalConnections() {
@@ -238,11 +197,9 @@ function showDiagonalConnections() {
 }
 
 function clearConnections() {
-    힌트1활성화 = false;
-    document.querySelectorAll('.connection-line, .dot-container').forEach(element => element.remove());
-    document.querySelectorAll('style').forEach(style => {
-        if (style.textContent.includes('moveDot')) {
-            style.remove();
+    document.querySelectorAll('.connection-line, .dot-container, .angle-connection, .gradient-circle').forEach(element => {
+        if (element && element.parentNode) {
+            element.parentNode.removeChild(element);
         }
     });
 }
@@ -1079,8 +1036,57 @@ function 패턴분석() {
 
 // 힌트1: 가까운 번호 연결
 function 힌트1() {
-    showHorizontalConnections();
-    히트맵표시();
+    // 다른 힌트들 비활성화
+    힌트2활성화 = false;
+    힌트3활성화 = false;
+    힌트4활성화 = false;
+    힌트5활성화 = false;
+    힌트6활성화 = false;
+    
+    // 기존 연결선들 제거
+    clearConnections();
+    clearScoreDisplay();
+    
+    if (힌트1활성화) {
+        clearConnections();
+        힌트1활성화 = false;
+        return;
+    }
+
+    힌트1활성화 = true;
+    
+    const 격자 = document.querySelector('.grid-container');
+    const 격자Rect = 격자.getBoundingClientRect();
+    const 모든당첨셀 = document.querySelectorAll('.grid-cell.marked');
+    const 셀배열 = Array.from(모든당첨셀);
+    
+    셀배열.forEach((셀1, 인덱스) => {
+        셀배열.slice(인덱스 + 1).forEach(셀2 => {
+            const 셀1Rect = 셀1.getBoundingClientRect();
+            const 셀2Rect = 셀2.getBoundingClientRect();
+            
+            const x1 = 셀1Rect.left - 격자Rect.left;
+            const y1 = 셀1Rect.top - 격자Rect.top;
+            const x2 = 셀2Rect.left - 격자Rect.left;
+            const y2 = 셀2Rect.top - 격자Rect.top;
+            
+            const 거리 = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+            const 각도 = Math.atan2(y2 - y1, x2 - x1);
+            
+            const 연결선 = document.createElement('div');
+            연결선.className = 'hint1-line';  // 새로운 클래스 사용
+            연결선.style.cssText = `
+                width: ${거리}px;
+                position: absolute;
+                left: ${x1 + 셀1Rect.width/2}px;
+                top: ${y1 + 셀1Rect.height/2}px;
+                transform-origin: left center;
+                transform: rotate(${각도}rad);
+                z-index: 3;
+            `;
+            격자.appendChild(연결선);
+        });
+    });
 }
 
 // 힌트2: 큰 각도 연결
@@ -1979,4 +1985,151 @@ function displayScore(cell, score) {
     `;
     cell.style.position = 'relative';
     cell.appendChild(scoreDisplay);
+}
+
+// 힌트6 함수 추가
+function 힌트6() {
+    // 이미 활성화되어 있으면 제거
+    if (힌트6활성화) {
+        clearMovingDots();
+        힌트6활성화 = false;
+        return;
+    }
+
+    // 다른 힌트들 비활성화
+    힌트1활성화 = false;
+    힌트2활성화 = false;
+    힌트3활성화 = false;
+    힌트4활성화 = false;
+    힌트5활성화 = false;
+    
+    // 기존 연결선들 제거
+    clearConnections();
+    clearScoreDisplay();
+    clearMovingDots();  // 혹시 남아있을 수 있는 점들 제거
+    
+    힌트6활성화 = true;
+    
+    const 격자 = document.querySelector('.grid-container');
+    if (!격자) return;
+    
+    const 격자Rect = 격자.getBoundingClientRect();
+    const 모든당첨셀 = document.querySelectorAll('.grid-cell.marked');
+    const 셀배열 = Array.from(모든당첨셀);
+    
+    try {
+        // 셀들을 회차와 열 번호로 정렬
+        const 정렬된셀배열 = 셀배열.map(cell => {
+            // 셀의 위치를 그리드에서의 인덱스로 계산
+            const cells = Array.from(격자.children);
+            const index = cells.indexOf(cell);
+            const row = Math.floor(index / 16); // 16은 그리드의 열 수
+            const col = index % 16;
+            return { cell, row, col };
+        }).sort((a, b) => {
+            if (a.row !== b.row) return a.row - b.row;
+            return a.col - b.col;
+        });
+
+        // 같은 회차의 셀들을 그룹화
+        const 회차그룹 = {};
+        정렬된셀배열.forEach(item => {
+            if (!회차그룹[item.row]) {
+                회차그룹[item.row] = [];
+            }
+            회차그룹[item.row].push(item);
+        });
+
+        // 연속된 회차 사이에만 점 생성
+        const 회차들 = Object.keys(회차그룹).map(Number).sort((a, b) => a - b);
+        
+        for (let i = 0; i < 회차들.length - 1; i++) {
+            const 현재회차 = 회차들[i];
+            const 다음회차 = 회차들[i + 1];
+            
+            // 연속된 회차가 아니면 건너뛰기
+            if (다음회차 - 현재회차 > 1) continue;
+            
+            const 현재셀들 = 회차그룹[현재회차];
+            const 다음셀들 = 회차그룹[다음회차];
+            
+            현재셀들.forEach(현재셀정보 => {
+                다음셀들.forEach(다음셀정보 => {
+                    const 셀1Rect = 현재셀정보.cell.getBoundingClientRect();
+                    const 셀2Rect = 다음셀정보.cell.getBoundingClientRect();
+                    
+                    const x1 = 셀1Rect.left - 격자Rect.left;
+                    const y1 = 셀1Rect.top - 격자Rect.top;
+                    const x2 = 셀2Rect.left - 격자Rect.left;
+                    const y2 = 셀2Rect.top - 격자Rect.top;
+                    
+                    const 거리 = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+                    const 각도 = Math.atan2(y2 - y1, x2 - x1);
+                    
+                    // 연결선 생성 (투명)
+                    const 연결선 = document.createElement('div');
+                    연결선.className = 'hint6-line';
+                    연결선.style.cssText = `
+                        width: ${거리}px;
+                        height: 2px;
+                        position: absolute;
+                        left: ${x1 + 셀1Rect.width/2}px;
+                        top: ${y1 + 셀1Rect.height/2}px;
+                        transform-origin: left center;
+                        transform: rotate(${각도}rad);
+                        z-index: 3;
+                        background: transparent;
+                    `;
+                    격자.appendChild(연결선);
+
+                    // 점 컨테이너 생성
+                    const 점컨테이너 = document.createElement('div');
+                    점컨테이너.className = 'hint6-dot-container';
+                    점컨테이너.style.cssText = `
+                        width: ${거리}px;
+                        height: 2px;
+                        position: absolute;
+                        left: ${x1 + 셀1Rect.width/2}px;
+                        top: ${y1 + 셀1Rect.height/2}px;
+                        transform-origin: left center;
+                        transform: rotate(${각도}rad);
+                        z-index: 5;
+                    `;
+
+                    // 움직이는 점들 생성
+                    for (let j = 0; j < 2; j++) {
+                        const 점 = document.createElement('div');
+                        점.className = 'hint6-moving-dot';
+                        점.style.animationDelay = `${j * 2.5 + Math.random()}s`;
+                        점컨테이너.appendChild(점);
+                    }
+
+                    격자.appendChild(점컨테이너);
+                });
+            });
+        }
+    } catch (error) {
+        console.error('힌트6 에러:', error);
+        힌트6활성화 = false;
+        clearMovingDots();
+    }
+}
+
+// 힌트6의 점들 제거 함수
+function clearMovingDots() {
+    const elements = document.querySelectorAll('.hint6-line, .hint6-dot-container');
+    elements.forEach(element => {
+        if (element && element.parentNode) {
+            element.parentNode.removeChild(element);
+        }
+    });
+}
+
+// clearConnections 함수 수정
+function clearConnections() {
+    document.querySelectorAll('.connection-line, .dot-container, .angle-connection, .gradient-circle').forEach(element => {
+        if (element && element.parentNode) {
+            element.parentNode.removeChild(element);
+        }
+    });
 }

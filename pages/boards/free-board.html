@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>자유게시판</title>
+    <link rel="stylesheet" href="../../css/board.css">
+</head>
+<body>
+    <div class="container">
+        <h1>자유게시판</h1>
+        
+        <!-- 게시판 섹션 -->
+        <div class="board-section">
+            <div class="board-header">
+                <h2>게시글 목록</h2>
+                <button onclick="createPost()">글쓰기</button>
+            </div>
+            <div class="board-list">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>번호</th>
+                            <th>제목</th>
+                            <th>작성자</th>
+                            <th>작성일</th>
+                            <th>조회</th>
+                        </tr>
+                    </thead>
+                    <tbody id="boardList">
+                        <!-- 게시글이 여기에 동적으로 추가됩니다 -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="board-pagination">
+                <button onclick="prevPage()">이전</button>
+                <span id="currentPage">1</span>
+                <button onclick="nextPage()">다음</button>
+            </div>
+        </div>
+    </div>
+    <script src="../../js/board.js"></script>
+</body>
+</html> 
