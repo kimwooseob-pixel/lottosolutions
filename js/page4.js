@@ -134,7 +134,7 @@ function 초기화() {
                 align-items: center;
                 justify-content: center;
                 transform: rotate(-45deg);
-                font-size: 12px;
+                font-size: 8px;
                 font-weight: bold;
                 white-space: nowrap;
                 padding-bottom: 15px;
@@ -510,19 +510,182 @@ function 힌트4() {
                 cell.style.color = '#fff';
                 return;
             }
-            
             if (isActive) {
                 const 강도비율 = 패턴강도[num] / (최대강도 || 1);
                 const 강화된강도 = Math.pow(강도비율, 0.7);
                 cell.style.backgroundColor = `rgba(23, 162, 184, ${강화된강도.toFixed(2)})`;
                 cell.style.color = 강화된강도 > 0.5 ? '#fff' : '#000';
+                cell.classList.remove('pulse');
+                void cell.offsetWidth;
+                cell.classList.add('pulse');
             } else {
                 cell.style.backgroundColor = '#f8f9fa';
                 cell.style.color = '#000';
+                cell.classList.remove('pulse');
             }
             cell.style.transition = 'all 0.3s ease';
         }
     });
+}
+
+// 힌트5: 빈칸에 점수 및 그라데이션 원 표시
+function 힌트5() {
+    window.힌트5활성화 = !window.힌트5활성화;
+    clearScoreDisplay();
+    if (!window.힌트5활성화) return;
+    // DOM 조작 최소화: 셀 목록을 미리 캐싱
+    const allCells = Array.from(document.querySelectorAll('.grid-cell'));
+    const markedCells = Array.from(document.querySelectorAll('.grid-cell.marked'));
+    // 점수 계산을 위한 위치 정보 미리 캐싱
+    const markedPositions = markedCells.map(getCellPosition);
+    allCells.forEach(cell => {
+        if (!cell.classList.contains('marked') && !cell.classList.contains('prediction-cell')) {
+            const cellPos = getCellPosition(cell);
+            let totalScore = 0;
+            for (let i = 0; i < markedPositions.length; i++) {
+                totalScore += calculatePositionScore(cellPos, markedPositions[i]);
+            }
+            // 점수(숫자)는 표시하지 않고, 그라데이션 원만 표시
+            if (totalScore <= 1.5) {
+                const gradientCircle = document.createElement('div');
+                gradientCircle.className = 'hint5-gradient-circle';
+                let size, gradientColor;
+                if (totalScore === 0) { size = 72; gradientColor = 'rgba(0,0,0,0.7)'; }
+                else if (totalScore === 1) { size = 60; gradientColor = 'rgba(128,128,0,0.7)'; }
+                else if (totalScore === 1.5) { size = 48; gradientColor = 'rgba(255,255,0,0.7)'; }
+                gradientCircle.style.cssText = `position:absolute;width:${size}px;height:${size}px;background:radial-gradient(circle,${gradientColor} 0%,transparent 70%);border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%);z-index:1;`;
+                cell.appendChild(gradientCircle);
+            }
+        }
+    });
+}
+
+function clearScoreDisplay() {
+    document.querySelectorAll('.score-display').forEach(el => el.remove());
+    document.querySelectorAll('.hint5-gradient-circle').forEach(el => el.remove());
+    document.querySelectorAll('[style*="radial-gradient"]').forEach(el => {
+        if (el.parentElement && el.parentElement.classList.contains('grid-cell')) {
+            el.remove();
+        }
+    });
+}
+
+function getCellPosition(cell) {
+    const gridSize = 16;
+    const cells = Array.from(document.querySelectorAll('.grid-cell'));
+    const index = cells.indexOf(cell);
+    const row = Math.floor((index - gridSize) / gridSize);
+    const col = index % gridSize;
+    return { row, col };
+}
+
+function calculatePositionScore(pos1, pos2) {
+    const rowDiff = Math.abs(pos1.row - pos2.row);
+    const colDiff = Math.abs(pos1.col - pos2.col);
+    if ((rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1)) return 2;
+    if (rowDiff === 1 && colDiff === 1) return 1.5;
+    if ((rowDiff === 2 && colDiff === 0) || (rowDiff === 0 && colDiff === 2)) return 1;
+    return 0;
+}
+
+function displayScore(cell, score) {
+    if (score <= 1.5) {
+        const gradientCircle = document.createElement('div');
+        gradientCircle.className = 'hint5-gradient-circle';
+        let size, gradientColor;
+        if (score === 0) { size = 72; gradientColor = 'rgba(0,0,0,0.7)'; }
+        else if (score === 1) { size = 60; gradientColor = 'rgba(128,128,0,0.7)'; }
+        else if (score === 1.5) { size = 48; gradientColor = 'rgba(255,255,0,0.7)'; }
+        gradientCircle.style.cssText = `position:absolute;width:${size}px;height:${size}px;background:radial-gradient(circle,${gradientColor} 0%,transparent 70%);border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%);z-index:1;`;
+        cell.appendChild(gradientCircle);
+    }
+    const scoreDisplay = document.createElement('div');
+    scoreDisplay.className = 'score-display';
+    scoreDisplay.textContent = score.toFixed(1);
+    scoreDisplay.style.cssText = `position:absolute;width:12px;height:12px;display:flex;justify-content:center;align-items:center;color:${score>0?'#1976D2':'#999'};font-weight:bold;font-size:7px;z-index:2;background-color:rgba(255,255,255,0.9);border-radius:2px;padding:1px;left:50%;top:50%;transform:translate(-50%,-50%);`;
+    cell.style.position = 'relative';
+    cell.appendChild(scoreDisplay);
+}
+
+// 힌트6: 당첨 셀들 사이에 움직이는 점(애니메이션) 표시
+function 힌트6() {
+    if (window.힌트6활성화) {
+        clearMovingDots();
+        document.querySelectorAll('.grid-cell.prediction-cell').forEach(cell => {
+            cell.style.backgroundColor = '#f8f9fa';
+            cell.classList.remove('pulse');
+        });
+        window.힌트6활성화 = false;
+        return;
+    }
+    window.힌트1활성화 = false;
+    window.힌트2활성화 = false;
+    window.힌트3활성화 = false;
+    window.힌트4활성화 = false;
+    window.힌트5활성화 = false;
+    clearConnections();
+    clearScoreDisplay();
+    clearMovingDots();
+    document.querySelectorAll('.grid-cell.prediction-cell').forEach(cell => {
+        cell.style.backgroundColor = '#f8f9fa';
+        cell.classList.remove('pulse');
+    });
+    window.힌트6활성화 = true;
+    const 격자 = document.querySelector('.grid-container');
+    if (!격자) return;
+    const 격자Rect = 격자.getBoundingClientRect();
+    const 모든당첨셀 = document.querySelectorAll('.grid-cell.marked');
+    const predictionCells = Array.from(document.querySelectorAll('.grid-cell.prediction-cell'));
+    const hitCounts = {};
+    // 번호별로 당첨 셀 모으기
+    const numberToCells = {};
+    모든당첨셀.forEach(cell => {
+        const num = cell.getAttribute('data-number');
+        if (!numberToCells[num]) numberToCells[num] = [];
+        numberToCells[num].push(cell);
+    });
+    Object.entries(numberToCells).forEach(([num, cells]) => {
+        const predictionCell = predictionCells.find(pc => pc.getAttribute('data-number') === num);
+        if (!predictionCell) return;
+        cells.forEach(cell => {
+            const cellRect = cell.getBoundingClientRect();
+            const predRect = predictionCell.getBoundingClientRect();
+            const x1 = cellRect.left + cellRect.width / 2 - 격자Rect.left;
+            const y1 = cellRect.top + cellRect.height / 2 - 격자Rect.top;
+            const x2 = predRect.left + predRect.width / 2 - 격자Rect.left;
+            const y2 = predRect.top + predRect.height / 2 - 격자Rect.top;
+            const 점 = document.createElement('div');
+            점.className = 'moving-dot';
+            점.style.cssText = `position:absolute;width:8px;height:8px;border-radius:50%;background:#1976D2;z-index:10;`;
+            격자.appendChild(점);
+            let t = 0;
+            const duration = 1200 + Math.random() * 400; // 약간의 시간차
+            function animateDot() {
+                t += 16;
+                const progress = (t % duration) / duration;
+                점.style.left = (x1 + (x2 - x1) * progress) + 'px';
+                점.style.top  = (y1 + (y2 - y1) * progress) + 'px';
+                if (progress >= 0.98) {
+                    // 점이 도착하면 카운트 증가 및 배경 진하게, 펄스 효과
+                    if (!hitCounts[num]) hitCounts[num] = 0;
+                    hitCounts[num]++;
+                    const intensity = Math.min(0.8, 0.2 + hitCounts[num] * 0.15);
+                    predictionCell.style.backgroundColor = `rgba(33, 150, 243, ${intensity})`;
+                    predictionCell.classList.remove('pulse');
+                    void predictionCell.offsetWidth; // reflow for restart
+                    predictionCell.classList.add('pulse');
+                }
+                if (document.body.contains(점)) {
+                    requestAnimationFrame(animateDot);
+                }
+            }
+            animateDot();
+        });
+    });
+}
+
+function clearMovingDots() {
+    document.querySelectorAll('.moving-dot').forEach(dot => dot.remove());
 }
 
 function saveUserName(name) {
@@ -541,4 +704,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (savedUserName) {
         document.getElementById('userName').value = savedUserName;
     }
-}); 
+});
+
+// 연결선, 각도선, 그라데이션 원 등 힌트 요소 제거 함수
+function clearConnections() {
+    document.querySelectorAll('.connection-line, .dot-container, .angle-connection, .gradient-circle').forEach(element => {
+        if (element && element.parentNode) {
+            element.parentNode.removeChild(element);
+        }
+    });
+} 

@@ -58,7 +58,7 @@ function createGrid() {
         selectBtn.style.borderRadius = '4px';
         selectBtn.style.cursor = 'pointer';
         selectBtn.title = `${row}번에서 시작`;
-        selectBtn.onclick = () => runArrowPath(row);
+        selectBtn.onclick = () => onLeftButtonClick(row);
         leftCell.appendChild(selectBtn);
         gridContainer.appendChild(leftCell);
 
@@ -310,6 +310,11 @@ function closeScorePopup() {
 
 // 초기화 함수
 function initGame() {
+    // 페이지5에서 저장한 최신 winningNumbers가 있으면 마지막 회차에 반영
+    const stored = localStorage.getItem('winningNumbers');
+    if (stored) {
+        gameState.winningNumbers[gameState.endNumber] = JSON.parse(stored);
+    }
     createGrid();
     console.log("게임 초기화 완료");
 }
@@ -420,4 +425,117 @@ function runArrowPath(startRow) {
         }
     }
     animateStep();
+}
+
+// 궁수/화살 애니메이션 및 사운드 효과
+function playArcherAnimation() {
+  const archerImg = document.getElementById('archer-img');
+  if (!archerImg) return;
+  archerImg.src = '../images/ar2.png';
+  setTimeout(() => {
+    archerImg.src = '../images/ar1.png';
+  }, 1000); // 1초 동안 활을 당긴 모습 유지
+}
+
+function shootArrow(gridTargetSelector) {
+  const archer = document.querySelector('.archer-container');
+  if (!archer) return;
+  let arrow;
+  if (window.arrowImageExists) {
+    arrow = document.createElement('img');
+    arrow.src = '../images/arrow.png';
+    arrow.className = 'arrow-fly';
+  } else {
+    arrow = document.createElement('div');
+    arrow.className = 'arrow-fly noimg';
+  }
+  // 시작 위치
+  arrow.style.left = getComputedStyle(arrow).left || '60px';
+  arrow.style.top = getComputedStyle(arrow).top || '55px';
+  archer.appendChild(arrow);
+
+  // 그리드의 첫 번째 셀~마지막 셀 위치 계산
+  let grid = document.querySelector('.grid-container');
+  let firstCell = grid.querySelector('.grid-cell');
+  let lastCol = gameState.endNumber;
+  let lastCell = grid.querySelector(`.grid-cell[data-row='1'][data-col='${lastCol}']`);
+  if (firstCell && lastCell) {
+    const gridRect = grid.getBoundingClientRect();
+    const firstRect = firstCell.getBoundingClientRect();
+    const lastRect = lastCell.getBoundingClientRect();
+    // 시작점(궁수)에서 마지막 셀까지의 상대 거리(px)
+    const gridLeft = gridRect.left;
+    const startX = firstRect.left - gridLeft;
+    const endX = lastRect.left - gridLeft;
+    // 화살을 그리드 시작점에서 끝점까지 이동
+    arrow.style.left = `${startX - 50}px`;
+    setTimeout(() => {
+      arrow.style.left = `${endX + 10}px`;
+    }, 10);
+    setTimeout(() => {
+      arrow.remove();
+    }, 600);
+  } else {
+    // fallback: 오른쪽으로만 이동
+    setTimeout(() => { arrow.style.left = '600px'; }, 10);
+    setTimeout(() => { arrow.remove(); }, 600);
+  }
+  // 사운드 효과
+  if (window.arrowShootAudio) {
+    window.arrowShootAudio.currentTime = 0;
+    window.arrowShootAudio.play();
+  }
+}
+
+// 화살 이미지 존재 여부 체크(최초 1회)
+(function checkArrowImage() {
+  const img = new Image();
+  img.onload = () => { window.arrowImageExists = true; };
+  img.onerror = () => { window.arrowImageExists = false; };
+  img.src = '../images/arrow.png';
+})();
+// 사운드 효과 준비(옵션)
+(function checkArrowAudio() {
+  try {
+    const audio = new Audio('../images/arrow_shoot.mp3');
+    audio.volume = 0.5;
+    window.arrowShootAudio = audio;
+  } catch (e) {}
+})();
+
+function playArcherAnimationAtRow(row) {
+  const archer = document.querySelector('.archer-container');
+  const archerImg = document.getElementById('archer-img');
+  if (!archer || !archerImg) return;
+
+  // 해당 행의 ▶ 버튼 위치 찾기
+  const gridContainer = document.querySelector('.grid-container');
+  const leftCell = gridContainer.querySelectorAll('.number-cell.row-header')[row - 1];
+  const btn = leftCell.querySelector('button');
+  if (!btn) return;
+
+  // 버튼의 위치(상대좌표) 계산
+  const gridRect = gridContainer.getBoundingClientRect();
+  const btnRect = btn.getBoundingClientRect();
+  const offsetTop = btnRect.top - gridRect.top + (btnRect.height / 2) - (archer.offsetHeight / 2) + 10;
+
+  // 궁수 위치 이동 및 표시
+  archer.style.top = `${offsetTop}px`;
+  archer.style.display = 'flex';
+  archerImg.src = '../images/ar2.png';
+
+  setTimeout(() => {
+    archerImg.src = '../images/ar1.png';
+  }, 1000);
+
+  // 애니메이션 끝나면 궁수 숨김
+  setTimeout(() => {
+    archer.style.display = 'none';
+  }, 1200);
+}
+
+function onLeftButtonClick(row) {
+  playArcherAnimationAtRow(row);
+  setTimeout(() => shootArrow(), 100);
+  setTimeout(() => runArrowPath(row), 200);
 } 

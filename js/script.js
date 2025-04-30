@@ -1312,21 +1312,25 @@ function 힌트4() {
                 cell.style.color = '#fff';
                 return;
             }
-            
             if (isActive) {
                 // 히트맵 활성화: 보라색 히트맵 적용
                 const 강도비율 = 패턴강도[num] / (최대강도 || 1);
                 const 강화된강도 = Math.pow(강도비율, 0.7);
                 cell.style.backgroundColor = `rgba(128, 0, 128, ${강화된강도.toFixed(2)})`;
                 cell.style.color = 강화된강도 > 0.5 ? '#fff' : '#000';
+                // 펄스 효과 추가
+                cell.classList.remove('pulse');
+                void cell.offsetWidth;
+                cell.classList.add('pulse');
             } else {
                 // 히트맵 비활성화: 원래 스타일로 복원
                 cell.style.backgroundColor = '#f8f9fa';
                 cell.style.color = '#000';
+                cell.classList.remove('pulse');
             }
             cell.style.transition = 'all 0.3s ease';
-            }
-        });
+        }
+    });
 }
 
 // 기존 히트맵 표시 함수 수정
@@ -1852,35 +1856,35 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function 힌트5() {
+    clearMovingDots(); // 힌트6의 점(움직이는 점) 완전히 제거
     힌트5활성화 = !힌트5활성화;  // 상태 토글
-    
-    // 이전 점수와 그라데이션 원 표시 제거
     clearScoreDisplay();
-    
-    // 비활성화 상태면 여기서 종료
     if (!힌트5활성화) {
         return;
     }
-    
-    // 모든 셀과 marked 셀 가져오기
-    const allCells = document.querySelectorAll('.grid-cell');
-    const markedCells = document.querySelectorAll('.grid-cell.marked');
-    
-    // 각 빈칸에 대해 점수 계산
+    // DOM 조작 최소화: 셀 목록을 미리 캐싱
+    const allCells = Array.from(document.querySelectorAll('.grid-cell'));
+    const markedCells = Array.from(document.querySelectorAll('.grid-cell.marked'));
+    // 점수 계산을 위한 위치 정보 미리 캐싱
+    const markedPositions = markedCells.map(getCellPosition);
     allCells.forEach(cell => {
         if (!cell.classList.contains('marked') && !cell.classList.contains('prediction-cell')) {
-            let totalScore = 0;
             const cellPos = getCellPosition(cell);
-            
-            // 각 marked 셀에 대해 점수 계산
-            markedCells.forEach(markedCell => {
-                const markedPos = getCellPosition(markedCell);
-                const score = calculatePositionScore(cellPos, markedPos);
-                totalScore += score;
-            });
-            
-            // 모든 점수(0 포함) 표시
-            displayScore(cell, totalScore);
+            let totalScore = 0;
+            for (let i = 0; i < markedPositions.length; i++) {
+                totalScore += calculatePositionScore(cellPos, markedPositions[i]);
+            }
+            // 점수(숫자)는 표시하지 않고, 그라데이션 원만 표시
+            if (totalScore <= 1.5) {
+                const gradientCircle = document.createElement('div');
+                gradientCircle.className = 'hint5-gradient-circle';
+                let size, gradientColor;
+                if (totalScore === 0) { size = 72; gradientColor = 'rgba(0,0,0,0.7)'; }
+                else if (totalScore === 1) { size = 60; gradientColor = 'rgba(128,128,0,0.7)'; }
+                else if (totalScore === 1.5) { size = 48; gradientColor = 'rgba(255,255,0,0.7)'; }
+                gradientCircle.style.cssText = `position:absolute;width:${size}px;height:${size}px;background:radial-gradient(circle,${gradientColor} 0%,transparent 70%);border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%);z-index:1;`;
+                cell.appendChild(gradientCircle);
+            }
         }
     });
 }
@@ -2040,16 +2044,15 @@ function 힌트6() {
             회차그룹[item.row].push(item);
         });
 
-        // 연속된 회차 사이에만 점 생성
-        const 회차들 = Object.keys(회차그룹).map(Number).sort((a, b) => a - b);
+        // 연속된 회차(왼쪽 방향)만: 회차들 내림차순 정렬
+        const 회차들 = Object.keys(회차그룹).map(Number).sort((a, b) => b - a);
         
         for (let i = 0; i < 회차들.length - 1; i++) {
             const 현재회차 = 회차들[i];
             const 다음회차 = 회차들[i + 1];
-            
-            // 연속된 회차가 아니면 건너뛰기
-            if (다음회차 - 현재회차 > 1) continue;
-            
+            // 연속된 회차(왼쪽 방향)만
+            if (현재회차 - 다음회차 !== 1) continue;
+            if (현재회차 <= 다음회차) continue;
             const 현재셀들 = 회차그룹[현재회차];
             const 다음셀들 = 회차그룹[다음회차];
             
@@ -2102,6 +2105,17 @@ function 힌트6() {
                         점.className = 'hint6-moving-dot';
                         점.style.animationDelay = `${j * 2.5 + Math.random()}s`;
                         점컨테이너.appendChild(점);
+                        // 펄스 효과를 예상열(가장 오른쪽 열)에만 적용
+                        setTimeout(() => {
+                            const num = 다음셀정보.cell.getAttribute('data-number');
+                            const predictionCells = Array.from(document.querySelectorAll('.grid-cell.prediction-cell'));
+                            const predictionCell = predictionCells.find(pc => pc.getAttribute('data-number') === num);
+                            if (predictionCell) {
+                                predictionCell.classList.remove('pulse');
+                                void predictionCell.offsetWidth;
+                                predictionCell.classList.add('pulse');
+                            }
+                        }, (j * 2.5 + Math.random()) * 1000 + 1200);
                     }
 
                     격자.appendChild(점컨테이너);

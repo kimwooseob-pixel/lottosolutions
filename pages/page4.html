@@ -17,13 +17,12 @@
             gap: 2px;
             margin: 20px auto;
             justify-content: center;
-            max-width: 520px;
+            width: fit-content;
             padding: 10px;
             background: #fff;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            max-height: 80vh;
-            overflow-y: auto;
+            max-width: none;
         }
 
         .container {
@@ -51,7 +50,7 @@
             font-weight: bold;
             background-color: #f8f9fa;
             border: none;
-            font-size: 10px;
+            font-size: 8px;
         }
 
         .grid-cell.prediction-cell {
@@ -199,7 +198,7 @@
         }
 
         #턴표시 {
-            font-size: 1.2em;
+            font-size: 1em;
             font-weight: bold;
             color: #2c3e50;
             padding: 10px 20px;
@@ -254,6 +253,24 @@
             }
         }
 
+        @media (max-width: 600px) {
+            .grid-container {
+                grid-template-columns: repeat(16, 18px);
+                gap: 1px;
+                padding: 5px;
+                width: fit-content;
+                max-width: none;
+            }
+            .grid-cell {
+                width: 18px;
+                height: 18px;
+                font-size: 8px;
+            }
+            .grid-cell.header {
+                font-size: 6px;
+            }
+        }
+
         /* 스크롤바 스타일링 */
         .grid-container::-webkit-scrollbar {
             width: 8px;
@@ -272,6 +289,27 @@
         .grid-container::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
+
+        @keyframes gradient-pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50%      { transform: translate(-50%, -50%) scale(1.18); }
+        }
+        .hint5-gradient-circle {
+            animation: gradient-pulse 1.2s infinite;
+        }
+
+        @keyframes cell-pulse-rainbow {
+            0%   { box-shadow: 0 0 0 0 rgba(255,0,0,0.7); }
+            16%  { box-shadow: 0 0 0 8px rgba(255,165,0,0.5); }
+            33%  { box-shadow: 0 0 0 12px rgba(255,255,0,0.5); }
+            50%  { box-shadow: 0 0 0 16px rgba(0,255,0,0.5); }
+            66%  { box-shadow: 0 0 0 12px rgba(0,0,255,0.5); }
+            83%  { box-shadow: 0 0 0 8px rgba(75,0,130,0.5); }
+            100% { box-shadow: 0 0 0 0 rgba(148,0,211,0.7); }
+        }
+        .pulse {
+            animation: cell-pulse-rainbow 0.5s;
+        }
     </style>
 </head>
 <body>
@@ -282,6 +320,8 @@
             <button class="hint-button" onclick="힌트2()">힌트2</button>
             <button class="hint-button" onclick="힌트3()">힌트3</button>
             <button class="hint-button" onclick="힌트4()">힌트4</button>
+            <button class="hint-button" onclick="힌트5()">힌트5</button>
+            <button class="hint-button" onclick="힌트6()">힌트6</button>
         </div>
         <div class="turn-controls">
             <span id="턴표시">1턴 (1153회-1167회)</span>

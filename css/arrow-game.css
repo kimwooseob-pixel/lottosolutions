@@ -61,7 +61,7 @@ h1 {
 
 .grid-container {
     display: inline-grid;
-    grid-template-columns: 40px repeat(15, 40px) 40px;
+    grid-template-columns: 30px repeat(15, 30px) 30px;
     gap: 2px;
     padding: 20px;
     background: rgba(255, 255, 255, 0.1);
@@ -69,8 +69,8 @@ h1 {
 }
 
 .number-cell {
-    width: 40px;
-    height: 40px;
+    width: 30px;
+    height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -96,8 +96,8 @@ h1 {
 }
 
 .grid-cell {
-    width: 40px;
-    height: 40px;
+    width: 30px;
+    height: 30px;
     background: rgba(0, 0, 0, 0.3);
     border-radius: 4px;
     cursor: pointer;
@@ -126,8 +126,8 @@ h1 {
 .grid-cell.winning::before {
     content: "";
     position: absolute;
-    width: 30px;
-    height: 30px;
+    width: 24px;
+    height: 24px;
     background: transparent;
     border: 2px solid #ff4444;
     border-radius: 50%;
@@ -276,4 +276,86 @@ h1 {
     font-weight: bold;
     text-shadow: 0 2px 8px #222, 0 0 4px #fff;
     filter: drop-shadow(0 0 6px #ff9800);
+}
+
+.archer-container {
+    position: absolute;
+    left: -20px;
+    top: 0;
+    width: 80px;
+    height: 110px;
+    z-index: 20;
+    pointer-events: none;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    transition: top 0.2s;
+}
+#archer-img {
+    width: 100%;
+    height: auto;
+    transition: filter 0.2s;
+    user-select: none;
+}
+.arrow-fly {
+    position: absolute;
+    left: 60px;
+    top: 55px;
+    width: 40px;
+    height: 10px;
+    z-index: 30;
+    transition: left 0.5s linear;
+    pointer-events: none;
+}
+.arrow-fly.noimg {
+    background: linear-gradient(90deg, #333 70%, #fff 100%);
+    border-radius: 3px;
+    box-shadow: 1px 0 4px #fff8, 0 0 2px #0008;
+}
+
+@media screen and (max-width: 900px) {
+    .archer-container {
+        left: -20px;
+        width: 60px;
+        height: 80px;
+    }
+    .arrow-fly {
+        left: 40px;
+        top: 40px;
+        width: 28px;
+        height: 7px;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .archer-container {
+        left: -10px;
+        width: 40px;
+        height: 54px;
+    }
+    .arrow-fly {
+        left: 20px;
+        top: 24px;
+        width: 16px;
+        height: 4px;
+    }
+    .grid-container {
+        grid-template-columns: 18px repeat(15, 18px) 18px;
+        gap: 1px;
+        padding: 5px;
+    }
+    .number-cell {
+        width: 18px;
+        height: 18px;
+        font-size: 8px;
+    }
+    .grid-cell {
+        width: 18px;
+        height: 18px;
+        font-size: 8px;
+    }
+    .grid-cell.winning::before {
+        width: 14px;
+        height: 14px;
+    }
 } 
