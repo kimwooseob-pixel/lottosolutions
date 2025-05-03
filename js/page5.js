@@ -302,7 +302,6 @@ function displayLastWeekResults() {
         if (key.startsWith('prediction_')) {
             const data = JSON.parse(localStorage.getItem(key));
             const predictionDate = new Date(data.timestamp);
-            
             // 저번주 예측만 필터링
             if (predictionDate >= getDateRangeForRound(currentRound - 1).start && 
                 predictionDate <= getDateRangeForRound(currentRound - 1).end) {
@@ -321,31 +320,53 @@ function displayLastWeekResults() {
     lastWeekPredictions.sort((a, b) => b.matches.regular - a.matches.regular);
 
     // 기존 결과 제거
-    const oldResults = resultsContainer.querySelectorAll('.result-item');
-    oldResults.forEach(item => item.remove());
+    resultsContainer.innerHTML = '';
 
-    // 결과 표시
-    lastWeekPredictions.forEach((prediction, index) => {
-        const resultItem = document.createElement('div');
-        resultItem.className = 'result-item';
-        
-        resultItem.innerHTML = `
-            <div class="rank">${index + 1}</div>
-            <div class="user-info">
-                <div class="user-name">${prediction.userName}</div>
+    // 1~3등 카드
+    const top3 = lastWeekPredictions.slice(0, 3);
+    if (top3.length > 0) {
+        const top3Container = document.createElement('div');
+        top3Container.className = 'top3-container';
+        top3.forEach((prediction, idx) => {
+            const card = document.createElement('div');
+            card.className = `top3-card rank-${idx+1}`;
+            let trophyImg = '';
+            if (idx === 0) trophyImg = '<img src="../images/gold.png" class="top3-trophy" alt="1등">';
+            else if (idx === 1) trophyImg = '<img src="../images/silver.png" class="top3-trophy" alt="2등">';
+            else if (idx === 2) trophyImg = '<img src="../images/bronze.png" class="top3-trophy" alt="3등">';
+            card.innerHTML = `
+                <div class="top3-rank">${idx+1}</div>
+                ${trophyImg}
+                <div class="top3-name">${prediction.userName}</div>
+                <div class="top3-score">${prediction.matches.regular}개 일치</div>
                 <div class="prediction-numbers">
-                    ${prediction.numbers.map(num => `
-                        <div class="number-ball ${당첨번호_데이터[currentRound - 1]?.includes(num) ? 'winning-number' : ''}">${num}</div>
-                    `).join('')}
+                    ${prediction.numbers.map(num => `<div class="number-ball ${당첨번호_데이터[currentRound-1]?.includes(num) ? 'winning-number' : ''}">${num}</div>`).join('')}
                 </div>
-            </div>
-            <div class="match-count">
-                ${prediction.matches.regular}개 일치
-            </div>
-        `;
+            `;
+            top3Container.appendChild(card);
+        });
+        resultsContainer.appendChild(top3Container);
+    }
 
-        resultsContainer.appendChild(resultItem);
-    });
+    // 4등 이하 리스트
+    if (lastWeekPredictions.length > 3) {
+        const list = document.createElement('div');
+        list.className = 'ranking-list';
+        lastWeekPredictions.slice(3).forEach((prediction, idx) => {
+            const row = document.createElement('div');
+            row.className = 'ranking-row';
+            row.innerHTML = `
+                <span class="rank-badge">${idx+4}</span>
+                <span class="user-name">${prediction.userName}</span>
+                <span class="match-count">${prediction.matches.regular}개 일치</span>
+                <span class="prediction-numbers">
+                    ${prediction.numbers.map(num => `<span class="number-ball ${당첨번호_데이터[currentRound-1]?.includes(num) ? 'winning-number' : ''}">${num}</span>`).join('')}
+                </span>
+            `;
+            list.appendChild(row);
+        });
+        resultsContainer.appendChild(list);
+    }
 
     if (lastWeekPredictions.length === 0) {
         const noDataMessage = document.createElement('div');

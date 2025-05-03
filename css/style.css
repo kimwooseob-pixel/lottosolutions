@@ -959,4 +959,35 @@ h1 {
     .prediction-numbers {
         gap: 5px;
     }
+}
+
+/* 점수/결과 팝업창 크기/위치/스크롤 조정 */
+.score-popup {
+    position: fixed;
+    top: 5%;
+    left: 50%;
+    transform: translate(-50%, 0) scale(0.54);
+    background: #fff;
+    padding: 8px 4px 4px 4px;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    z-index: 1001;
+    min-width: 220px;
+    max-width: 90vw;
+    min-height: 120px;
+    max-height: 50vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+@media (max-width: 600px) {
+    .score-popup {
+        transform: translate(-50%, 0) scale(0.48);
+        top: 2%;
+        min-width: 120px;
+        min-height: 80px;
+        max-height: 38vh;
+        padding: 4px 2px 2px 2px;
+    }
 } 

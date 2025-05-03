@@ -87,8 +87,8 @@
         }
 
         .number-ball {
-            width: 40px;
-            height: 40px;
+            width: 20px;
+            height: 20px;
             background-color: #e74c3c;
             border-radius: 50%;
             display: flex;
@@ -96,7 +96,7 @@
             justify-content: center;
             font-weight: bold;
             color: white;
-            font-size: 18px;
+            font-size: 9px;
         }
 
         .timestamp {
@@ -122,8 +122,10 @@
         .prediction-item {
             display: flex;
             align-items: center;
-            padding: 15px;
+            padding: 7px 8px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 9px;
+            border-radius: 6px;
         }
 
         .prediction-info {
@@ -134,12 +136,14 @@
             font-weight: bold;
             color: #3498db;
             margin-bottom: 5px;
+            font-size: 10px;
         }
 
         .match-count {
             color: #2ecc71;
             font-weight: bold;
             margin-left: 10px;
+            font-size: 9px;
         }
 
         .winning-number {
@@ -161,10 +165,9 @@
         }
 
         .prediction-item .number-ball {
-            width: 35px;
-            height: 35px;
-            font-size: 16px;
-            transition: all 0.3s ease;
+            width: 20px;
+            height: 20px;
+            font-size: 9px;
         }
 
         .prediction-item .winning-number {
@@ -349,52 +352,170 @@
             margin: 30px 0;
             opacity: 0.3;
         }
+
+        .rank-badge {
+            display: inline-block;
+            min-width: 22px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-right: 6px;
+            padding: 2px 6px;
+            border-radius: 8px;
+            vertical-align: middle;
+        }
+
+        .rank-1 { background: #ffe066; color: #b8860b; border: 2px solid #ffd700; }
+        .rank-2 { background: #e0e0e0; color: #555; border: 2px solid #b0b0b0; }
+        .rank-3 { background: #ffd6a0; color: #a0522d; border: 2px solid #cd7f32; }
+
+        .main-scale {
+            transform: scale(0.5);
+            transform-origin: top left;
+        }
+
+        .rank-badge img.rank-medal {
+            width: 24px !important;
+            height: 24px !important;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+
+        .prediction-section, .prediction-row, .prediction-item {
+            font-size: 9px;
+        }
+
+        .top3-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+        .top3-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #23283a;
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+            padding: 18px 16px 10px 16px;
+            min-width: 110px;
+            position: relative;
+            border: 3px solid #ffd70033;
+        }
+        .top3-card.rank-1 { border-color: #ffd700; z-index: 2; }
+        .top3-card.rank-2 { border-color: #b0b0b0; opacity: 0.95; }
+        .top3-card.rank-3 { border-color: #cd7f32; opacity: 0.92; }
+        .top3-trophy {
+            width: 38px;
+            height: 38px;
+            margin-bottom: 6px;
+        }
+        .top3-rank {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 2px;
+            text-shadow: 0 2px 8px #0008;
+        }
+        .top3-card.rank-2 .top3-rank { color: #b0b0b0; }
+        .top3-card.rank-3 .top3-rank { color: #cd7f32; }
+        .top3-name {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 2px;
+            text-align: center;
+        }
+        .top3-score {
+            font-size: 1em;
+            color: #2ecc71;
+            font-weight: bold;
+            margin-bottom: 0;
+        }
+
+        .ranking-list {
+            margin-top: 10px;
+        }
+        .ranking-row {
+            display: flex;
+            align-items: center;
+            background: #23283a;
+            border-radius: 8px;
+            margin-bottom: 7px;
+            padding: 7px 12px;
+            font-size: 0.95em;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .ranking-row .rank-badge {
+            min-width: 22px;
+            font-size: 1em;
+            margin-right: 8px;
+            background: #222;
+            color: #fff;
+            border: none;
+        }
+        .ranking-row .user-name {
+            font-size: 1em;
+            color: #7ecbff;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .ranking-row .match-count {
+            color: #2ecc71;
+            font-weight: bold;
+            margin-left: auto;
+            font-size: 0.98em;
+        }
+        .ranking-row .number-ball {
+            width: 18px;
+            height: 18px;
+            font-size: 0.95em;
+            margin-right: 2px;
+        }
     </style>
 </head>
 <body>
-    <h1>로또 예상번호 순위표<div class="admin-dot"></div></h1>
-    
-    <!-- 1. 당첨번호 섹션 -->
-    <div class="prediction-section">
-        <div class="section-header">1168회차 당첨번호</div>
-        <div class="winning-numbers-section">
-            <div class="last-week-numbers">
-                <div class="number-ball">9</div>
-                <div class="number-ball">21</div>
-                <div class="number-ball">24</div>
-                <div class="number-ball">30</div>
-                <div class="number-ball">33</div>
-                <div class="number-ball">37</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 2. 지난주 예측 결과 섹션 -->
-    <div class="prediction-section">
-        <div class="section-header">지난 주 예측 결과</div>
-        <div id="previousPredictions">
-            <!-- 지난 주 예측 결과들이 여기에 동적으로 추가됩니다 -->
-        </div>
-    </div>
-
-    <div class="section-divider"></div>
-
-    <!-- 3. 이번 주 예측번호 목록 -->
-    <div class="prediction-section">
-        <div class="section-header">이번 주 예측번호 목록</div>
-        <div id="thisWeekPredictions">
-            <!-- 입력 폼 -->
-            <div id="predictionInputForm" class="prediction-row">
-                <input type="text" class="user-id-input" placeholder="아이디" maxlength="20" autocomplete="off">
-                <button class="confirm-button">확인</button>
-                <div class="prediction-numbers">
-                    <!-- 페이지4에서 가져온 번호들이 여기에 표시됩니다 -->
+    <div class="main-scale">
+        <h1>로또 예상번호 순위표<div class="admin-dot"></div></h1>
+        <!-- 1. 당첨번호 섹션 -->
+        <div class="prediction-section">
+            <div class="section-header">1168회차 당첨번호</div>
+            <div class="winning-numbers-section">
+                <div class="last-week-numbers">
+                    <div class="number-ball">9</div>
+                    <div class="number-ball">21</div>
+                    <div class="number-ball">24</div>
+                    <div class="number-ball">30</div>
+                    <div class="number-ball">33</div>
+                    <div class="number-ball">37</div>
                 </div>
             </div>
-            <!-- 저장된 예측들이 여기에 추가됩니다 -->
+        </div>
+        <!-- 2. 지난주 예측 결과 섹션 -->
+        <div class="prediction-section">
+            <div class="section-header">지난 주 예측 결과</div>
+            <div id="lastWeekResults">
+                <!-- 지난 주 예측 결과들이 여기에 동적으로 추가됩니다 -->
+            </div>
+        </div>
+        <div class="section-divider"></div>
+        <!-- 3. 이번 주 예측번호 목록 -->
+        <div class="prediction-section">
+            <div class="section-header">이번 주 예측번호 목록</div>
+            <div id="thisWeekPredictions">
+                <!-- 입력 폼 -->
+                <div id="predictionInputForm" class="prediction-row">
+                    <input type="text" class="user-id-input" placeholder="아이디" maxlength="20" autocomplete="off">
+                    <button class="confirm-button">확인</button>
+                    <div class="prediction-numbers">
+                        <!-- 페이지4에서 가져온 번호들이 여기에 표시됩니다 -->
+                    </div>
+                </div>
+                <!-- 저장된 예측들이 여기에 추가됩니다 -->
+            </div>
         </div>
     </div>
-
     <!-- 관리자 팝업 -->
     <div class="popup-overlay"></div>
     <div class="admin-popup">
@@ -671,7 +792,7 @@
 
             // 이전 예측 결과들 표시
             function displayPreviousPredictions() {
-                const previousPredictionsContainer = document.getElementById('previousPredictions');
+                const previousPredictionsContainer = document.getElementById('lastWeekResults');
                 previousPredictionsContainer.innerHTML = '';
 
                 const predictions = JSON.parse(localStorage.getItem('lastWeekPredictions') || '[]');

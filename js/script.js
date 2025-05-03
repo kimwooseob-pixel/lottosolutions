@@ -650,7 +650,7 @@ function 격자초기화() {
 }
 
 // 선택된 번호를 저장할 변수
-let 선택된번호들 = [];
+// let 선택된번호들 = [];
 
 function 셀클릭(cell) {
     if (!cell.classList.contains('prediction-cell')) return;
@@ -704,7 +704,7 @@ function 점수계산(맞춘개수) {
 }
 
 // 동물 이미지 배열 추가
-const 동물이미지들 = ['fa1.png', 'fa2.png', 'fa3.png'];
+// const 동물이미지들 = ['fa1.png', 'fa2.png', 'fa3.png'];
 
 // 턴완료 함수 수정
 function 턴완료() {
@@ -806,14 +806,44 @@ function showScorePopup(selectedNumbers, matchedNumbers, matchCount, score, roun
     const numbersColumn = document.createElement('div');
     numbersColumn.className = 'numbers-column';
     
-    // 번호 볼 추가
+    // 번호 볼 추가 (OK/NO 이미지 포함)
     selectedNumbers.sort((a, b) => a - b).forEach((num, index) => {
         const ball = document.createElement('div');
         ball.className = 'number-ball';
+        ball.style.display = 'flex';
+        ball.style.flexDirection = 'column';
+        ball.style.alignItems = 'center';
+        ball.style.justifyContent = 'center';
+        ball.style.position = 'relative';
+
+        // 번호를 span으로 추가 (항상 보이게, 원 중앙)
+        const numSpan = document.createElement('span');
+        numSpan.textContent = num;
+        numSpan.style.fontWeight = 'bold';
+        numSpan.style.fontSize = '1.1em';
+        numSpan.style.position = 'absolute';
+        numSpan.style.top = '50%';
+        numSpan.style.left = '50%';
+        numSpan.style.transform = 'translate(-50%, -50%)';
+        numSpan.style.pointerEvents = 'none';
+        numSpan.style.color = matchedNumbers.includes(num) ? '#e74c3c' : '#1976D2';
+        ball.appendChild(numSpan);
+
+        // 이미지 추가 (20% 줄여서 40px)
+        const img = document.createElement('img');
+        img.style.width = '40px';
+        img.style.height = '40px';
+        img.style.display = 'block';
+        img.style.margin = '2px auto 0 auto';
         if (matchedNumbers.includes(num)) {
-            ball.classList.add('matched');
+            img.src = '../images/ok.png';
+            img.alt = '맞춤';
+        } else {
+            img.src = '../images/no.png';
+            img.alt = '틀림';
         }
-        ball.textContent = num;
+        ball.appendChild(img);
+
         ball.style.animationDelay = `${index * 0.1}s`;
         numbersColumn.appendChild(ball);
     });
@@ -1070,21 +1100,1030 @@ function 힌트1() {
             const x2 = 셀2Rect.left - 격자Rect.left;
             const y2 = 셀2Rect.top - 격자Rect.top;
             
-            const 거리 = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-            const 각도 = Math.atan2(y2 - y1, x2 - x1);
+            // 격자 위치 차이 계산
+            const col1 = Math.floor(x1 / (셀1Rect.width + 2));
+            const col2 = Math.floor(x2 / (셀2Rect.width + 2));
+            const rowDiff = Math.abs(
+                Math.floor(y1 / (셀1Rect.height + 2)) - 
+                Math.floor(y2 / (셀2Rect.height + 2))
+            );
             
-            const 연결선 = document.createElement('div');
-            연결선.className = 'hint1-line';  // 새로운 클래스 사용
-            연결선.style.cssText = `
-                width: ${거리}px;
-                position: absolute;
-                left: ${x1 + 셀1Rect.width/2}px;
-                top: ${y1 + 셀1Rect.height/2}px;
-                transform-origin: left center;
-                transform: rotate(${각도}rad);
-                z-index: 3;
+            // 인접한 셀들만 연결 (가로로 한 칸 차이)
+            if (Math.abs(col2 - col1) === 1 && rowDiff === 0) {
+                const 거리 = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+                const 각도 = Math.atan2(y2 - y1, x2 - x1);
+                
+                // 연결선 생성
+                const 연결선 = document.createElement('div');
+                연결선.className = 'connection-line';
+                연결선.style.cssText = `
+                    width: ${거리}px;
+                    height: 6px;
+                    position: absolute;
+                    left: ${x1 + 셀1Rect.width/2}px;
+                    top: ${y1 + 셀1Rect.height/2 - 3}px;
+                    transform-origin: left center;
+                    transform: rotate(${각도}rad);
+                    z-index: 3;
+                `;
+                격자.appendChild(연결선);
+
+                // 점 컨테이너 생성
+                const 점컨테이너 = document.createElement('div');
+                점컨테이너.className = 'dot-container';
+                점컨테이너.style.cssText = `
+                    width: ${거리}px;
+                    height: 6px;
+                    position: absolute;
+                    left: ${x1 + 셀1Rect.width/2}px;
+                    top: ${y1 + 셀1Rect.height/2 - 3}px;
+                    transform-origin: left center;
+                    transform: rotate(${각도}rad);
+                    z-index: 5;
+                `;
+
+                // 움직이는 점들 생성 (3개로 증가)
+                for (let i = 0; i < 3; i++) {
+                    const 점 = document.createElement('div');
+                    점.className = 'moving-dot';
+                    점.style.animationDelay = `${i * 1.0}s`;  // 간격 조정
+                    점컨테이너.appendChild(점);
+                }
+
+                격자.appendChild(점컨테이너);
+            }
+        });
+    });
+}
+
+function showVerticalConnections() {
+    clearConnections();
+    currentConnectionType = 'vertical';
+    showConnections();
+}
+
+function showDiagonalConnections() {
+    clearConnections();
+    currentConnectionType = 'diagonal';
+    showConnections();
+}
+
+function clearConnections() {
+    document.querySelectorAll('.connection-line, .dot-container, .angle-connection, .gradient-circle').forEach(element => {
+        if (element && element.parentNode) {
+            element.parentNode.removeChild(element);
+        }
+    });
+}
+
+function showConnections() {
+    const markedCells = document.querySelectorAll('.grid-cell.marked');
+    const cellPositions = Array.from(markedCells).map(cell => {
+        const rect = cell.getBoundingClientRect();
+        const gridRect = document.querySelector('.grid-container').getBoundingClientRect();
+        return {
+            cell,
+            x: rect.left - gridRect.left + rect.width / 2,
+            y: rect.top - gridRect.top + rect.height / 2
+        };
+    });
+
+    for (let i = 0; i < cellPositions.length - 1; i++) {
+        const start = cellPositions[i];
+        const end = cellPositions[i + 1];
+        
+        if (shouldConnect(start, end)) {
+            drawLine(start, end);
+        }
+    }
+}
+
+function shouldConnect(start, end) {
+    const startRow = parseInt(start.cell.dataset.row);
+    const startCol = parseInt(start.cell.dataset.col);
+    const endRow = parseInt(end.cell.dataset.row);
+    const endCol = parseInt(end.cell.dataset.col);
+
+    switch (currentConnectionType) {
+        case 'horizontal':
+            return startRow === endRow;
+        case 'vertical':
+            return startCol === endCol;
+        case 'diagonal':
+            return Math.abs(endRow - startRow) === Math.abs(endCol - startCol);
+        default:
+            return false;
+    }
+}
+
+function drawLine(start, end) {
+    const line = document.createElement('div');
+    line.className = 'connection-line';
+    
+    const length = Math.sqrt(
+        Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
+    );
+    
+    const angle = Math.atan2(end.y - start.y, end.x - start.x);
+    
+    line.style.width = `${length}px`;
+    line.style.left = `${start.x}px`;
+    line.style.top = `${start.y}px`;
+    line.style.transform = `rotate(${angle * 180 / Math.PI}deg)`;
+    
+    document.querySelector('.grid-container').appendChild(line);
+}
+
+// 모바일 터치 이벤트 처리
+function initTouchEvents() {
+    const gridContainer = document.querySelector('.grid-container');
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let scrolling = false;
+
+    gridContainer.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        scrolling = false;
+    });
+
+    gridContainer.addEventListener('touchmove', (e) => {
+        if (scrolling) return;
+
+        const touchX = e.touches[0].clientX;
+        const touchY = e.touches[0].clientY;
+        const deltaX = Math.abs(touchX - touchStartX);
+        const deltaY = Math.abs(touchY - touchStartY);
+
+        if (deltaX > 5 || deltaY > 5) {
+            scrolling = true;
+        }
+    });
+
+    gridContainer.addEventListener('touchend', (e) => {
+        if (!scrolling) {
+            const touch = e.changedTouches[0];
+            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            if (element && element.classList.contains('prediction-button')) {
+                element.click();
+            }
+        }
+    });
+}
+
+// 페이지 로드 시 패턴 분석 실행
+window.onload = 패턴분석;
+
+// 게임 초기화
+function 게임초기화() {
+    // localStorage에서 현재턴 가져오기
+    현재턴 = parseInt(localStorage.getItem('현재턴')) || 1;
+    console.log('게임 초기화 - 현재턴:', 현재턴);
+    
+    선택된번호들 = [];
+    입력값초기화();
+    격자초기화();
+    턴표시업데이트();
+}
+
+// 로또 번호 생성
+function 로또번호생성() {
+    const 번호목록 = [];
+    while (번호목록.length < 6) {
+        const 번호 = Math.floor(Math.random() * 45) + 1;
+        if (!번호목록.includes(번호)) {
+            번호목록.push(번호);
+        }
+    }
+    return 번호목록.sort((a, b) => a - b);
+}
+
+// 입력 필드 초기화
+function 입력값초기화() {
+    const 입력필드들 = document.querySelectorAll('.number-input input');
+    입력필드들.forEach(입력필드 => {
+        입력필드.value = '';
+        입력필드.style.borderColor = '#ddd';
+    });
+}
+
+// 자동 번호 생성
+function 자동생성() {
+    const 번호목록 = 로또번호생성();
+    const 입력필드들 = document.querySelectorAll('.number-input input');
+    입력필드들.forEach((입력필드, 인덱스) => {
+        입력필드.value = 번호목록[인덱스];
+    });
+}
+
+// 번호 확인
+function 번호확인() {
+    const 입력필드들 = document.querySelectorAll('.number-input input');
+    const 사용자번호 = [];
+    let 유효성검사 = true;
+
+    // 입력값 검증
+    입력필드들.forEach(입력필드 => {
+        const 번호 = parseInt(입력필드.value);
+        if (isNaN(번호) || 번호 < 1 || 번호 > 45) {
+            입력필드.style.borderColor = 'red';
+            유효성검사 = false;
+        } else if (사용자번호.includes(번호)) {
+            입력필드.style.borderColor = 'red';
+            유효성검사 = false;
+        } else {
+            입력필드.style.borderColor = '#ddd';
+            사용자번호.push(번호);
+        }
+    });
+
+    if (!유효성검사 || 사용자번호.length !== 6) {
+        alert('1부터 45까지의 중복되지 않는 번호를 입력해주세요.');
+        return;
+    }
+
+    // 결과 표시
+    결과표시(사용자번호.sort((a, b) => a - b));
+}
+
+// 결과 표시
+function 결과표시(사용자번호) {
+    const 맞은개수 = 사용자번호.filter(번호 => 당첨번호.includes(번호)).length;
+    const 점수 = 계산점수(맞은개수);
+    
+    // 팝업 생성
+    const popup = document.createElement('div');
+    popup.className = 'score-popup';
+    
+    // 선택한 번호들 표시
+    const numbersDisplay = document.createElement('div');
+    numbersDisplay.className = 'number-display';
+    numbersDisplay.innerHTML = `
+        <div class="selected-numbers">
+            ${사용자번호.map(번호 => `
+                <div class="number-ball ${당첨번호.includes(번호) ? 'correct' : 'user'}">${번호}</div>
+            `).join('')}
+        </div>
+    `;
+    
+    // 점수 텍스트
+    const scoreText = document.createElement('div');
+    scoreText.className = 'score-text';
+    scoreText.innerHTML = `맞은 개수: ${맞은개수}개 / 점수: ${점수}점`;
+    
+    // 동물 이미지와 말풍선
+    const animalContainer = document.createElement('div');
+    animalContainer.className = 'animal-container';
+    
+    const animal = document.createElement('img');
+    animal.className = 'animal-image bounce-in';
+    animal.src = getAnimalImage(맞은개수);
+    animal.alt = '동물 캐릭터';
+    
+    const speechBubble = document.createElement('div');
+    speechBubble.className = 'speech-bubble fade-in';
+    speechBubble.textContent = getAnimalMessage(맞은개수);
+    
+    animalContainer.appendChild(animal);
+    animalContainer.appendChild(speechBubble);
+    
+    // 닫기 버튼
+    const closeButton = document.createElement('button');
+    closeButton.className = 'close-button';
+    closeButton.textContent = '닫기';
+    closeButton.onclick = closeScorePopup;
+    
+    // 팝업에 요소들 추가
+    popup.appendChild(numbersDisplay);
+    popup.appendChild(scoreText);
+    popup.appendChild(animalContainer);
+    popup.appendChild(closeButton);
+    
+    // 기존 팝업 제거 후 새 팝업 추가
+    const existingPopup = document.querySelector('.score-popup');
+    if (existingPopup) {
+        existingPopup.remove();
+    }
+    document.body.appendChild(popup);
+    
+    // 턴 업데이트
+    현재턴++;
+    턴표시업데이트();
+}
+
+function getAnimalImage(맞은개수) {
+    if (맞은개수 >= 5) return 'images/happy_animal.png';
+    if (맞은개수 >= 3) return 'images/normal_animal.png';
+    return 'images/sad_animal.png';
+}
+
+function getAnimalMessage(맞은개수) {
+    if (맞은개수 >= 5) return '대단해요! 축하드립니다! 🎉';
+    if (맞은개수 >= 3) return '좋은 성적이네요! 👍';
+    return '다음에는 더 잘할 수 있을 거예요! 💪';
+}
+
+function closeScorePopup() {
+    const popup = document.querySelector('.score-popup');
+    if (popup) {
+        popup.style.opacity = '0';
+        setTimeout(() => popup.remove(), 300);
+    }
+}
+
+function 계산점수(맞은개수) {
+    switch (맞은개수) {
+        case 6: return 1000;
+        case 5: return 500;
+        case 4: return 300;
+        case 3: return 200;
+        case 2: return 100;
+        default: return 0;
+    }
+}
+
+// 게임 리셋
+function 게임리셋() {
+    게임초기화();
+}
+
+// 격자 초기화 (턴에 따라 다른 회차 표시)
+function 격자초기화() {
+    const gridContainer = document.querySelector('.grid-container');
+    if (!gridContainer) return;
+    
+    gridContainer.innerHTML = '';
+    
+    // 셀 크기와 원 크기를 30% 감소
+    const 셀크기 = 21;
+    const 원크기 = 17;
+    const 폰트크기 = 7;  // 폰트 크기도 조정
+    
+    // 그리드 컨테이너 스타일 설정
+    gridContainer.style.cssText = `
+        display: grid;
+        grid-template-columns: repeat(16, ${셀크기}px);
+        grid-auto-rows: ${셀크기}px;
+        column-gap: 0;
+        row-gap: 1px;
+        margin: 14px auto;
+        justify-content: center;
+        width: fit-content;
+        height: fit-content;
+        padding: 7px;
+        position: relative;
+        overflow: visible;
+    `;
+
+    const 턴정보 = get턴정보();
+    console.log('현재 턴 정보:', 턴정보);
+
+    // 턴 표시 업데이트
+    턴표시업데이트();
+
+    // 헤더 행 추가 (회차 번호)
+    for (let i = 0; i < 16; i++) {
+        const header = document.createElement('div');
+        header.className = 'grid-cell header';
+        if (i < 15) {
+            const 회차번호 = 턴정보.시작회차 + i;
+            header.textContent = 회차번호;
+            header.style.cssText = `
+                height: ${셀크기}px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transform: rotate(-45deg);
+                font-size: 8px;
+                font-weight: bold;
+                white-space: nowrap;
+                padding: 0;
+                color: #333;
             `;
-            격자.appendChild(연결선);
+        } else {
+            header.textContent = '예상';
+            header.style.cssText = `
+                border-left: 1px solid #3498db;
+                background-color: #f8f9fa;
+                font-weight: bold;
+                color: #3498db;
+                text-align: center;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: ${셀크기}px;
+                width: ${셀크기}px;
+                padding: 0;
+                margin: 0;
+                white-space: nowrap;
+                overflow: visible;
+                position: relative;
+                z-index: 2;
+                font-size: 8px;
+            `;
+        }
+        gridContainer.appendChild(header);
+    }
+
+    // 1-45까지의 번호에 대한 그리드 셀 생성
+    for (let num = 1; num <= 45; num++) {
+        for (let col = 0; col < 16; col++) {
+            const cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            cell.setAttribute('data-number', num);
+            cell.setAttribute('data-row', num);
+            cell.setAttribute('data-col', col);
+            
+            if (col === 15) {
+                // 예상 열
+                cell.textContent = num;
+                cell.classList.add('prediction-cell');
+                cell.style.cssText = `
+                    border-left: 1px solid #3498db;
+                    background-color: #f8f9fa;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    height: ${셀크기}px;
+                    width: ${셀크기}px;
+                    line-height: ${셀크기}px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: bold;
+                    position: relative;
+                    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+                    border-radius: 3px;
+                    margin: 0;
+                    padding: 0;
+                    z-index: 3;
+                    font-size: 8px;
+                `;
+                
+                if (선택된번호들.includes(num)) {
+                    cell.classList.add('selected');
+                    cell.style.backgroundColor = '#3498db';
+                    cell.style.color = '#fff';
+                }
+                
+                cell.addEventListener('click', () => 셀클릭(cell));
+            } else {
+                cell.style.cssText = `
+                    height: ${셀크기}px;
+                    width: ${셀크기}px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 0;
+                    padding: 0;
+                    font-size: ${폰트크기}px;
+                    position: relative;
+                `;
+                
+                const 현재회차 = 턴정보.시작회차 + col;
+                const 해당회차번호들 = 실제당첨번호[현재회차];
+                
+                if (해당회차번호들 && 해당회차번호들.includes(num)) {
+                    cell.classList.add('marked');
+                    const circle = document.createElement('div');
+                    circle.className = 'number-circle';
+                    circle.textContent = num;
+                    
+                    // 원 스타일을 명시적으로 설정
+                    circle.style.cssText = `
+                        width: ${원크기}px;
+                        height: ${원크기}px;
+                        border: 1px solid #e74c3c;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: ${폰트크기}px;
+                        color: #e74c3c;
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        z-index: 1;
+                        margin: 0;
+                        padding: 0;
+                        box-sizing: border-box;
+                        background: transparent;
+                    `;
+                    cell.appendChild(circle);
+                }
+            }
+            
+            gridContainer.appendChild(cell);
+        }
+    }
+    
+    console.log('격자 초기화 완료, 현재턴:', 현재턴);
+}
+
+// 선택된 번호를 저장할 변수
+// let 선택된번호들 = [];
+
+function 셀클릭(cell) {
+    if (!cell.classList.contains('prediction-cell')) return;
+    
+    const 번호 = parseInt(cell.getAttribute('data-number'));
+    if (isNaN(번호)) return;
+
+    console.log('셀클릭 - 현재 선택된 번호들:', 선택된번호들);
+
+    if (cell.classList.contains('selected')) {
+        // 선택 해제
+        cell.classList.remove('selected');
+        cell.style.backgroundColor = '#f8f9fa';
+        cell.style.color = '#000';
+        선택된번호들 = 선택된번호들.filter(n => n !== 번호);
+        console.log('번호 선택 해제:', 번호);
+        console.log('남은 선택된 번호들:', 선택된번호들);
+    } else {
+        // 새로운 번호 선택
+        if (선택된번호들.length >= 8) {
+            alert('최대 8개의 번호만 선택할 수 있습니다.');
+            return;
+        }
+        cell.classList.add('selected');
+        cell.style.backgroundColor = '#3498db';
+        cell.style.color = '#fff';
+        선택된번호들.push(번호);
+        console.log('번호 선택:', 번호);
+        console.log('현재 선택된 번호들:', 선택된번호들);
+        
+        // 8개가 선택되면 자동으로 턴완료 실행
+        if (선택된번호들.length === 8) {
+            console.log('8개 선택 완료, 턴완료 실행');
+            턴완료();
+        }
+    }
+}
+
+// 점수 계산 함수
+function 점수계산(맞춘개수) {
+    // 8개 중에서 맞춘 개수에 따른 점수 계산
+    switch(맞춘개수) {
+        case 6: return 10;  // 6개 모두 맞춤
+        case 5: return 8;   // 5개 맞춤
+        case 4: return 6;   // 4개 맞춤
+        case 3: return 4;   // 3개 맞춤
+        case 2: return 2;   // 2개 맞춤
+        case 1: return 1;   // 1개 맞춤
+        default: return 0;  // 0개 맞춤
+    }
+}
+
+// 동물 이미지 배열 추가
+// const 동물이미지들 = ['fa1.png', 'fa2.png', 'fa3.png'];
+
+// 턴완료 함수 수정
+function 턴완료() {
+    console.log('턴완료 함수 실행 시작');
+    
+    if (선택된번호들.length !== 8) {
+        alert('8개의 번호를 선택해주세요.');
+        return;
+    }
+
+    // 현재 턴의 회차 정보 가져오기
+    const 턴정보 = get턴정보();
+    console.log('현재 선택된 번호들:', 선택된번호들);
+    console.log('턴정보:', 턴정보);
+
+    // 예측 회차의 당첨번호 가져오기 (종료회차 + 1)
+    const 예측회차 = 턴정보.예측회차;
+    const 당첨번호 = 실제당첨번호[예측회차.toString()];
+    console.log(`예측 회차(${예측회차})의 당첨번호:`, 당첨번호);
+
+    if (!당첨번호) {
+        console.error(`${예측회차} 회차의 당첨번호를 찾을 수 없습니다.`);
+        return;
+    }
+
+    // 선택된 번호들 중에서 당첨번호와 일치하는 것을 찾음
+    const 맞은번호들 = 선택된번호들.filter(번호 => 당첨번호.includes(번호));
+    const 맞은개수 = 맞은번호들.length;
+
+    console.log('체점 결과:');
+    console.log('맞은 번호들:', 맞은번호들);
+    console.log('맞은 개수:', 맞은개수);
+
+    // 점수 계산
+    const 획득점수 = 점수계산(맞은개수);
+
+    // 현재 체크포인트 계산 (1-3)
+    const 체크포인트 = Math.ceil(현재턴 / 10);
+    
+    // 현재 체크포인트의 시작 턴
+    const 시작턴 = (체크포인트 - 1) * 10 + 1;
+    
+    // 턴 결과 저장
+    const 턴결과 = {
+        선택번호들: 선택된번호들,
+        맞은번호들: 맞은번호들,
+        맞은개수: 맞은개수,
+        점수: 획득점수,
+        회차: 예측회차,
+        당첨번호: 당첨번호
+    };
+    
+    // localStorage에 턴 결과 저장
+    localStorage.setItem(`turn${현재턴}_result`, JSON.stringify(턴결과));
+    localStorage.setItem(`turn${현재턴}_score`, 획득점수.toString());
+    
+    // 체크포인트 정보 저장
+    localStorage.setItem('current_checkpoint', 체크포인트.toString());
+    localStorage.setItem('checkpoint_start_turn', 시작턴.toString());
+
+    // 결과 표시
+    showScorePopup(
+        선택된번호들,
+        맞은번호들,
+        맞은개수,
+        획득점수,
+        {
+            회차: 예측회차,
+            당첨번호: 당첨번호,
+            맞은번호: 맞은번호들
+        }
+    );
+}
+
+function showScorePopup(selectedNumbers, matchedNumbers, matchCount, score, roundInfo) {
+    // 기존 팝업이 있다면 제거
+    const existingPopup = document.querySelector('.score-popup');
+    if (existingPopup) {
+        existingPopup.remove();
+    }
+
+    // 새로운 팝업 요소 생성
+    const popup = document.createElement('div');
+    popup.className = 'score-popup';
+    
+    // 결과 컨테이너 생성
+    const resultContainer = document.createElement('div');
+    resultContainer.className = 'result-container';
+    
+    // 점수 텍스트 추가
+    const scoreText = document.createElement('div');
+    scoreText.className = 'score-text';
+    scoreText.innerHTML = `맞춘 개수: <span class="match-count">${matchCount}</span>개 
+                          &nbsp;&nbsp;/&nbsp;&nbsp; 
+                          획득 점수: <span class="score-value">${score}</span>점`;
+    resultContainer.appendChild(scoreText);
+    
+    // 번호 컨테이너 생성
+    const numbersColumn = document.createElement('div');
+    numbersColumn.className = 'numbers-column';
+    
+    // 번호 볼 추가 (OK/NO 이미지 포함)
+    selectedNumbers.sort((a, b) => a - b).forEach((num, index) => {
+        const ball = document.createElement('div');
+        ball.className = 'number-ball';
+        ball.style.display = 'flex';
+        ball.style.flexDirection = 'column';
+        ball.style.alignItems = 'center';
+        ball.style.justifyContent = 'center';
+        ball.style.position = 'relative';
+
+        // 번호를 span으로 추가 (항상 보이게, 원 중앙)
+        const numSpan = document.createElement('span');
+        numSpan.textContent = num;
+        numSpan.style.fontWeight = 'bold';
+        numSpan.style.fontSize = '1.1em';
+        numSpan.style.position = 'absolute';
+        numSpan.style.top = '50%';
+        numSpan.style.left = '50%';
+        numSpan.style.transform = 'translate(-50%, -50%)';
+        numSpan.style.pointerEvents = 'none';
+        numSpan.style.color = matchedNumbers.includes(num) ? '#e74c3c' : '#1976D2';
+        ball.appendChild(numSpan);
+
+        // 이미지 추가 (20% 줄여서 40px)
+        const img = document.createElement('img');
+        img.style.width = '40px';
+        img.style.height = '40px';
+        img.style.display = 'block';
+        img.style.margin = '2px auto 0 auto';
+        if (matchedNumbers.includes(num)) {
+            img.src = '../images/ok.png';
+            img.alt = '맞춤';
+        } else {
+            img.src = '../images/no.png';
+            img.alt = '틀림';
+        }
+        ball.appendChild(img);
+
+        ball.style.animationDelay = `${index * 0.1}s`;
+        numbersColumn.appendChild(ball);
+    });
+    resultContainer.appendChild(numbersColumn);
+    
+    // 동물 컨테이너 생성
+    const animalContainer = document.createElement('div');
+    animalContainer.className = 'animal-container';
+    
+    // 동물 이미지 추가
+    const animalImage = document.createElement('img');
+    animalImage.className = 'animal-image';
+    animalImage.src = `../images/${getRandomImage(matchCount)}`;
+    animalImage.alt = '캐릭터';
+    
+    // 말풍선 추가
+    const speechBubble = document.createElement('div');
+    speechBubble.className = 'speech-bubble';
+    speechBubble.textContent = matchCount <= 2 ? 
+        '다시 한번 도전해보세요!' :
+        '잘했어요! 다음 턴으로 갈까요?';
+    
+    animalContainer.appendChild(animalImage);
+    animalContainer.appendChild(speechBubble);
+    
+    // 닫기 버튼 추가
+    const closeButton = document.createElement('button');
+    closeButton.className = 'close-button';
+    closeButton.textContent = matchCount <= 2 ? '다시 도전하기' : '다음 턴으로';
+    
+    // 버튼 클릭 이벤트 수정
+    closeButton.onclick = () => {
+        if (matchCount > 2) {
+            // 팝업 닫기
+            popup.style.opacity = '0';
+            setTimeout(() => {
+                popup.remove();
+                
+                // 20턴이나 30턴인 경우 체크포인트 정보 저장 후 페이지3으로 이동
+                if (현재턴 === 20 || 현재턴 === 30) {
+                    const 체크포인트 = Math.ceil(현재턴 / 10);  // 20턴은 2, 30턴은 3
+                    const 시작턴 = (체크포인트 - 1) * 10 + 1;  // 체크포인트에 따른 시작턴
+                    
+                    // 체크포인트 정보 저장
+                    localStorage.setItem('current_checkpoint', 체크포인트.toString());
+                    localStorage.setItem('checkpoint_start_turn', 시작턴.toString());
+                    
+                    // 현재 턴의 점수 저장
+                    localStorage.setItem(`turn${현재턴}_score`, score.toString());
+                    
+                    console.log('체크포인트 도달. 페이지3으로 이동:', {
+                        체크포인트: 체크포인트,
+                        시작턴: 시작턴,
+                        현재턴: 현재턴,
+                        점수: score
+                    });
+                    
+                    window.location.href = '../pages/page3.html';
+                } else {
+                    // 다른 턴의 경우 기존 로직 유지
+                    const buttons = Array.from(document.querySelectorAll('button'));
+                    const 다음턴버튼 = buttons.find(button => button.textContent.includes('다음턴'));
+                    
+                    if (다음턴버튼) {
+                        console.log('다음턴 버튼 찾음:', 다음턴버튼);
+                        다음턴버튼.click();
+                    } else {
+                        console.log('다음턴 버튼을 찾지 못했습니다. 직접 다음턴 함수 호출');
+                        다음턴();
+                    }
+                }
+            }, 300);
+        } else {
+            // 2개 이하 맞춘 경우는 기존대로 동작
+            popup.style.opacity = '0';
+            setTimeout(() => {
+                popup.remove();
+                선택된번호들 = [];
+                격자초기화();
+            }, 300);
+        }
+    };
+    
+    // 모든 요소를 팝업에 추가
+    popup.appendChild(resultContainer);
+    popup.appendChild(animalContainer);
+    popup.appendChild(closeButton);
+    
+    // 팝업을 페이지에 추가
+    document.body.appendChild(popup);
+}
+
+function getRandomImage(matchCount) {
+    if (matchCount <= 2) {
+        // fa 시리즈 중 랜덤 선택 (2개 이하 맞췄을 때)
+        const faIndex = Math.floor(Math.random() * 3) + 1;
+        return `fa${faIndex}.png`;
+    } else {
+        // su 시리즈 중 랜덤 선택 (3개 이상 맞췄을 때)
+        const suIndex = Math.floor(Math.random() * 4) + 1;
+        return `su${suIndex}.png`;
+    }
+}
+
+function closeScorePopup() {
+    const popup = document.querySelector('.score-popup');
+    if (popup) {
+        popup.style.opacity = '0';
+        setTimeout(() => popup.remove(), 300);
+    }
+}
+
+// 페이지 로드 시 초기화
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('페이지 로드됨');
+    
+    // localStorage에서 현재턴 가져오기
+    현재턴 = parseInt(localStorage.getItem('현재턴')) || 1;
+    console.log('시작 턴:', 현재턴);
+    
+    초기화();
+    턴표시업데이트();
+    격자초기화();
+    initTouchEvents();
+});
+
+function 초기화() {
+    선택된번호들 = [];
+    격자초기화();
+    document.querySelectorAll('.prediction-cell').forEach(cell => {
+        cell.classList.remove('selected');
+        cell.style.backgroundColor = '#f8f9fa';
+        cell.style.color = '#000';
+    });
+}
+
+function 결과화면표시() {
+    // 기존 화면 숨기기
+    document.querySelector('.grid-container').style.display = 'none';
+    document.querySelector('.controls').style.display = 'none';
+    document.querySelector('.heatmap-container').style.display = 'none';
+    
+    // 결과 화면 컨테이너 생성
+    const 결과컨테이너 = document.createElement('div');
+    결과컨테이너.className = 'result-container';
+    
+    // 총점 계산
+    const 총점 = 턴점수들.reduce((a, b) => a + b, 0);
+    
+    // 결과 화면 HTML 생성
+    결과컨테이너.innerHTML = `
+        <h2>게임 결과</h2>
+        <div class="total-score">총점: ${총점}점</div>
+        <div class="turn-scores">
+            ${턴점수들.map((점수, 인덱스) => `
+                <div class="turn-score">
+                    ${인덱스 + 1}턴: ${점수}점
+                </div>
+            `).join('')}
+        </div>
+        <button onclick="location.reload()" class="restart-button">다음판으로</button>
+    `;
+    
+    document.body.appendChild(결과컨테이너);
+}
+
+// 턴 이동 함수들
+function 이전턴() {
+    if (현재턴 > 1) {
+        현재턴--;
+        초기화();
+        업데이트턴표시();
+    }
+}
+
+function 다음턴() {
+    if (현재턴 >= 총턴수) {
+        alert('마지막 턴입니다!');
+        return;
+    }
+    
+    // 현재 턴이 체크포인트 턴인지 확인
+    if (현재턴 === 체크포인트턴) {
+        console.log('체크포인트 턴 도달. 페이지3으로 이동합니다.');
+        window.location.href = '../pages/page3.html';
+        return;
+    }
+    
+    현재턴++;
+    console.log(`다음 턴으로 이동: ${현재턴}턴`);
+    
+    // 턴 정보 업데이트
+    const 턴정보 = get턴정보();
+    console.log('새로운 턴 정보:', 턴정보);
+    
+    // 화면 초기화 및 업데이트
+    입력값초기화();
+    격자초기화();
+    턴표시업데이트();
+    
+    // localStorage에 현재 턴 저장
+    localStorage.setItem('현재턴', 현재턴.toString());
+}
+
+function 턴표시업데이트() {
+    const 턴정보 = get턴정보();
+    const 턴표시엘리먼트 = document.querySelector('.turn-display');
+    if (턴표시엘리먼트) {
+        턴표시엘리먼트.innerHTML = `
+            <div>${현재턴}턴</div>
+            <div>${턴정보.시작회차}-${턴정보.종료회차}</div>
+        `;
+    }
+}
+
+// 패턴 분석
+function 패턴분석() {
+    격자초기화();
+}
+
+// 힌트1: 가까운 번호 연결
+function 힌트1() {
+    // 다른 힌트들 비활성화
+    힌트2활성화 = false;
+    힌트3활성화 = false;
+    힌트4활성화 = false;
+    힌트5활성화 = false;
+    힌트6활성화 = false;
+    
+    // 기존 연결선들 제거
+    clearConnections();
+    clearScoreDisplay();
+    
+    if (힌트1활성화) {
+        clearConnections();
+        힌트1활성화 = false;
+        return;
+    }
+
+    힌트1활성화 = true;
+    
+    const 격자 = document.querySelector('.grid-container');
+    const 격자Rect = 격자.getBoundingClientRect();
+    const 모든당첨셀 = document.querySelectorAll('.grid-cell.marked');
+    const 셀배열 = Array.from(모든당첨셀);
+    
+    셀배열.forEach((셀1, 인덱스) => {
+        셀배열.slice(인덱스 + 1).forEach(셀2 => {
+            const 셀1Rect = 셀1.getBoundingClientRect();
+            const 셀2Rect = 셀2.getBoundingClientRect();
+            
+            const x1 = 셀1Rect.left - 격자Rect.left;
+            const y1 = 셀1Rect.top - 격자Rect.top;
+            const x2 = 셀2Rect.left - 격자Rect.left;
+            const y2 = 셀2Rect.top - 격자Rect.top;
+            
+            // 격자 위치 차이 계산
+            const col1 = Math.floor(x1 / (셀1Rect.width + 2));
+            const col2 = Math.floor(x2 / (셀2Rect.width + 2));
+            const rowDiff = Math.abs(
+                Math.floor(y1 / (셀1Rect.height + 2)) - 
+                Math.floor(y2 / (셀2Rect.height + 2))
+            );
+            
+            // 인접한 셀들만 연결 (가로로 한 칸 차이)
+            if (Math.abs(col2 - col1) === 1 && rowDiff === 0) {
+                const 거리 = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+                const 각도 = Math.atan2(y2 - y1, x2 - x1);
+                
+                // 연결선 생성
+                const 연결선 = document.createElement('div');
+                연결선.className = 'connection-line';
+                연결선.style.cssText = `
+                    width: ${거리}px;
+                    height: 6px;
+                    position: absolute;
+                    left: ${x1 + 셀1Rect.width/2}px;
+                    top: ${y1 + 셀1Rect.height/2 - 3}px;
+                    transform-origin: left center;
+                    transform: rotate(${각도}rad);
+                    z-index: 3;
+                `;
+                격자.appendChild(연결선);
+
+                // 점 컨테이너 생성
+                const 점컨테이너 = document.createElement('div');
+                점컨테이너.className = 'dot-container';
+                점컨테이너.style.cssText = `
+                    width: ${거리}px;
+                    height: 6px;
+                    position: absolute;
+                    left: ${x1 + 셀1Rect.width/2}px;
+                    top: ${y1 + 셀1Rect.height/2 - 3}px;
+                    transform-origin: left center;
+                    transform: rotate(${각도}rad);
+                    z-index: 5;
+                `;
+
+                // 움직이는 점들 생성 (3개로 증가)
+                for (let i = 0; i < 3; i++) {
+                    const 점 = document.createElement('div');
+                    점.className = 'moving-dot';
+                    점.style.animationDelay = `${i * 1.0}s`;  // 간격 조정
+                    점컨테이너.appendChild(점);
+                }
+
+                격자.appendChild(점컨테이너);
+            }
         });
     });
 }
@@ -1566,14 +2605,44 @@ function showScorePopup(selectedNumbers, matchedNumbers, matchCount, score, roun
     const numbersColumn = document.createElement('div');
     numbersColumn.className = 'numbers-column';
     
-    // 번호 볼 추가
+    // 번호 볼 추가 (OK/NO 이미지 포함)
     selectedNumbers.sort((a, b) => a - b).forEach((num, index) => {
         const ball = document.createElement('div');
         ball.className = 'number-ball';
+        ball.style.display = 'flex';
+        ball.style.flexDirection = 'column';
+        ball.style.alignItems = 'center';
+        ball.style.justifyContent = 'center';
+        ball.style.position = 'relative';
+
+        // 번호를 span으로 추가 (항상 보이게, 원 중앙)
+        const numSpan = document.createElement('span');
+        numSpan.textContent = num;
+        numSpan.style.fontWeight = 'bold';
+        numSpan.style.fontSize = '1.1em';
+        numSpan.style.position = 'absolute';
+        numSpan.style.top = '50%';
+        numSpan.style.left = '50%';
+        numSpan.style.transform = 'translate(-50%, -50%)';
+        numSpan.style.pointerEvents = 'none';
+        numSpan.style.color = matchedNumbers.includes(num) ? '#e74c3c' : '#1976D2';
+        ball.appendChild(numSpan);
+
+        // 이미지 추가 (20% 줄여서 40px)
+        const img = document.createElement('img');
+        img.style.width = '40px';
+        img.style.height = '40px';
+        img.style.display = 'block';
+        img.style.margin = '2px auto 0 auto';
         if (matchedNumbers.includes(num)) {
-            ball.classList.add('matched');
+            img.src = '../images/ok.png';
+            img.alt = '맞춤';
+        } else {
+            img.src = '../images/no.png';
+            img.alt = '틀림';
         }
-        ball.textContent = num;
+        ball.appendChild(img);
+
         ball.style.animationDelay = `${index * 0.1}s`;
         numbersColumn.appendChild(ball);
     });

@@ -61,21 +61,21 @@ h1 {
 
 .grid-container {
     display: inline-grid;
-    grid-template-columns: 30px repeat(15, 30px) 30px;
-    gap: 2px;
-    padding: 20px;
+    grid-template-columns: 21px repeat(15, 21px) 21px;
+    gap: 1px;
+    padding: 8px;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
 }
 
 .number-cell {
-    width: 30px;
-    height: 30px;
+    width: 21px;
+    height: 21px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: rgba(33, 150, 243, 0.2);
-    font-size: 0.9em;
+    font-size: 0.7em;
     color: #fff;
     border-radius: 4px;
     font-weight: bold;
@@ -96,8 +96,8 @@ h1 {
 }
 
 .grid-cell {
-    width: 30px;
-    height: 30px;
+    width: 21px;
+    height: 21px;
     background: rgba(0, 0, 0, 0.3);
     border-radius: 4px;
     cursor: pointer;
@@ -105,7 +105,7 @@ h1 {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9em;
+    font-size: 0.7em;
     color: rgba(255, 255, 255, 0.9);
     position: relative;
 }
@@ -340,22 +340,22 @@ h1 {
         height: 4px;
     }
     .grid-container {
-        grid-template-columns: 18px repeat(15, 18px) 18px;
-        gap: 1px;
-        padding: 5px;
+        grid-template-columns: 13px repeat(15, 13px) 13px;
+        gap: 0.5px;
+        padding: 2px;
     }
     .number-cell {
-        width: 18px;
-        height: 18px;
-        font-size: 8px;
+        width: 13px;
+        height: 13px;
+        font-size: 6px;
     }
     .grid-cell {
-        width: 18px;
-        height: 18px;
-        font-size: 8px;
+        width: 13px;
+        height: 13px;
+        font-size: 6px;
     }
     .grid-cell.winning::before {
-        width: 14px;
-        height: 14px;
+        width: 8px;
+        height: 8px;
     }
 } 
