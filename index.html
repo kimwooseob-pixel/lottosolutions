@@ -106,6 +106,11 @@
     </style>
 </head>
 <body>
+    <div id="userBar" style="position:absolute;top:18px;right:32px;z-index:10000;display:none;">
+        <span id="userWelcome" style="margin-right:10px;"></span>
+        <button id="logoutBtn" style="padding:6px 14px;background:#e74c3c;color:#fff;border:none;border-radius:6px;cursor:pointer;">로그아웃</button>
+    </div>
+
     <div class="container">
         <h1>Lotto Solutions</h1>
         <div class="subtitle">AI 기반 로또 번호 예측 시스템</div>
@@ -123,12 +128,12 @@
                 <span class="button-description">이전 회차의 당첨번호로 연습해보세요</span>
             </button>
 
-            <button class="nav-button" onclick="location.href='pages/page4.html'">
+            <button class="nav-button" id="btn-predict">
                 <span class="button-title">이번주 번호를 예상해보기</span>
                 <span class="button-description">AI가 분석한 힌트들을 이용해 보세요</span>
             </button>
 
-            <button class="nav-button" onclick="location.href='pages/page5.html'">
+            <button class="nav-button" id="btn-ranking">
                 <span class="button-title">랭킹표</span>
                 <span class="button-description">다른 상위랭커들의 예상번호도 확인해보세요</span>
             </button>
@@ -151,8 +156,166 @@
         </div>
     </div>
 
+    <!-- 로그인 모달 -->
+    <div id="loginModal" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.45); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:#23283a; border-radius:12px; padding:32px 28px 24px 28px; min-width:260px; box-shadow:0 8px 32px #0008; display:flex; flex-direction:column; align-items:center; position:relative;">
+            <span id="closeLogin" style="position:absolute; right:16px; top:10px; font-size:1.5em; color:#aaa; cursor:pointer;">&times;</span>
+            <h2 style="margin-bottom:18px; color:#fff;">로그인</h2>
+            <input type="text" id="loginId" placeholder="아이디" style="margin-bottom:10px; padding:10px; border-radius:6px; border:1px solid #888; width:180px;">
+            <input type="password" id="loginPw" placeholder="비밀번호" style="margin-bottom:16px; padding:10px; border-radius:6px; border:1px solid #888; width:180px;">
+            <button id="loginBtn" style="padding:10px 0; width:180px; background:#1976D2; color:#fff; border:none; border-radius:6px; font-size:1em; cursor:pointer;">로그인</button>
+            <button id="showSignupBtn" style="margin-top:10px; background:none; color:#90caf9; border:none; cursor:pointer;">회원가입</button>
+            <div id="loginError" style="color:#ff7675; margin-top:8px; display:none;"></div>
+        </div>
+    </div>
+
+    <!-- 회원가입 모달 -->
+    <div id="signupModal" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.45); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:#23283a; border-radius:12px; padding:32px 28px 24px 28px; min-width:260px; box-shadow:0 8px 32px #0008; display:flex; flex-direction:column; align-items:center; position:relative;">
+            <span id="closeSignup" style="position:absolute; right:16px; top:10px; font-size:1.5em; color:#aaa; cursor:pointer;">&times;</span>
+            <h2 style="margin-bottom:18px; color:#fff;">회원가입</h2>
+            <input type="text" id="signupId" placeholder="아이디" style="margin-bottom:10px; padding:10px; border-radius:6px; border:1px solid #888; width:180px;">
+            <input type="password" id="signupPw" placeholder="비밀번호" style="margin-bottom:16px; padding:10px; border-radius:6px; border:1px solid #888; width:180px;">
+            <button id="signupBtn" style="padding:10px 0; width:180px; background:#43a047; color:#fff; border:none; border-radius:6px; font-size:1em; cursor:pointer;">회원가입</button>
+            <div id="signupError" style="color:#ff7675; margin-top:8px; display:none;"></div>
+        </div>
+    </div>
+
     <footer>
         © 2024 Lotto Solutions. All rights reserved.
     </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 유저 바/로그아웃
+        const userBar = document.getElementById('userBar');
+        const userWelcome = document.getElementById('userWelcome');
+        const logoutBtn = document.getElementById('logoutBtn');
+        function updateUserBar() {
+            const userId = localStorage.getItem('userId');
+            if (userId) {
+                userBar.style.display = 'block';
+                userWelcome.textContent = userId + '님 환영합니다!';
+            } else {
+                userBar.style.display = 'none';
+            }
+        }
+        logoutBtn.onclick = function() {
+            localStorage.removeItem('userId');
+            updateUserBar();
+            location.reload();
+        };
+        updateUserBar();
+
+        // 로그인/회원가입 모달
+        const loginModal = document.getElementById('loginModal');
+        const signupModal = document.getElementById('signupModal');
+        const closeLogin = document.getElementById('closeLogin');
+        const closeSignup = document.getElementById('closeSignup');
+        const showSignupBtn = document.getElementById('showSignupBtn');
+        const loginBtn = document.getElementById('loginBtn');
+        const signupBtn = document.getElementById('signupBtn');
+        const loginError = document.getElementById('loginError');
+        const signupError = document.getElementById('signupError');
+
+        function showLoginModal(targetPage) {
+            loginModal.style.display = 'flex';
+            loginModal.setAttribute('data-target', targetPage || '');
+            loginError.style.display = 'none';
+        }
+        function closeLoginModal() { loginModal.style.display = 'none'; }
+        function showSignupModal() {
+            signupModal.style.display = 'flex';
+            signupError.style.display = 'none';
+        }
+        function closeSignupModal() { signupModal.style.display = 'none'; }
+
+        closeLogin.onclick = closeLoginModal;
+        closeSignup.onclick = closeSignupModal;
+        showSignupBtn.onclick = function() {
+            closeLoginModal();
+            showSignupModal();
+        };
+
+        // 회원가입 로직
+        signupBtn.onclick = function() {
+            const id = document.getElementById('signupId').value.trim();
+            const pw = document.getElementById('signupPw').value.trim();
+            if (!id || !pw) {
+                signupError.textContent = '아이디와 비밀번호를 입력하세요.';
+                signupError.style.display = 'block';
+                return;
+            }
+            if (localStorage.getItem('user_' + id)) {
+                signupError.textContent = '이미 존재하는 아이디입니다.';
+                signupError.style.display = 'block';
+                return;
+            }
+            localStorage.setItem('user_' + id, pw);
+            signupError.style.display = 'none';
+            alert('회원가입이 완료되었습니다!');
+            closeSignupModal();
+            showLoginModal();
+        };
+
+        // 로그인 로직
+        loginBtn.onclick = function() {
+            const id = document.getElementById('loginId').value.trim();
+            const pw = document.getElementById('loginPw').value.trim();
+            if (!id || !pw) {
+                loginError.textContent = '아이디와 비밀번호를 입력하세요.';
+                loginError.style.display = 'block';
+                return;
+            }
+            const savedPw = localStorage.getItem('user_' + id);
+            if (!savedPw) {
+                loginError.textContent = '존재하지 않는 아이디입니다.';
+                loginError.style.display = 'block';
+                return;
+            }
+            if (pw !== savedPw) {
+                loginError.textContent = '비밀번호가 일치하지 않습니다.';
+                loginError.style.display = 'block';
+                return;
+            }
+            localStorage.setItem('userId', id);
+            closeLoginModal();
+            updateUserBar();
+            // 로그인 후 원래 이동하려던 페이지로 이동
+            const target = loginModal.getAttribute('data-target');
+            if (target) location.href = target;
+        };
+
+        // 엔터키 로그인/회원가입
+        document.getElementById('loginPw').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') loginBtn.onclick();
+        });
+        document.getElementById('signupPw').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') signupBtn.onclick();
+        });
+
+        // 버튼 클릭 시 로그인 체크
+        function isLoggedIn() { return !!localStorage.getItem('userId'); }
+        const btnPredict = document.getElementById('btn-predict');
+        const btnRanking = document.getElementById('btn-ranking');
+        btnPredict.onclick = function(e) {
+            if (!isLoggedIn()) {
+                e.preventDefault();
+                showLoginModal('pages/page4.html');
+            } else {
+                location.href = 'pages/page4.html';
+            }
+        };
+        btnRanking.onclick = function(e) {
+            if (!isLoggedIn()) {
+                e.preventDefault();
+                showLoginModal('pages/page5.html');
+            } else {
+                location.href = 'pages/page5.html';
+            }
+        };
+        updateUserBar();
+    });
+    </script>
 </body>
 </html> 

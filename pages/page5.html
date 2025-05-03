@@ -190,10 +190,16 @@
         }
 
         .prediction-section {
-            margin-bottom: 30px;
-            background-color: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 20px;
+            max-width: 700px;
+            width: 100%;
+            margin: 0 auto 32px auto;
+            background: rgba(255,255,255,0.04);
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+            padding: 24px 18px 18px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
         }
 
         .section-header {
@@ -384,25 +390,24 @@
             font-size: 9px;
         }
 
-        .top3-container {
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            gap: 16px;
-            margin-bottom: 18px;
-        }
-        .top3-card {
+        .top3-container, .ranking-list {
+            width: 100%;
             display: flex;
             flex-direction: column;
+            gap: 18px;
             align-items: center;
-            background: #23283a;
-            border-radius: 16px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.18);
-            padding: 18px 16px 10px 16px;
-            min-width: 110px;
-            position: relative;
-            border: 3px solid #ffd70033;
         }
+
+        .top3-card, .ranking-row {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            border-radius: 14px;
+            padding: 18px 0;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            background: #23283a;
+        }
+
         .top3-card.rank-1 { border-color: #ffd700; z-index: 2; }
         .top3-card.rank-2 { border-color: #b0b0b0; opacity: 0.95; }
         .top3-card.rank-3 { border-color: #cd7f32; opacity: 0.92; }
@@ -434,9 +439,6 @@
             margin-bottom: 0;
         }
 
-        .ranking-list {
-            margin-top: 10px;
-        }
         .ranking-row {
             display: flex;
             align-items: center;
@@ -473,46 +475,104 @@
             font-size: 0.95em;
             margin-right: 2px;
         }
+
+        @media (max-width: 800px) {
+            .prediction-section, .top3-card, .ranking-row {
+                max-width: 98vw;
+                padding-left: 4vw;
+                padding-right: 4vw;
+            }
+        }
+
+        .main-2col {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 32px;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .left-panel, .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+        .left-panel {
+            flex: 1 1 0;
+            min-width: 350px;
+            max-width: 700px;
+        }
+        .right-panel {
+            flex: 1 1 0;
+            min-width: 350px;
+            max-width: 700px;
+        }
+        @media (max-width: 1000px) {
+            .main-2col {
+                flex-direction: column;
+                align-items: center;
+                gap: 24px;
+            }
+            .left-panel, .right-panel {
+                max-width: 98vw;
+                min-width: 0;
+            }
+        }
+
+        .prediction-section.section-lastweek {
+            margin-top: 60px;
+        }
     </style>
 </head>
 <body>
-    <div class="main-scale">
-        <h1>로또 예상번호 순위표<div class="admin-dot"></div></h1>
-        <!-- 1. 당첨번호 섹션 -->
-        <div class="prediction-section">
-            <div class="section-header">1168회차 당첨번호</div>
-            <div class="winning-numbers-section">
-                <div class="last-week-numbers">
-                    <div class="number-ball">9</div>
-                    <div class="number-ball">21</div>
-                    <div class="number-ball">24</div>
-                    <div class="number-ball">30</div>
-                    <div class="number-ball">33</div>
-                    <div class="number-ball">37</div>
-                </div>
-            </div>
-        </div>
-        <!-- 2. 지난주 예측 결과 섹션 -->
-        <div class="prediction-section">
-            <div class="section-header">지난 주 예측 결과</div>
-            <div id="lastWeekResults">
-                <!-- 지난 주 예측 결과들이 여기에 동적으로 추가됩니다 -->
-            </div>
-        </div>
-        <div class="section-divider"></div>
-        <!-- 3. 이번 주 예측번호 목록 -->
-        <div class="prediction-section">
-            <div class="section-header">이번 주 예측번호 목록</div>
-            <div id="thisWeekPredictions">
-                <!-- 입력 폼 -->
-                <div id="predictionInputForm" class="prediction-row">
-                    <input type="text" class="user-id-input" placeholder="아이디" maxlength="20" autocomplete="off">
-                    <button class="confirm-button">확인</button>
-                    <div class="prediction-numbers">
-                        <!-- 페이지4에서 가져온 번호들이 여기에 표시됩니다 -->
+    <h1>로또 예상번호 순위표<div class="admin-dot"></div></h1>
+    <div class="main-2col">
+        <div class="left-panel">
+            <!-- 1. 당첨번호 섹션 -->
+            <div class="prediction-section">
+                <div class="section-header">1168회차 당첨번호</div>
+                <div class="winning-numbers-section">
+                    <div class="last-week-numbers">
+                        <div class="number-ball">9</div>
+                        <div class="number-ball">21</div>
+                        <div class="number-ball">24</div>
+                        <div class="number-ball">30</div>
+                        <div class="number-ball">33</div>
+                        <div class="number-ball">37</div>
                     </div>
                 </div>
-                <!-- 저장된 예측들이 여기에 추가됩니다 -->
+            </div>
+            <!-- 트로피 이미지 -->
+            <div style="margin: 0 0 24px 0; text-align: center;">
+                <img src="../images/gold.png" alt="gold" style="width:80px; margin:0 12px;">
+                <img src="../images/silver.png" alt="silver" style="width:80px; margin:0 12px;">
+                <img src="../images/bronze.png" alt="bronze" style="width:80px; margin:0 12px;">
+            </div>
+            <!-- 2. 지난주 예측 결과 섹션 -->
+            <div class="prediction-section section-lastweek">
+                <div class="section-header">지난 주 예측 결과</div>
+                <div id="lastWeekResults">
+                    <!-- 지난 주 예측 결과들이 여기에 동적으로 추가됩니다 -->
+                </div>
+            </div>
+        </div>
+        <div class="right-panel">
+            <!-- 3. 이번 주 예측번호 목록 -->
+            <div class="prediction-section">
+                <div class="section-header">이번 주 예측번호 목록</div>
+                <div id="thisWeekPredictions">
+                    <!-- 입력 폼 -->
+                    <div id="predictionInputForm" class="prediction-row">
+                        <input type="text" class="user-id-input" placeholder="아이디" maxlength="20" autocomplete="off">
+                        <button class="confirm-button">확인</button>
+                        <div class="prediction-numbers">
+                            <!-- 페이지4에서 가져온 번호들이 여기에 표시됩니다 -->
+                        </div>
+                    </div>
+                    <!-- 저장된 예측들이 여기에 추가됩니다 -->
+                </div>
             </div>
         </div>
     </div>

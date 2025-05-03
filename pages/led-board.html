@@ -158,16 +158,74 @@
     </form>
     <div id="videoList"></div>
   </div>
+  <!-- 관리자 비밀번호 모달 -->
+  <div id="adminPwModal" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.45); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:#fff; border-radius:12px; padding:32px 28px 24px 28px; min-width:260px; box-shadow:0 8px 32px #0008; display:flex; flex-direction:column; align-items:center; position:relative;">
+      <span id="closePwModal" style="position:absolute; right:16px; top:10px; font-size:1.5em; color:#888; cursor:pointer;">&times;</span>
+      <h3 style="margin-bottom:18px; color:#1976d2;">관리자 비밀번호</h3>
+      <input type="password" id="adminPwInput" placeholder="비밀번호 입력" style="margin-bottom:10px; padding:10px; border-radius:6px; border:1px solid #888; width:180px;">
+      <button id="adminPwCheckBtn" style="padding:10px 0; width:180px; background:#1976D2; color:#fff; border:none; border-radius:6px; font-size:1em; cursor:pointer;">확인</button>
+      <div id="adminPwError" style="color:#e74c3c; margin-top:8px; display:none;"></div>
+    </div>
+  </div>
+
+  <!-- 일반 토론 게시판 -->
+  <div id="generalBoard" style="background:#fff; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.06); padding:16px; margin-top:32px; max-width:500px; margin-left:auto; margin-right:auto;">
+    <h2 style="color:#1976d2; font-size:1.2em; margin-top:0;">일반 토론 게시판</h2>
+    <form id="generalCommentForm" style="display:flex; gap:8px; margin-bottom:12px;">
+      <input type="text" id="generalCommentInput" placeholder="댓글을 입력하세요" style="flex:1; padding:8px; border-radius:6px; border:1px solid #cfd8dc;">
+      <button type="submit" style="background:#43a047; color:#fff; border:none; border-radius:6px; padding:8px 16px; font-size:1em; cursor:pointer;">등록</button>
+    </form>
+    <ul id="generalCommentList" style="list-style:none; padding:0; margin:0;"></ul>
+  </div>
+
   <script type="module">
     import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
     // head에서 window.app, window.db, window.storage로 할당됨
     const db = window.db;
     const storage = window.storage;
-    // 동영상 업로드
+    // 관리자 비밀번호 모달
+    const adminPwModal = document.getElementById('adminPwModal');
+    const closePwModal = document.getElementById('closePwModal');
+    const adminPwInput = document.getElementById('adminPwInput');
+    const adminPwCheckBtn = document.getElementById('adminPwCheckBtn');
+    const adminPwError = document.getElementById('adminPwError');
+    let allowUpload = false;
+    function showPwModal() {
+      adminPwModal.style.display = 'flex';
+      adminPwInput.value = '';
+      adminPwError.style.display = 'none';
+      allowUpload = false;
+    }
+    function closePw() { adminPwModal.style.display = 'none'; }
+    closePwModal.onclick = closePw;
+    adminPwCheckBtn.onclick = function() {
+      if (adminPwInput.value === 'knue2000') {
+        allowUpload = true;
+        closePw();
+        document.getElementById('uploadForm').dispatchEvent(new Event('pw-ok'));
+      } else {
+        adminPwError.textContent = '비밀번호가 올바르지 않습니다.';
+        adminPwError.style.display = 'block';
+      }
+    };
+    // 업로드 폼 가로채기
     const uploadForm = document.getElementById('uploadForm');
-    uploadForm.onsubmit = async (e) => {
-      e.preventDefault();
+    const uploadBtn = uploadForm.querySelector('button[type="submit"]');
+    let uploadEvent = null;
+    uploadForm.onsubmit = (e) => {
+      if (!allowUpload) {
+        e.preventDefault();
+        showPwModal();
+        uploadEvent = e;
+        return false;
+      }
+      allowUpload = false;
+      // ...기존 업로드 코드...
+    };
+    uploadForm.addEventListener('pw-ok', async () => {
+      // 실제 업로드 진행
       const file = document.getElementById('videoFile').files[0];
       const title = document.getElementById('videoTitle').value;
       if (!file) return alert('동영상을 선택하세요.');
@@ -185,7 +243,7 @@
         });
         uploadForm.reset();
       });
-    };
+    });
     // 동영상 목록 및 댓글 표시
     const videoList = document.getElementById('videoList');
     onSnapshot(query(collection(db, 'led-videos'), orderBy('createdAt', 'desc')), (snapshot) => {
@@ -200,7 +258,7 @@
           <div>
             <form class="commentForm">
               <input type="text" placeholder="댓글 입력" required />
-              <button type="submit">댓글 달기</button>
+              <button type="submit">등록</button>
             </form>
             <ul class="commentList">
               ${(data.comments||[]).map(c=>`<li>${c}</li>`).join('')}
@@ -221,6 +279,25 @@
         videoList.appendChild(div);
       });
     });
+    // 일반 토론 게시판(로컬 저장)
+    const generalCommentForm = document.getElementById('generalCommentForm');
+    const generalCommentInput = document.getElementById('generalCommentInput');
+    const generalCommentList = document.getElementById('generalCommentList');
+    function renderGeneralComments() {
+      const comments = JSON.parse(localStorage.getItem('generalBoardComments')||'[]');
+      generalCommentList.innerHTML = comments.map(c=>`<li style='background:#f1f8e9; border-radius:5px; padding:6px 10px; margin-bottom:4px;'>${c}</li>`).join('');
+    }
+    generalCommentForm.onsubmit = function(e) {
+      e.preventDefault();
+      const val = generalCommentInput.value.trim();
+      if (!val) return;
+      const comments = JSON.parse(localStorage.getItem('generalBoardComments')||'[]');
+      comments.push(val);
+      localStorage.setItem('generalBoardComments', JSON.stringify(comments));
+      generalCommentInput.value = '';
+      renderGeneralComments();
+    };
+    renderGeneralComments();
   </script>
 </body>
 </html> 

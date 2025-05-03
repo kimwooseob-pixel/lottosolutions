@@ -704,7 +704,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (savedUserName) {
         document.getElementById('userName').value = savedUserName;
     }
-});
+}); 
 
 // 연결선, 각도선, 그라데이션 원 등 힌트 요소 제거 함수
 function clearConnections() {

@@ -924,7 +924,7 @@ h1 {
     pointer-events: none;
     height: 4px !important;
     border-radius: 2px;
-}
+} 
 
 /* 예측번호 카드 스타일 개선 */
 .prediction-row {
