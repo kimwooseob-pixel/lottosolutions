@@ -26,35 +26,89 @@
                 padding: 0 !important;
             }
             .arrow-panel {
-                width: 98vw;
-                max-width: none;
+                width: 100vw;
+                max-width: 100vw;
                 margin: 0 auto 8px auto;
                 height: 28px;
-                padding: 0 0.5vw;
+                padding: 0;
                 display: flex;
                 justify-content: space-between;
             }
             .arrow-num {
-                width: 12vw;
-                height: 12vw;
+                width: 13vw;
+                height: 13vw;
                 max-width: 32px;
                 max-height: 32px;
                 font-size: 1em;
-                margin: 0 0.5vw;
+                margin: 0;
                 display: flex;
                 align-items: center;
                 justify-content: center;
             }
             .grid-cell, .grid-header {
-                width: 18px;
-                height: 18px;
-                font-size: 8px;
-                min-width: unset;
-                max-width: unset;
-                min-height: unset;
-                max-height: unset;
+                width: 6vw;
+                min-width: 14px;
+                max-width: 28px;
+                height: 6vw;
+                min-height: 14px;
+                max-height: 28px;
+                font-size: 0.95em;
                 padding: 0;
                 box-sizing: border-box;
+            }
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(17, 36px);
+            gap: 1px;
+            margin: 20px auto;
+            justify-content: center;
+            width: fit-content;
+            padding: 10px;
+            position: relative;
+            overflow: visible;
+        }
+        .grid-cell, .grid-header {
+            width: 36px;
+            height: 32px;
+            font-size: 14px;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #222;
+            background: #222;
+            color: #fff;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            .grid-cell, .grid-header {
+                min-width: 28px;
+                min-height: 24px;
+                font-size: 12px;
+                width: 28px;
+                height: 24px;
+            }
+            .grid-container {
+                grid-template-columns: repeat(17, 28px);
+                gap: 1px;
+                width: fit-content;
+                margin: 10px auto;
+                padding: 5px;
+            }
+        }
+        @media (max-width: 600px) {
+            .grid-container {
+                grid-template-columns: repeat(17, 24px);
+                width: 408px;
+                gap: 1px;
+            }
+            .grid-cell, .grid-header {
+                width: 24px;
+                height: 20px;
+                font-size: 10px;
             }
         }
     </style>
