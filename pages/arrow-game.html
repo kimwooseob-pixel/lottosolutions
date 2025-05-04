@@ -12,6 +12,41 @@
     <link rel="apple-touch-icon" href="../images/icons/icon-192x192.png">
     <style>
         /* 기존 스타일 코드가 여기에 위치해야 하며, // ... existing code ... 주석은 제거합니다. */
+        @media (max-width: 700px) {
+            /* 파란 동그라미 박스 3개: 화면 가득 차도록 */
+            .arrow-panel {
+                width: 98vw;
+                max-width: none;
+                margin: 0 auto 8px auto;
+                height: 28px;
+                padding: 0 0.5vw;
+                display: flex;
+                justify-content: space-between;
+            }
+            .arrow-num {
+                width: 12vw;
+                height: 12vw;
+                max-width: 32px;
+                max-height: 32px;
+                font-size: 1em;
+                margin: 0 0.5vw;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            /* 격자 그리드 셀 좌우 가득 */
+            .grid-cell, .grid-header {
+                width: 10vw;
+                min-width: 18px;
+                max-width: 36px;
+                height: 7vw;
+                min-height: 16px;
+                max-height: 28px;
+                font-size: 0.95em;
+                padding: 0;
+                box-sizing: border-box;
+            }
+        }
     </style>
 </head>
 <body>
