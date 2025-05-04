@@ -13,7 +13,18 @@
     <style>
         /* 기존 스타일 코드가 여기에 위치해야 하며, // ... existing code ... 주석은 제거합니다. */
         @media (max-width: 700px) {
-            /* 파란 동그라미 박스 3개: 화면 가득 차도록 */
+            body {
+                margin: 0;
+                padding: 0;
+                width: 100vw;
+                overflow-x: hidden;
+            }
+            .container, .game-container, .grid-container {
+                width: 100vw !important;
+                max-width: 100vw !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
             .arrow-panel {
                 width: 98vw;
                 max-width: none;
@@ -34,7 +45,6 @@
                 align-items: center;
                 justify-content: center;
             }
-            /* 격자 그리드 셀 좌우 가득 */
             .grid-cell, .grid-header {
                 width: 10vw;
                 min-width: 18px;
