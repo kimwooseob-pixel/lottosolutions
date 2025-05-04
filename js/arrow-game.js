@@ -35,7 +35,7 @@ function createGrid() {
 
     // 상단 회차 번호 (1003-1017)
     for (let i = gameState.startNumber; i <= gameState.endNumber; i++) {
-        gridContainer.appendChild(createCell('number-cell', i));
+        gridContainer.appendChild(createCell('number-cell header', i));
     }
     // 오른쪽 상단 빈 셀
     gridContainer.appendChild(createCell('number-cell empty', ''));
@@ -144,31 +144,34 @@ function 힌트4() {
     });
 }
 
+let hint5Active = false;
+
 function 힌트5() {
-    // 이전 점수와 그라데이션 원 표시 제거
-    clearScoreDisplay();
-    
-    // 모든 셀과 당첨 셀 가져오기
-    const allCells = document.querySelectorAll('.grid-cell');
-    const winningCells = document.querySelectorAll('.grid-cell.winning');
-    
-    // 각 빈칸에 대해 점수 계산
-    allCells.forEach(cell => {
-        if (!cell.classList.contains('winning')) {
-            let totalScore = 0;
-            const cellPos = getCellPosition(cell);
-            
-            // 각 당첨 셀에 대해 점수 계산
-            winningCells.forEach(winningCell => {
-                const winningPos = getCellPosition(winningCell);
-                const score = calculatePositionScore(cellPos, winningPos);
-                totalScore += score;
-            });
-            
-            // 모든 점수(0 포함) 표시
-            displayScore(cell, totalScore);
-        }
-    });
+    if (hint5Active) {
+        clearScoreDisplay();
+        hint5Active = false;
+    } else {
+        clearScoreDisplay();
+        // 모든 셀과 당첨 셀 가져오기
+        const allCells = document.querySelectorAll('.grid-cell');
+        const winningCells = document.querySelectorAll('.grid-cell.winning');
+        // 각 빈칸에 대해 점수 계산
+        allCells.forEach(cell => {
+            if (!cell.classList.contains('winning')) {
+                let totalScore = 0;
+                const cellPos = getCellPosition(cell);
+                // 각 당첨 셀에 대해 점수 계산
+                winningCells.forEach(winningCell => {
+                    const winningPos = getCellPosition(winningCell);
+                    const score = calculatePositionScore(cellPos, winningPos);
+                    totalScore += score;
+                });
+                // 모든 점수(0 포함) 표시
+                displayScore(cell, totalScore);
+            }
+        });
+        hint5Active = true;
+    }
 }
 
 function clearScoreDisplay() {
@@ -324,68 +327,215 @@ document.addEventListener('DOMContentLoaded', initGame);
 
 let arrowAnimationRunning = false;
 
+// 별표시 번호 저장용 배열 (3개 패널별로 분리)
+window.arrowPanelNumbers = [[], [], []];
+
+function updateArrowPanels() {
+    const panelEls = document.querySelectorAll('.arrow-panel');
+    for (let i = 0; i < 3; i++) {
+        const nums = window.arrowPanelNumbers[i];
+        const countMap = {};
+        nums.forEach(n => {
+            countMap[n] = (countMap[n] || 0) + 1;
+        });
+        const panel = panelEls[i];
+        if (!panel) continue;
+        for (let j = 0; j < 7; j++) {
+            const num = nums[j];
+            const numEl = panel.children[j];
+            if (numEl) {
+                numEl.textContent = '';
+                numEl.classList.remove('arrow-num-red1', 'arrow-num-red2', 'arrow-num-red3');
+                if (num === undefined) {
+                    // 빈칸
+                } else {
+                    numEl.textContent = num;
+                    // 등장 횟수에 따라 색상 적용
+                    const cnt = countMap[num];
+                    if (cnt === 2) numEl.classList.add('arrow-num-red1');
+                    else if (cnt === 3) numEl.classList.add('arrow-num-red2');
+                    else if (cnt >= 4) numEl.classList.add('arrow-num-red3');
+                }
+            }
+        }
+    }
+}
+
+// 규칙별로 패널 인덱스 반환
+function getPanelIndexByRule(ruleIndex) {
+    if (ruleIndex === 0) return 0; // 3칸 최대
+    if (ruleIndex === 1) return 1; // 3칸 최소
+    return 2; // 5칸 최대
+}
+
+// 3가지 경로 규칙 함수
+function findNextCellMax3(row, col) {
+    // 오른쪽 3칸(↗, →, ↘) 중 점수가 가장 높은 칸
+    const candidates = [
+        { r: row - 1, c: col + 1, dir: '↗', angle: -45 },
+        { r: row,     c: col + 1, dir: '→', angle: 0 },
+        { r: row + 1, c: col + 1, dir: '↘', angle: 45 }
+    ];
+    let maxVal = -Infinity, maxIdx = 1;
+    candidates.forEach((cand, idx) => {
+        if (cand.r < 1 || cand.r > 45) return;
+        const cell = document.querySelector(`.grid-cell[data-row='${cand.r}'][data-col='${cand.c}']`);
+        let val = -Infinity;
+        if (cell) {
+            let scoreEl = cell.querySelector('.score-display');
+            if (scoreEl) {
+                val = parseFloat(scoreEl.textContent);
+            } else {
+                let totalScore = 0;
+                const cellPos = { row: cand.r, col: cand.c };
+                const winningCells = document.querySelectorAll('.grid-cell.winning');
+                winningCells.forEach(winningCell => {
+                    const winningPos = {
+                        row: parseInt(winningCell.dataset.row),
+                        col: parseInt(winningCell.dataset.col)
+                    };
+                    const rowDiff = Math.abs(cellPos.row - winningPos.row);
+                    const colDiff = Math.abs(cellPos.col - winningPos.col);
+                    if ((rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1)) {
+                        totalScore += 2;
+                    } else if (rowDiff === 1 && colDiff === 1) {
+                        totalScore += 1.5;
+                    } else if ((rowDiff === 2 && colDiff === 0) || (rowDiff === 0 && colDiff === 2)) {
+                        totalScore += 1;
+                    }
+                });
+                val = totalScore;
+            }
+        }
+        if (val > maxVal || (val === maxVal && idx === 1)) {
+            maxVal = val;
+            maxIdx = idx;
+        }
+    });
+    return candidates[maxIdx];
+}
+
+function findNextCellMin3(row, col) {
+    // 오른쪽 3칸(↗, →, ↘) 중 점수가 가장 낮은 칸
+    const candidates = [
+        { r: row - 1, c: col + 1, dir: '↗', angle: -45 },
+        { r: row,     c: col + 1, dir: '→', angle: 0 },
+        { r: row + 1, c: col + 1, dir: '↘', angle: 45 }
+    ];
+    let minVal = Infinity, minIdx = 1;
+    candidates.forEach((cand, idx) => {
+        if (cand.r < 1 || cand.r > 45) return;
+        const cell = document.querySelector(`.grid-cell[data-row='${cand.r}'][data-col='${cand.c}']`);
+        let val = Infinity;
+        if (cell) {
+            let scoreEl = cell.querySelector('.score-display');
+            if (scoreEl) {
+                val = parseFloat(scoreEl.textContent);
+            } else {
+                let totalScore = 0;
+                const cellPos = { row: cand.r, col: cand.c };
+                const winningCells = document.querySelectorAll('.grid-cell.winning');
+                winningCells.forEach(winningCell => {
+                    const winningPos = {
+                        row: parseInt(winningCell.dataset.row),
+                        col: parseInt(winningCell.dataset.col)
+                    };
+                    const rowDiff = Math.abs(cellPos.row - winningPos.row);
+                    const colDiff = Math.abs(cellPos.col - winningPos.col);
+                    if ((rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1)) {
+                        totalScore += 2;
+                    } else if (rowDiff === 1 && colDiff === 1) {
+                        totalScore += 1.5;
+                    } else if ((rowDiff === 2 && colDiff === 0) || (rowDiff === 0 && colDiff === 2)) {
+                        totalScore += 1;
+                    }
+                });
+                val = totalScore;
+            }
+        }
+        if (val < minVal || (val === minVal && idx === 1)) {
+            minVal = val;
+            minIdx = idx;
+        }
+    });
+    return candidates[minIdx];
+}
+
+function findNextCellMax5(row, col) {
+    // 오른쪽 5칸(↖, ↗, →, ↘, ↙) 중 점수가 가장 높은 칸
+    const candidates = [
+        { r: row - 2, c: col + 1, dir: '↖', angle: -70 },
+        { r: row - 1, c: col + 1, dir: '↗', angle: -45 },
+        { r: row,     c: col + 1, dir: '→', angle: 0 },
+        { r: row + 1, c: col + 1, dir: '↘', angle: 45 },
+        { r: row + 2, c: col + 1, dir: '↙', angle: 70 }
+    ];
+    let maxVal = -Infinity, maxIdx = 2;
+    candidates.forEach((cand, idx) => {
+        if (cand.r < 1 || cand.r > 45) return;
+        const cell = document.querySelector(`.grid-cell[data-row='${cand.r}'][data-col='${cand.c}']`);
+        let val = -Infinity;
+        if (cell) {
+            let scoreEl = cell.querySelector('.score-display');
+            if (scoreEl) {
+                val = parseFloat(scoreEl.textContent);
+            } else {
+                let totalScore = 0;
+                const cellPos = { row: cand.r, col: cand.c };
+                const winningCells = document.querySelectorAll('.grid-cell.winning');
+                winningCells.forEach(winningCell => {
+                    const winningPos = {
+                        row: parseInt(winningCell.dataset.row),
+                        col: parseInt(winningCell.dataset.col)
+                    };
+                    const rowDiff = Math.abs(cellPos.row - winningPos.row);
+                    const colDiff = Math.abs(cellPos.col - winningPos.col);
+                    if ((rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1)) {
+                        totalScore += 2;
+                    } else if (rowDiff === 1 && colDiff === 1) {
+                        totalScore += 1.5;
+                    } else if ((rowDiff === 2 && colDiff === 0) || (rowDiff === 0 && colDiff === 2)) {
+                        totalScore += 1;
+                    }
+                });
+                val = totalScore;
+            }
+        }
+        if (val > maxVal || (val === maxVal && idx === 2)) {
+            maxVal = val;
+            maxIdx = idx;
+        }
+    });
+    return candidates[maxIdx];
+}
+
+// runArrowPath 함수 내에서 push 부분만 수정
 function runArrowPath(startRow) {
     if (arrowAnimationRunning) return;
     arrowAnimationRunning = true;
-    // 기존 화살표/강조 제거
     document.querySelectorAll('.arrow-indicator, .arrow-target').forEach(el => el.remove());
     document.querySelectorAll('.number-cell.row-header').forEach(el => el.classList.remove('arrow-target-highlight'));
 
     let row = startRow;
     let col = gameState.startNumber;
     const path = [{ row, col }];
+
+    // 랜덤 규칙 선택
+    const ruleIndex = Math.floor(Math.random() * 3);
+    let findNextCell;
+    if (ruleIndex === 0) findNextCell = findNextCellMax3;
+    else if (ruleIndex === 1) findNextCell = findNextCellMin3;
+    else findNextCell = findNextCellMax5;
+
     while (col < gameState.endNumber) {
-        const candidates = [
-            { r: row - 1, c: col + 1, dir: '↗', angle: -45 },
-            { r: row,     c: col + 1, dir: '→', angle: 0 },
-            { r: row + 1, c: col + 1, dir: '↘', angle: 45 }
-        ];
-        let maxVal = -Infinity, maxIdx = 1;
-        candidates.forEach((cand, idx) => {
-            if (cand.r < 1 || cand.r > 45) return;
-            const cell = document.querySelector(`.grid-cell[data-row='${cand.r}'][data-col='${cand.c}']`);
-            let val = -Infinity;
-            if (cell) {
-                // 힌트5 점수 계산: score-display가 없으면 직접 계산
-                let scoreEl = cell.querySelector('.score-display');
-                if (scoreEl) {
-                    val = parseFloat(scoreEl.textContent);
-                } else {
-                    // 직접 점수 계산 (힌트5와 동일 로직)
-                    let totalScore = 0;
-                    const cellPos = { row: cand.r, col: cand.c };
-                    const winningCells = document.querySelectorAll('.grid-cell.winning');
-                    winningCells.forEach(winningCell => {
-                        const winningPos = {
-                            row: parseInt(winningCell.dataset.row),
-                            col: parseInt(winningCell.dataset.col)
-                        };
-                        const rowDiff = Math.abs(cellPos.row - winningPos.row);
-                        const colDiff = Math.abs(cellPos.col - winningPos.col);
-                        if ((rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1)) {
-                            totalScore += 2;
-                        } else if (rowDiff === 1 && colDiff === 1) {
-                            totalScore += 1.5;
-                        } else if ((rowDiff === 2 && colDiff === 0) || (rowDiff === 0 && colDiff === 2)) {
-                            totalScore += 1;
-                        }
-                    });
-                    val = totalScore;
-                }
-            }
-            if (val > maxVal || (val === maxVal && idx === 1)) {
-                maxVal = val;
-                maxIdx = idx;
-            }
-        });
-        row = candidates[maxIdx].r;
-        col = candidates[maxIdx].c;
-        path.push({ row, col, dir: candidates[maxIdx].dir, angle: candidates[maxIdx].angle });
+        const next = findNextCell(row, col);
+        row = next.r;
+        col = next.c;
+        path.push({ row, col, dir: next.dir, angle: next.angle });
     }
-    // 애니메이션: 한 칸씩 이동
+    // 애니메이션: 한 칸씩 이동 (이하 기존과 동일)
     let i = 0;
     function animateStep() {
-        // 이전 화살표 제거
         document.querySelectorAll('.arrow-indicator.anim-arrow').forEach(el => el.remove());
         if (i < path.length - 1) {
             const { row, col, dir, angle } = path[i + 1];
@@ -408,7 +558,6 @@ function runArrowPath(startRow) {
             i++;
             setTimeout(animateStep, 180);
         } else {
-            // 마지막 오른쪽 번호 강조
             const lastRow = path[path.length - 1].row;
             const rightCell = Array.from(document.querySelectorAll('.number-cell.row-header')).filter(el => el.textContent == lastRow).pop();
             if (rightCell) {
@@ -420,6 +569,13 @@ function runArrowPath(startRow) {
                 mark.style.fontSize = '1.5em';
                 mark.style.marginLeft = '4px';
                 rightCell.appendChild(mark);
+                const num = parseInt(rightCell.textContent);
+                if (!isNaN(num)) {
+                    const panelIdx = getPanelIndexByRule(ruleIndex);
+                    if (window.arrowPanelNumbers[panelIdx].length >= 7) window.arrowPanelNumbers[panelIdx] = window.arrowPanelNumbers[panelIdx].slice(1);
+                    window.arrowPanelNumbers[panelIdx].push(num);
+                    updateArrowPanels();
+                }
             }
             arrowAnimationRunning = false;
         }
@@ -508,30 +664,31 @@ function playArcherAnimationAtRow(row) {
   const archerImg = document.getElementById('archer-img');
   if (!archer || !archerImg) return;
 
-  // 해당 행의 ▶ 버튼 위치 찾기
-  const gridContainer = document.querySelector('.grid-container');
-  const leftCell = gridContainer.querySelectorAll('.number-cell.row-header')[row - 1];
-  const btn = leftCell.querySelector('button');
-  if (!btn) return;
-
-  // 버튼의 위치(상대좌표) 계산
-  const gridRect = gridContainer.getBoundingClientRect();
-  const btnRect = btn.getBoundingClientRect();
-  const offsetTop = btnRect.top - gridRect.top + (btnRect.height / 2) - (archer.offsetHeight / 2) + 10;
-
-  // 궁수 위치 이동 및 표시
-  archer.style.top = `${offsetTop}px`;
+  // 항상 먼저 보이게
   archer.style.display = 'flex';
-  archerImg.src = '../images/ar2.png';
 
+  // 10ms 후 위치 계산 및 이미지 변경
   setTimeout(() => {
-    archerImg.src = '../images/ar1.png';
-  }, 1000);
+    const gridContainer = document.querySelector('.grid-container');
+    const leftCell = gridContainer.querySelectorAll('.number-cell.row-header')[row - 1];
+    const btn = leftCell.querySelector('button');
+    if (!btn) return;
 
-  // 애니메이션 끝나면 궁수 숨김
-  setTimeout(() => {
-    archer.style.display = 'none';
-  }, 1200);
+    const gridRect = gridContainer.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+    const offsetTop = btnRect.top - gridRect.top + (btnRect.height / 2) - (archer.offsetHeight / 2) + 10;
+
+    archer.style.top = `${offsetTop}px`;
+    archerImg.src = '../images/ar2.png';
+
+    setTimeout(() => {
+      archerImg.src = '../images/ar1.png';
+    }, 1000);
+
+    setTimeout(() => {
+      archer.style.display = 'none';
+    }, 1200);
+  }, 10);
 }
 
 function onLeftButtonClick(row) {

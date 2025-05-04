@@ -11,15 +11,20 @@
     <link rel="icon" type="image/png" sizes="192x192" href="../images/icons/icon-192x192.png">
     <link rel="apple-touch-icon" href="../images/icons/icon-192x192.png">
     <style>
-        // ... existing code ...
+        /* 기존 스타일 코드가 여기에 위치해야 하며, // ... existing code ... 주석은 제거합니다. */
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>화살표 게임</h1>
-        <div class="controls">
-            <button class="hint-button" onclick="힌트5()">경로계산 원리합계</button>
-            <button class="hint-button" onclick="다음턴()">다음턴</button>
+        <div class="title-box">
+            <button class="hint-button small" onclick="힌트5()">경로계산</button>
+            <h1>화살표</h1>
+            <button class="hint-button small" onclick="location.href='../index.html'">돌아가기</button>
+        </div>
+        <div class="arrow-panels">
+            <div class="arrow-panel"><div class="arrow-num"></div><div class="arrow-num"></div><div class="arrow-num"></div><div class="arrow-num"></div><div class="arrow-num"></div><div class="arrow-num"></div><div class="arrow-num"></div></div>
+            <div class="arrow-panel"><div class="arrow-num"></div><div class="arrow-num"></div><div class="arrow-num"></div><div class="arrow-num"></div><div class="arrow-num"></div><div class="arrow-num"></div><div class="arrow-num"></div></div>
+            <div class="arrow-panel"><div class="arrow-num"></div><div class="arrow-num"></div><div class="arrow-num"></div><div class="arrow-num"></div><div class="arrow-num"></div><div class="arrow-num"></div><div class="arrow-num"></div></div>
         </div>
         <div class="game-container" style="position:relative;">
             <div class="archer-container">

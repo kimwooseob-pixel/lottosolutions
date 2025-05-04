@@ -11,7 +11,7 @@
       apiKey: "AIzaSyAwh55rLOQkY8ZVCzaC4ZF3iaUVU5Vu0GM",
       authDomain: "ai-lottosolutions.firebaseapp.com",
       projectId: "ai-lottosolutions",
-      storageBucket: "ai-lottosolutions.appspot.com",
+      storageBucket: "ai-lottosolutions.firebasestorage.app",
       messagingSenderId: "616782090306",
       appId: "1:616782090306:web:688c710998dfce8e4d5ddb",
       measurementId: "G-NEXMN4FFJG"
@@ -74,47 +74,52 @@
     }
     #videoList {
       display: flex;
-      flex-direction: column;
-      gap: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 16px;
     }
     .video-card {
       background: #fff;
       border-radius: 10px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-      padding: 16px;
+      padding: 8px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 6px;
+      max-width: 120px;
+      min-width: 0;
+      margin: 0;
     }
     .video-card h3 {
-      margin: 0 0 6px 0;
-      font-size: 1.1em;
+      margin: 0 0 4px 0;
+      font-size: 0.95em;
       color: #1976d2;
+      word-break: break-all;
     }
     .video-card video {
       width: 100%;
-      border-radius: 8px;
+      border-radius: 6px;
       background: #000;
     }
     .video-card .commentForm {
       display: flex;
-      gap: 6px;
-      margin-top: 8px;
+      gap: 3px;
+      margin-top: 4px;
     }
     .video-card .commentForm input[type="text"] {
       flex: 1;
-      padding: 7px;
+      padding: 3px 4px;
       border: 1px solid #cfd8dc;
-      border-radius: 6px;
-      font-size: 1em;
+      border-radius: 4px;
+      font-size: 0.9em;
     }
     .video-card .commentForm button {
       background: #43a047;
       color: #fff;
       border: none;
-      border-radius: 6px;
-      padding: 7px 14px;
-      font-size: 1em;
+      border-radius: 4px;
+      padding: 3px 7px;
+      font-size: 0.9em;
       cursor: pointer;
       transition: background 0.2s;
     }
@@ -124,22 +129,73 @@
     .video-card .commentList {
       list-style: none;
       padding: 0;
-      margin: 8px 0 0 0;
+      margin: 4px 0 0 0;
     }
     .video-card .commentList li {
       background: #f1f8e9;
-      border-radius: 5px;
-      padding: 6px 10px;
-      margin-bottom: 4px;
-      font-size: 0.97em;
+      border-radius: 4px;
+      padding: 3px 6px;
+      margin-bottom: 2px;
+      font-size: 0.85em;
+    }
+    /* 감상평(리뷰) 박스 스타일 */
+    .review-board {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      padding: 8px;
+      margin: 32px auto 0 auto;
+      max-width: 400px;
+    }
+    .review-board h2 {
+      color: #1976d2;
+      font-size: 1em;
+      margin-top: 0;
+    }
+    .reviewForm {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+    .reviewForm input[type="text"] {
+      flex: 1;
+      padding: 3px 4px;
+      border-radius: 4px;
+      border: 1px solid #cfd8dc;
+      font-size: 0.9em;
+    }
+    .reviewForm button {
+      background: #43a047;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 3px 7px;
+      font-size: 0.9em;
+      cursor: pointer;
+    }
+    .reviewForm button:hover {
+      background: #388e3c;
+    }
+    .reviewList {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .reviewList li {
+      background: #e3f2fd;
+      border-radius: 4px;
+      padding: 3px 6px;
+      margin-bottom: 2px;
+      font-size: 0.85em;
     }
     @media (max-width: 600px) {
       .container {
         max-width: 100vw;
         padding: 6px;
       }
-      form#uploadForm, .video-card {
+      form#uploadForm, .video-card, .review-board {
         padding: 10px;
+        max-width: 98vw;
       }
       h1 {
         font-size: 1.3em;
@@ -157,25 +213,80 @@
     </form>
     <div id="videoList"></div>
   </div>
+  <!-- 관리자 비밀번호 모달 -->
+  <div id="adminPwModal" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.45); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:#fff; border-radius:12px; padding:32px 28px 24px 28px; min-width:260px; box-shadow:0 8px 32px #0008; display:flex; flex-direction:column; align-items:center; position:relative;">
+      <span id="closePwModal" style="position:absolute; right:16px; top:10px; font-size:1.5em; color:#888; cursor:pointer;">&times;</span>
+      <h3 style="margin-bottom:18px; color:#1976d2;">관리자 비밀번호</h3>
+      <input type="password" id="adminPwInput" placeholder="비밀번호 입력" style="margin-bottom:10px; padding:10px; border-radius:6px; border:1px solid #888; width:180px;">
+      <button id="adminPwCheckBtn" style="padding:10px 0; width:180px; background:#1976D2; color:#fff; border:none; border-radius:6px; font-size:1em; cursor:pointer;">확인</button>
+      <div id="adminPwError" style="color:#e74c3c; margin-top:8px; display:none;"></div>
+    </div>
+  </div>
+  <div class="review-board">
+    <h2>감상평 게시판</h2>
+    <form class="reviewForm">
+      <input type="text" id="reviewInput" placeholder="감상평을 입력하세요" />
+      <button type="submit">등록</button>
+    </form>
+    <ul class="reviewList" id="reviewList"></ul>
+  </div>
   <script type="module">
     import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
     const db = window.db;
     const storage = window.storage;
-    // 동영상 업로드
+    // 관리자 비밀번호 모달
+    const adminPwModal = document.getElementById('adminPwModal');
+    const closePwModal = document.getElementById('closePwModal');
+    const adminPwInput = document.getElementById('adminPwInput');
+    const adminPwCheckBtn = document.getElementById('adminPwCheckBtn');
+    const adminPwError = document.getElementById('adminPwError');
+    let allowUpload = false;
+    function showPwModal() {
+      adminPwModal.style.display = 'flex';
+      adminPwInput.value = '';
+      adminPwError.style.display = 'none';
+      allowUpload = false;
+    }
+    function closePw() { adminPwModal.style.display = 'none'; }
+    closePwModal.onclick = closePw;
+    adminPwCheckBtn.onclick = function() {
+      if (adminPwInput.value === 'knue2000') {
+        allowUpload = true;
+        closePw();
+        document.getElementById('uploadForm').dispatchEvent(new Event('pw-ok'));
+      } else {
+        adminPwError.textContent = '비밀번호가 올바르지 않습니다.';
+        adminPwError.style.display = 'block';
+      }
+    };
+    // 업로드 폼 가로채기
     const uploadForm = document.getElementById('uploadForm');
-    uploadForm.onsubmit = async (e) => {
-      e.preventDefault();
+    const uploadBtn = uploadForm.querySelector('button[type="submit"]');
+    let uploadEvent = null;
+    uploadForm.onsubmit = (e) => {
+      if (!allowUpload) {
+        e.preventDefault();
+        showPwModal();
+        uploadEvent = e;
+        return false;
+      }
+      allowUpload = false;
+      // ...기존 업로드 코드...
+    };
+    uploadForm.addEventListener('pw-ok', async () => {
+      // 실제 업로드 진행
       const file = document.getElementById('videoFile').files[0];
       const title = document.getElementById('videoTitle').value;
       if (!file) return alert('동영상을 선택하세요.');
-      const storageRef = ref(storage, 'brush-videos/' + Date.now() + '_' + file.name);
+      const storageRef = ref(window.storage, 'brush-videos/' + Date.now() + '_' + file.name);
       const uploadTask = uploadBytesResumable(storageRef, file);
       uploadTask.on('state_changed', null, (error) => {
         alert('업로드 실패: ' + error.message);
       }, async () => {
         const url = await getDownloadURL(uploadTask.snapshot.ref);
-        await addDoc(collection(db, 'brush-videos'), {
+        await addDoc(collection(window.db, 'brush-videos'), {
           title,
           url,
           createdAt: new Date().toISOString(),
@@ -183,7 +294,7 @@
         });
         uploadForm.reset();
       });
-    };
+    });
     // 동영상 목록 및 댓글 표시
     const videoList = document.getElementById('videoList');
     onSnapshot(query(collection(db, 'brush-videos'), orderBy('createdAt', 'desc')), (snapshot) => {
@@ -192,33 +303,39 @@
         const data = docSnap.data();
         const div = document.createElement('div');
         div.className = 'video-card';
+        // 날짜 포맷
+        let dateStr = '';
+        if (data.createdAt) {
+          const d = new Date(data.createdAt);
+          dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        }
         div.innerHTML = `
           <h3>${data.title}</h3>
           <video src="${data.url}" controls></video>
-          <div>
-            <form class="commentForm">
-              <input type="text" placeholder="댓글 입력" required />
-              <button type="submit">댓글 달기</button>
-            </form>
-            <ul class="commentList">
-              ${(data.comments||[]).map(c=>`<li>${c}</li>`).join('')}
-            </ul>
-          </div>
+          <div style="font-size:0.8em;color:#888;margin:2px 0 4px 0;">${dateStr}</div>
         `;
-        // 댓글 폼 이벤트
-        div.querySelector('.commentForm').onsubmit = async (e) => {
-          e.preventDefault();
-          const input = e.target.querySelector('input');
-          const comment = input.value;
-          if (!comment) return;
-          await updateDoc(doc(db, 'brush-videos', docSnap.id), {
-            comments: arrayUnion(comment)
-          });
-          input.value = '';
-        };
         videoList.appendChild(div);
       });
     });
+    // 감상평(리뷰) 게시판 기능
+    const reviewInput = document.getElementById('reviewInput');
+    const reviewList = document.getElementById('reviewList');
+    const reviewForm = document.querySelector('.reviewForm');
+    function renderReviews() {
+      const reviews = JSON.parse(localStorage.getItem('brushBoardReviews')||'[]');
+      reviewList.innerHTML = reviews.map(c=>`<li>${c}</li>`).join('');
+    }
+    reviewForm.onsubmit = function(e) {
+      e.preventDefault();
+      const val = reviewInput.value.trim();
+      if (!val) return;
+      const reviews = JSON.parse(localStorage.getItem('brushBoardReviews')||'[]');
+      reviews.push(val);
+      localStorage.setItem('brushBoardReviews', JSON.stringify(reviews));
+      reviewInput.value = '';
+      renderReviews();
+    };
+    renderReviews();
   </script>
 </body>
 </html> 

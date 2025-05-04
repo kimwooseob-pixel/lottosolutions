@@ -934,6 +934,10 @@ function showScorePopup(selectedNumbers, matchedNumbers, matchCount, score, roun
     
     // 팝업을 페이지에 추가
     document.body.appendChild(popup);
+
+    // 턴 점수 박스에 점수 표시
+    const scoreBox = document.getElementById('turn-score-value');
+    if (scoreBox) scoreBox.textContent = score;
 }
 
 function getRandomImage(matchCount) {
@@ -1057,6 +1061,7 @@ function 턴표시업데이트() {
             <div>${턴정보.시작회차}-${턴정보.종료회차}</div>
         `;
     }
+    updateTurnScoreBox();
 }
 
 // 패턴 분석
@@ -1906,6 +1911,10 @@ function showScorePopup(selectedNumbers, matchedNumbers, matchCount, score, roun
     
     // 팝업을 페이지에 추가
     document.body.appendChild(popup);
+
+    // 턴 점수 박스에 점수 표시
+    const scoreBox = document.getElementById('turn-score-value');
+    if (scoreBox) scoreBox.textContent = score;
 }
 
 function getRandomImage(matchCount) {
@@ -2029,6 +2038,7 @@ function 턴표시업데이트() {
             <div>${턴정보.시작회차}-${턴정보.종료회차}</div>
         `;
     }
+    updateTurnScoreBox();
 }
 
 // 패턴 분석
@@ -3216,3 +3226,21 @@ function clearConnections() {
         }
     });
 }
+
+// 턴 점수 박스 업데이트 함수
+function updateTurnScoreBox() {
+    const listDiv = document.getElementById('turn-score-list');
+    const sumDiv = document.getElementById('turn-score-sum');
+    if (!listDiv || !sumDiv) return;
+    let scoreList = [];
+    let sum = 0;
+    // 현재턴은 아직 완료되지 않은 상황이므로, 1턴~(현재턴-1)까지 표시
+    for (let i = 1; i < 현재턴; i++) {
+        const score = parseInt(localStorage.getItem(`turn${i}_score`)) || 0;
+        scoreList.push(`${i}턴: ${score}점`);
+        sum += score;
+    }
+    listDiv.textContent = scoreList.join('   ');
+    sumDiv.textContent = `총점: ${sum}점`;
+}
+
