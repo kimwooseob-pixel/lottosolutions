@@ -21,7 +21,23 @@ let gameState = {
         1014: [9, 15, 21, 28, 34, 45],
         1015: [2, 4, 16, 17, 36, 39],
         1016: [8, 19, 25, 34, 37, 44],
-        1017: [2, 9, 16, 25, 26, 40]
+        1017: [2, 9, 16, 25, 26, 40],
+        // 1154-1168 회차 범위의 당첨번호 데이터 추가
+        1154: [6, 10, 12, 14, 20, 42],
+        1155: [17, 25, 33, 35, 38, 45],
+        1156: [1, 4, 29, 39, 43, 45],
+        1157: [7, 15, 30, 37, 39, 44],
+        1158: [8, 13, 18, 24, 27, 29],
+        1159: [8, 11, 15, 16, 17, 37],
+        1160: [8, 11, 16, 19, 21, 25],
+        1161: [9, 11, 30, 31, 41, 44],
+        1162: [15, 23, 29, 34, 40, 44],
+        1163: [9, 12, 15, 25, 34, 36],
+        1164: [1, 9, 12, 26, 35, 38],
+        1165: [5, 11, 18, 20, 35, 45],
+        1166: [21, 22, 26, 34, 36, 41],
+        1167: [3, 11, 14, 18, 26, 27],
+        1168: [9, 21, 24, 30, 33, 37]
     }
 };
 
@@ -67,9 +83,33 @@ function createGrid() {
             const cell = document.createElement('div');
             cell.className = 'grid-cell';
             cell.textContent = row; // 셀에 번호 표시
-            if (gameState.winningNumbers[col].includes(row)) {
+            
+            // winningNumbers에 해당 회차 번호가 있는지 확인 후 winning 클래스 추가
+            if (gameState.winningNumbers[col] && Array.isArray(gameState.winningNumbers[col]) && 
+                gameState.winningNumbers[col].includes(row)) {
                 cell.classList.add('winning');
+                
+                // 당첨번호 셀에 추가 스타일 적용
+                const circle = document.createElement('div');
+                circle.className = 'winning-circle';
+                circle.style.cssText = `
+                    position: absolute;
+                    width: 26px;
+                    height: 26px;
+                    border: 2px solid #e74c3c;
+                    border-radius: 50%;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    z-index: 0;
+                `;
+                cell.style.position = 'relative';
+                cell.style.color = '#e74c3c';
+                cell.style.fontWeight = 'bold';
+                cell.style.zIndex = '1';
+                cell.appendChild(circle);
             }
+            
             cell.dataset.row = row;
             cell.dataset.col = col;
             cell.addEventListener('click', () => toggleCell(cell));
@@ -318,45 +358,249 @@ function initGame() {
     if (stored) {
         gameState.winningNumbers[gameState.endNumber] = JSON.parse(stored);
     }
+
+    // 페이지4의 회차 범위가 업데이트되었는지 확인
+    const drawRange = localStorage.getItem('drawRange');
+    if (drawRange) {
+        try {
+            const rangeData = JSON.parse(drawRange);
+            if (rangeData && rangeData.start && rangeData.end) {
+                // 회차 범위 업데이트
+                const oldStart = gameState.startNumber;
+                const oldEnd = gameState.endNumber;
+                
+                gameState.startNumber = rangeData.start;
+                gameState.endNumber = rangeData.end;
+                console.log(`화살표 게임 회차 범위 업데이트: ${gameState.startNumber}-${gameState.endNumber}`);
+                
+                // 새 범위에 해당하는 winningNumbers 데이터 초기화
+                for (let i = gameState.startNumber; i <= gameState.endNumber; i++) {
+                    if (!gameState.winningNumbers[i]) {
+                        gameState.winningNumbers[i] = [];
+                    }
+                }
+                
+                // 새로운 회차에 대한 당첨번호가 있는지 확인
+                const latestWinningNumber = localStorage.getItem('latestWinningNumber');
+                if (latestWinningNumber) {
+                    try {
+                        const winningData = JSON.parse(latestWinningNumber);
+                        if (winningData && winningData.drawNumber && winningData.numbers) {
+                            // 새 회차 당첨번호 추가
+                            gameState.winningNumbers[winningData.drawNumber] = winningData.numbers;
+                            console.log(`${winningData.drawNumber}회 당첨번호 업데이트됨:`, winningData.numbers);
+                        }
+                    } catch (e) {
+                        console.error('당첨번호 파싱 오류:', e);
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('회차 범위 파싱 오류:', e);
+        }
+    }
+    
+    // 누락된 winningNumbers 데이터 초기화
+    for (let i = gameState.startNumber; i <= gameState.endNumber; i++) {
+        if (!gameState.winningNumbers[i]) {
+            gameState.winningNumbers[i] = [];
+        }
+    }
+    
     createGrid();
     console.log("게임 초기화 완료");
 }
 
 // 페이지 로드 시 초기화
-document.addEventListener('DOMContentLoaded', initGame);
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("페이지 로드됨");
+    
+    // 패널 초기화
+    window.arrowPanelNumbers = [];
+    const panels = document.querySelectorAll('.arrow-panel');
+    if (panels.length > 0) {
+        console.log(`패널 개수: ${panels.length}`);
+        
+        // 각 패널의 원 개수 출력
+        panels.forEach((panel, index) => {
+            console.log(`패널 ${index+1}의 원 개수: ${panel.children.length}`);
+        });
+    }
+    
+    // localStorage에서 현재 회차 정보 확인
+    const drawRange = localStorage.getItem('drawRange');
+    if (drawRange) {
+        try {
+            const rangeData = JSON.parse(drawRange);
+            if (rangeData && rangeData.start && rangeData.end) {
+                // 메인 페이지 로드 시 즉시 회차 범위 업데이트
+                gameState.startNumber = rangeData.start;
+                gameState.endNumber = rangeData.end;
+                console.log(`초기 화면 회차 범위 설정: ${gameState.startNumber}-${gameState.endNumber}`);
+            }
+        } catch (e) {
+            console.error('회차 범위 파싱 오류:', e);
+        }
+    }
+    
+    initGame();
+    updateArrowPanels();
+    updateGameTitle(); // 제목 업데이트
+    
+    // 화살표 게임 회차 범위 업데이트 이벤트 리스너
+    window.addEventListener('arrowGameRangeUpdate', function(event) {
+        if (event.detail && event.detail.startNumber && event.detail.endNumber) {
+            gameState.startNumber = event.detail.startNumber;
+            gameState.endNumber = event.detail.endNumber;
+            console.log(`이벤트로 회차 범위 업데이트: ${gameState.startNumber}-${gameState.endNumber}`);
+            
+            // 누락된 winningNumbers 데이터 초기화
+            for (let i = gameState.startNumber; i <= gameState.endNumber; i++) {
+                if (!gameState.winningNumbers[i]) {
+                    gameState.winningNumbers[i] = [];
+                }
+            }
+            
+            createGrid(); // 그리드 다시 생성
+            updateGameTitle(); // 제목 업데이트
+        }
+    });
+    
+    // 다른 탭/창에서 발생한 업데이트 감지를 위한 이벤트 리스너
+    window.addEventListener('storage', function(event) {
+        if (event.key === 'drawRange') {
+            try {
+                const rangeData = JSON.parse(event.newValue);
+                if (rangeData && rangeData.start && rangeData.end) {
+                    gameState.startNumber = rangeData.start;
+                    gameState.endNumber = rangeData.end;
+                    console.log(`localStorage 이벤트로 회차 범위 업데이트: ${gameState.startNumber}-${gameState.endNumber}`);
+                    
+                    // 누락된 winningNumbers 데이터 초기화
+                    for (let i = gameState.startNumber; i <= gameState.endNumber; i++) {
+                        if (!gameState.winningNumbers[i]) {
+                            gameState.winningNumbers[i] = [];
+                        }
+                    }
+                    
+                    createGrid(); // 그리드 다시 생성
+                    updateGameTitle(); // 제목 업데이트
+                }
+            } catch (e) {
+                console.error('회차 범위 파싱 오류:', e);
+            }
+        } else if (event.key === 'latestWinningNumber') {
+            try {
+                const winningData = JSON.parse(event.newValue);
+                if (winningData && winningData.drawNumber && winningData.numbers) {
+                    gameState.winningNumbers[winningData.drawNumber] = winningData.numbers;
+                    console.log(`${winningData.drawNumber}회 당첨번호 업데이트됨:`, winningData.numbers);
+                    createGrid(); // 그리드 다시 생성
+                }
+            } catch (e) {
+                console.error('당첨번호 파싱 오류:', e);
+            }
+        } else if (event.key === 'lastDrawRangeUpdate') {
+            // 다른 탭/창에서 회차 범위가 업데이트되었음을 감지
+            console.log('다른 탭/창에서 회차 범위 업데이트 감지됨');
+            // localStorage에서 최신 정보 가져와서 적용
+            const drawRange = localStorage.getItem('drawRange');
+            if (drawRange) {
+                try {
+                    const rangeData = JSON.parse(drawRange);
+                    if (rangeData && rangeData.start && rangeData.end) {
+                        gameState.startNumber = rangeData.start;
+                        gameState.endNumber = rangeData.end;
+                        console.log(`다른 탭 업데이트로 회차 범위 갱신: ${gameState.startNumber}-${gameState.endNumber}`);
+                        
+                        // 누락된 winningNumbers 데이터 초기화
+                        for (let i = gameState.startNumber; i <= gameState.endNumber; i++) {
+                            if (!gameState.winningNumbers[i]) {
+                                gameState.winningNumbers[i] = [];
+                            }
+                        }
+                        
+                        createGrid(); // 그리드 다시 생성
+                        updateGameTitle(); // 제목 업데이트
+                    }
+                } catch (e) {
+                    console.error('회차 범위 파싱 오류:', e);
+                }
+            }
+        }
+    });
+});
+
+// 게임 제목 업데이트 함수
+function updateGameTitle() {
+    const titleElement = document.querySelector('.title-box h1');
+    if (titleElement) {
+        titleElement.textContent = `화살표 (${gameState.startNumber}회-${gameState.endNumber}회)`;
+    }
+}
 
 let arrowAnimationRunning = false;
 
-// 별표시 번호 저장용 배열 (3개 패널별로 분리)
-window.arrowPanelNumbers = [[], [], []];
+// 별표시 번호 저장용 배열 (단일 배열로 관리)
+window.arrowPanelNumbers = [];
 
 function updateArrowPanels() {
-    const panelEls = document.querySelectorAll('.arrow-panel');
-    for (let i = 0; i < 3; i++) {
-        const nums = window.arrowPanelNumbers[i];
-        const countMap = {};
-        nums.forEach(n => {
-            countMap[n] = (countMap[n] || 0) + 1;
-        });
-        const panel = panelEls[i];
-        if (!panel) continue;
-        for (let j = 0; j < 7; j++) {
-            const num = nums[j];
-            const numEl = panel.children[j];
-            if (numEl) {
-                numEl.textContent = '';
-                numEl.classList.remove('arrow-num-red1', 'arrow-num-red2', 'arrow-num-red3');
-                if (num === undefined) {
-                    // 빈칸
-                } else {
-                    numEl.textContent = num;
-                    // 등장 횟수에 따라 색상 적용
-                    const cnt = countMap[num];
-                    if (cnt === 2) numEl.classList.add('arrow-num-red1');
-                    else if (cnt === 3) numEl.classList.add('arrow-num-red2');
-                    else if (cnt >= 4) numEl.classList.add('arrow-num-red3');
-                }
-            }
+    console.log("updateArrowPanels 호출됨");
+    
+    // 패널 직접 선택
+    const panel = document.querySelector('.arrow-panel');
+    if (!panel) {
+        console.error('패널을 찾을 수 없습니다.');
+        return;
+    }
+    
+    // 패널의 모든 원 요소 선택
+    const allCircles = Array.from(panel.children).slice(0, 10);
+    console.log("총 원 개수:", allCircles.length);
+    
+    // 모든 원 초기화
+    allCircles.forEach(circle => {
+        circle.textContent = '';
+        circle.classList.remove('arrow-num-red1', 'arrow-num-red2', 'arrow-num-red3');
+    });
+    
+    // 숫자가 없으면 종료
+    if (window.arrowPanelNumbers.length === 0) {
+        console.log("표시할 숫자가 없습니다.");
+        return;
+    }
+    
+    console.log("숫자 배열:", window.arrowPanelNumbers);
+    
+    // 숫자 빈도수 계산 (강조 표시용)
+    const countMap = {};
+    window.arrowPanelNumbers.forEach(n => {
+        countMap[n] = (countMap[n] || 0) + 1;
+    });
+    
+    // 최신 순서대로 처리 (최대 10개)
+    const numCount = Math.min(window.arrowPanelNumbers.length, allCircles.length);
+    console.log("표시할 숫자 개수:", numCount);
+    
+    // 각 원에 숫자 할당
+    for (let i = 0; i < numCount; i++) {
+        const circle = allCircles[i];
+        // 최신 숫자부터 표시
+        const numIndex = window.arrowPanelNumbers.length - 1 - i;
+        const num = window.arrowPanelNumbers[numIndex];
+        
+        console.log(`원 ${i+1}에 숫자 ${num} 할당 (배열 인덱스: ${numIndex})`);
+        
+        if (circle) {
+            circle.textContent = num;
+            
+            // 등장 횟수에 따라 색상 적용
+            const cnt = countMap[num];
+            if (cnt === 2) circle.classList.add('arrow-num-red1');
+            else if (cnt === 3) circle.classList.add('arrow-num-red2');
+            else if (cnt >= 4) circle.classList.add('arrow-num-red3');
+        } else {
+            console.error(`인덱스 ${i}의 원 요소가 없습니다.`);
         }
     }
 }
@@ -371,47 +615,47 @@ function getPanelIndexByRule(ruleIndex) {
 // 3가지 경로 규칙 함수
 function findNextCellMax3(row, col) {
     // 오른쪽 3칸(↗, →, ↘) 중 점수가 가장 높은 칸
-    const candidates = [
-        { r: row - 1, c: col + 1, dir: '↗', angle: -45 },
-        { r: row,     c: col + 1, dir: '→', angle: 0 },
-        { r: row + 1, c: col + 1, dir: '↘', angle: 45 }
-    ];
-    let maxVal = -Infinity, maxIdx = 1;
-    candidates.forEach((cand, idx) => {
-        if (cand.r < 1 || cand.r > 45) return;
-        const cell = document.querySelector(`.grid-cell[data-row='${cand.r}'][data-col='${cand.c}']`);
-        let val = -Infinity;
-        if (cell) {
-            let scoreEl = cell.querySelector('.score-display');
-            if (scoreEl) {
-                val = parseFloat(scoreEl.textContent);
-            } else {
-                let totalScore = 0;
-                const cellPos = { row: cand.r, col: cand.c };
-                const winningCells = document.querySelectorAll('.grid-cell.winning');
-                winningCells.forEach(winningCell => {
-                    const winningPos = {
-                        row: parseInt(winningCell.dataset.row),
-                        col: parseInt(winningCell.dataset.col)
-                    };
-                    const rowDiff = Math.abs(cellPos.row - winningPos.row);
-                    const colDiff = Math.abs(cellPos.col - winningPos.col);
-                    if ((rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1)) {
-                        totalScore += 2;
-                    } else if (rowDiff === 1 && colDiff === 1) {
-                        totalScore += 1.5;
-                    } else if ((rowDiff === 2 && colDiff === 0) || (rowDiff === 0 && colDiff === 2)) {
-                        totalScore += 1;
-                    }
-                });
-                val = totalScore;
+        const candidates = [
+            { r: row - 1, c: col + 1, dir: '↗', angle: -45 },
+            { r: row,     c: col + 1, dir: '→', angle: 0 },
+            { r: row + 1, c: col + 1, dir: '↘', angle: 45 }
+        ];
+        let maxVal = -Infinity, maxIdx = 1;
+        candidates.forEach((cand, idx) => {
+            if (cand.r < 1 || cand.r > 45) return;
+            const cell = document.querySelector(`.grid-cell[data-row='${cand.r}'][data-col='${cand.c}']`);
+            let val = -Infinity;
+            if (cell) {
+                let scoreEl = cell.querySelector('.score-display');
+                if (scoreEl) {
+                    val = parseFloat(scoreEl.textContent);
+                } else {
+                    let totalScore = 0;
+                    const cellPos = { row: cand.r, col: cand.c };
+                    const winningCells = document.querySelectorAll('.grid-cell.winning');
+                    winningCells.forEach(winningCell => {
+                        const winningPos = {
+                            row: parseInt(winningCell.dataset.row),
+                            col: parseInt(winningCell.dataset.col)
+                        };
+                        const rowDiff = Math.abs(cellPos.row - winningPos.row);
+                        const colDiff = Math.abs(cellPos.col - winningPos.col);
+                        if ((rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1)) {
+                            totalScore += 2;
+                        } else if (rowDiff === 1 && colDiff === 1) {
+                            totalScore += 1.5;
+                        } else if ((rowDiff === 2 && colDiff === 0) || (rowDiff === 0 && colDiff === 2)) {
+                            totalScore += 1;
+                        }
+                    });
+                    val = totalScore;
+                }
             }
-        }
-        if (val > maxVal || (val === maxVal && idx === 1)) {
-            maxVal = val;
-            maxIdx = idx;
-        }
-    });
+            if (val > maxVal || (val === maxVal && idx === 1)) {
+                maxVal = val;
+                maxIdx = idx;
+            }
+        });
     return candidates[maxIdx];
 }
 
@@ -509,7 +753,7 @@ function findNextCellMax5(row, col) {
     return candidates[maxIdx];
 }
 
-// runArrowPath 함수 내에서 push 부분만 수정
+// runArrowPath 함수 내에서 push 부분을 수정
 function runArrowPath(startRow) {
     if (arrowAnimationRunning) return;
     arrowAnimationRunning = true;
@@ -571,9 +815,20 @@ function runArrowPath(startRow) {
                 rightCell.appendChild(mark);
                 const num = parseInt(rightCell.textContent);
                 if (!isNaN(num)) {
-                    const panelIdx = getPanelIndexByRule(ruleIndex);
-                    if (window.arrowPanelNumbers[panelIdx].length >= 7) window.arrowPanelNumbers[panelIdx] = window.arrowPanelNumbers[panelIdx].slice(1);
-                    window.arrowPanelNumbers[panelIdx].push(num);
+                    console.log(`새 숫자 추가: ${num}`);
+                    
+                    // 숫자를 단일 배열에 추가
+                    window.arrowPanelNumbers.push(num);
+                    
+                    // 배열이 10개를 초과하면 가장 오래된 것 제거
+                    if (window.arrowPanelNumbers.length > 10) {
+                        const removed = window.arrowPanelNumbers.shift();
+                        console.log(`가장 오래된 숫자 제거: ${removed}`);
+                    }
+                    
+                    // 숫자 배열 상태 출력
+                    console.log("현재 숫자 배열:", window.arrowPanelNumbers);
+                    
                     updateArrowPanels();
                 }
             }
@@ -625,16 +880,20 @@ function shootArrow(gridTargetSelector) {
     const endX = lastRect.left - gridLeft;
     // 화살을 그리드 시작점에서 끝점까지 이동
     arrow.style.left = `${startX - 50}px`;
-    setTimeout(() => {
+    setTimeout(function() {
       arrow.style.left = `${endX + 10}px`;
     }, 10);
-    setTimeout(() => {
+    setTimeout(function() {
       arrow.remove();
     }, 600);
   } else {
     // fallback: 오른쪽으로만 이동
-    setTimeout(() => { arrow.style.left = '600px'; }, 10);
-    setTimeout(() => { arrow.remove(); }, 600);
+    setTimeout(function() { 
+      arrow.style.left = '600px'; 
+    }, 10);
+    setTimeout(function() { 
+      arrow.remove(); 
+    }, 600);
   }
   // 사운드 효과
   if (window.arrowShootAudio) {

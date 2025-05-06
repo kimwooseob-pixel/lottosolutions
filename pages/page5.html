@@ -524,56 +524,84 @@
         .prediction-section.section-lastweek {
             margin-top: 60px;
         }
+
+        .perfect-match-list {
+            max-width: 400px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .no-match-message {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .perfect-match-badge {
+            background-color: #2ecc71;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
     <h1>로또 예상번호 순위표<div class="admin-dot"></div></h1>
     <div class="main-2col">
         <div class="left-panel">
-            <!-- 1. 당첨번호 섹션 -->
-            <div class="prediction-section">
-                <div class="section-header">1168회차 당첨번호</div>
-                <div class="winning-numbers-section">
-                    <div class="last-week-numbers">
-                        <div class="number-ball">9</div>
-                        <div class="number-ball">21</div>
-                        <div class="number-ball">24</div>
-                        <div class="number-ball">30</div>
-                        <div class="number-ball">33</div>
-                        <div class="number-ball">37</div>
-                    </div>
-                </div>
+    <!-- 1. 당첨번호 섹션 -->
+    <div class="prediction-section">
+        <div class="section-header">1168회차 당첨번호</div>
+        <div class="winning-numbers-section">
+            <div class="last-week-numbers">
+                <div class="number-ball">9</div>
+                <div class="number-ball">21</div>
+                <div class="number-ball">24</div>
+                <div class="number-ball">30</div>
+                <div class="number-ball">33</div>
+                <div class="number-ball">37</div>
             </div>
+        </div>
+    </div>
             <!-- 트로피 이미지 -->
             <div style="margin: 0 0 24px 0; text-align: center;">
                 <img src="../images/gold.png" alt="gold" style="width:80px; margin:0 12px;">
                 <img src="../images/silver.png" alt="silver" style="width:80px; margin:0 12px;">
                 <img src="../images/bronze.png" alt="bronze" style="width:80px; margin:0 12px;">
             </div>
-            <!-- 2. 지난주 예측 결과 섹션 -->
+    <!-- 2. 지난주 예측 결과 섹션 -->
             <div class="prediction-section section-lastweek">
-                <div class="section-header">지난 주 예측 결과</div>
+        <div class="section-header">지난 주 예측 결과</div>
                 <div id="lastWeekResults">
-                    <!-- 지난 주 예측 결과들이 여기에 동적으로 추가됩니다 -->
-                </div>
-            </div>
+            <!-- 지난 주 예측 결과들이 여기에 동적으로 추가됩니다 -->
+        </div>
+    </div>
         </div>
         <div class="right-panel">
-            <!-- 3. 이번 주 예측번호 목록 -->
-            <div class="prediction-section">
-                <div class="section-header">이번 주 예측번호 목록</div>
-                <div id="thisWeekPredictions">
-                    <!-- 입력 폼 -->
-                    <div id="predictionInputForm" class="prediction-row">
-                        <input type="text" class="user-id-input" placeholder="아이디" maxlength="20" autocomplete="off">
-                        <button class="confirm-button">확인</button>
-                        <div class="prediction-numbers">
-                            <!-- 페이지4에서 가져온 번호들이 여기에 표시됩니다 -->
-                        </div>
-                    </div>
-                    <!-- 저장된 예측들이 여기에 추가됩니다 -->
+    <!-- 3. 이번 주 예측번호 목록 -->
+    <div class="prediction-section">
+        <div class="section-header">이번 주 예측번호 목록</div>
+        <div id="thisWeekPredictions">
+            <!-- 입력 폼 -->
+            <div id="predictionInputForm" class="prediction-row">
+                <input type="text" class="user-id-input" placeholder="아이디" maxlength="20" autocomplete="off">
+                <button class="confirm-button">확인</button>
+                <div class="prediction-numbers">
+                    <!-- 페이지4에서 가져온 번호들이 여기에 표시됩니다 -->
                 </div>
             </div>
+            <!-- 저장된 예측들이 여기에 추가됩니다 -->
+        </div>
+    </div>
+    <!-- 완전일치 번호 섹션 추가 -->
+    <div class="prediction-section">
+        <div class="section-header">완전일치 번호 목록</div>
+        <div id="perfectMatchList" class="perfect-match-list">
+            <!-- 완전일치 예측 항목들이 여기에 추가됩니다 -->
+        </div>
+    </div>
         </div>
     </div>
     <!-- 관리자 팝업 -->
@@ -704,6 +732,41 @@
                 });
             }
 
+            // 완전일치 번호 목록 표시 함수 추가
+            function displayPerfectMatches() {
+                const perfectMatches = JSON.parse(localStorage.getItem('perfectMatches') || '[]');
+                const perfectMatchList = document.getElementById('perfectMatchList');
+                
+                if (perfectMatches.length === 0) {
+                    perfectMatchList.innerHTML = '<div class="no-match-message">아직 완전일치 번호가 없습니다.</div>';
+                    return;
+                }
+                
+                perfectMatchList.innerHTML = '';
+                
+                // 최신순으로 정렬
+                perfectMatches.sort((a, b) => b.timestamp - a.timestamp);
+                
+                perfectMatches.forEach(match => {
+                    const matchElement = document.createElement('div');
+                    matchElement.className = 'prediction-row perfect-match';
+                    
+                    const numbersHtml = match.numbers.map(num => 
+                        `<div class="number-ball winning-number">${num}</div>`
+                    ).join('');
+                    
+                    matchElement.innerHTML = `
+                        <div class="user-name">${match.userName}</div>
+                        <div class="prediction-numbers">
+                            ${numbersHtml}
+                        </div>
+                        <div class="perfect-match-badge">완전일치</div>
+                        <div class="timestamp">${new Date(match.timestamp).toLocaleString()}</div>
+                    `;
+                    perfectMatchList.appendChild(matchElement);
+                });
+            }
+
             // 이벤트 리스너 설정
             if (savedUserId) {
                 userIdInput.value = savedUserId;
@@ -719,6 +782,7 @@
             // 초기 데이터 표시
             displayPage4Selection();
             displayThisWeekPredictions();
+            displayPerfectMatches();
 
             // 관리자 버튼 클릭 이벤트
             adminDot.addEventListener('click', function() {
@@ -816,6 +880,18 @@
                     end: nextDrawNumber,
                     prediction: nextDrawNumber + 1
                 }));
+                
+                // 화살표 게임 페이지도 회차 범위를 인식할 수 있도록 이벤트 발생
+                const arrowGameUpdateEvent = new CustomEvent('arrowGameRangeUpdate', {
+                    detail: {
+                        startNumber: nextDrawNumber - 14,
+                        endNumber: nextDrawNumber
+                    }
+                });
+                window.dispatchEvent(arrowGameUpdateEvent);
+
+                // 다른 열린 창에도 회차 범위 업데이트를 알리기 위한 이벤트
+                localStorage.setItem('lastDrawRangeUpdate', new Date().getTime().toString());
             });
 
             // 페이지 컨텐츠 업데이트 함수
@@ -832,6 +908,7 @@
 
                 // 예측 섹션 초기화
                 displayThisWeekPredictions();
+                displayPerfectMatches();
             }
 
             // 페이지 로드 시 최신 정보로 업데이트
@@ -883,6 +960,14 @@
 
             // 초기화 시 이전 예측 결과 표시
             displayPreviousPredictions();
+
+            // 스토리지 변경 이벤트 리스너 추가 - 다른 페이지에서 완전일치가 추가되었을 때 실시간 업데이트
+            window.addEventListener('storage', function(event) {
+                if (event.key === 'perfectMatches' || event.key === 'currentWeekPredictions') {
+                    displayPerfectMatches();
+                    displayThisWeekPredictions();
+                }
+            });
         });
     </script>
 </body>

@@ -16,6 +16,25 @@
             font-family: 'Arial', sans-serif;
         }
 
+        /* 관리자 모드 버튼 스타일 */
+        #adminBtn {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            width: 12px;
+            height: 12px;
+            background-color: #e74c3c;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 10000;
+            border: none;
+        }
+
+        #adminBtn:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+        }
+
         .container {
             flex: 1;
             display: flex;
@@ -106,6 +125,9 @@
     </style>
 </head>
 <body>
+    <!-- 관리자 모드 버튼 -->
+    <button id="adminBtn" title="관리자 모드"></button>
+
     <div id="userBar" style="position:absolute;top:18px;right:32px;z-index:10000;display:none;">
         <span id="userWelcome" style="margin-right:10px;"></span>
         <button id="logoutBtn" style="padding:6px 14px;background:#e74c3c;color:#fff;border:none;border-radius:6px;cursor:pointer;">로그아웃</button>
@@ -116,10 +138,22 @@
         <div class="subtitle">AI 기반 로또 번호 예측 시스템</div>
         
         <div class="button-container">
+            <!-- 랜덤뽑기 버튼 -->
+            <button class="nav-button game-button" style="background: linear-gradient(135deg, #FF9900, #E65100);" onclick="location.href='pages/random-numbers.html'">
+                <span class="button-title">저번주/이번주 당첨번호 2개 랜덤뽑기</span>
+                <span class="button-description">지난 회차와 현재 회차의 번호 2개를 랜덤으로 뽑아보세요</span>
+            </button>
+
             <!-- 화살표 게임 버튼 -->
             <button class="nav-button game-button" onclick="location.href='pages/arrow-game.html'">
-                <span class="button-title">화살표게임</span>
-                <span class="button-description">화살표 게임을 즐겨보세요</span>
+                <span class="button-title">화살을 쏴서 번호예측</span>
+                <span class="button-description">화살을 쏴서 당첨번호를 예측해보세요</span>
+            </button>
+
+            <!-- 벽돌깨기 게임 버튼 -->
+            <button class="nav-button game-button" style="background: linear-gradient(135deg, #FF6B6B, #D32F2F);" onclick="location.href='pages/brick-game.html'">
+                <span class="button-title">벽돌깨기 게임을 이용한 번호예측</span>
+                <span class="button-description">벽돌을 깨서 당첨번호를 예측해보세요</span>
             </button>
 
             <!-- 기존 로또 관련 버튼들 -->
@@ -178,6 +212,58 @@
             <input type="password" id="signupPw" placeholder="비밀번호" style="margin-bottom:16px; padding:10px; border-radius:6px; border:1px solid #888; width:180px;">
             <button id="signupBtn" style="padding:10px 0; width:180px; background:#43a047; color:#fff; border:none; border-radius:6px; font-size:1em; cursor:pointer;">회원가입</button>
             <div id="signupError" style="color:#ff7675; margin-top:8px; display:none;"></div>
+        </div>
+    </div>
+
+    <!-- 관리자 비밀번호 모달 -->
+    <div id="adminModal" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.45); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:#23283a; border-radius:12px; padding:32px 28px 24px 28px; min-width:260px; box-shadow:0 8px 32px #0008; display:flex; flex-direction:column; align-items:center; position:relative;">
+            <span id="closeAdmin" style="position:absolute; right:16px; top:10px; font-size:1.5em; color:#aaa; cursor:pointer;">&times;</span>
+            <h2 style="margin-bottom:18px; color:#fff;">관리자 모드</h2>
+            <input type="password" id="adminPw" placeholder="비밀번호" style="margin-bottom:16px; padding:10px; border-radius:6px; border:1px solid #888; width:180px;">
+            <button id="adminLoginBtn" style="padding:10px 0; width:180px; background:#e74c3c; color:#fff; border:none; border-radius:6px; font-size:1em; cursor:pointer;">로그인</button>
+            <div id="adminError" style="color:#ff7675; margin-top:8px; display:none;"></div>
+        </div>
+    </div>
+
+    <!-- 관리자 대시보드 모달 -->
+    <div id="adminDashboard" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.45); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:#23283a; border-radius:12px; padding:32px 28px 24px 28px; width:80%; max-width:800px; height:80%; max-height:600px; box-shadow:0 8px 32px #0008; display:flex; flex-direction:column; position:relative; overflow:auto;">
+            <span id="closeAdminDashboard" style="position:absolute; right:16px; top:10px; font-size:1.5em; color:#aaa; cursor:pointer;">&times;</span>
+            <h2 style="margin-bottom:18px; color:#fff; text-align:center;">관리자 대시보드</h2>
+            
+            <div style="display:flex; flex-wrap:wrap; justify-content:space-between; margin-bottom:20px;">
+                <div style="background:#1f253a; border-radius:8px; padding:16px; width:48%; margin-bottom:16px;">
+                    <h3 style="color:#fff; margin-top:0;">오늘 방문자 수</h3>
+                    <p id="todayVisitors" style="font-size:24px; color:#3498db; font-weight:bold;">0</p>
+                </div>
+                <div style="background:#1f253a; border-radius:8px; padding:16px; width:48%; margin-bottom:16px;">
+                    <h3 style="color:#fff; margin-top:0;">누적 방문자 수</h3>
+                    <p id="totalVisitors" style="font-size:24px; color:#2ecc71; font-weight:bold;">0</p>
+                </div>
+                <div style="background:#1f253a; border-radius:8px; padding:16px; width:48%; margin-bottom:16px;">
+                    <h3 style="color:#fff; margin-top:0;">오늘 회원가입 수</h3>
+                    <p id="todaySignups" style="font-size:24px; color:#e74c3c; font-weight:bold;">0</p>
+                </div>
+                <div style="background:#1f253a; border-radius:8px; padding:16px; width:48%; margin-bottom:16px;">
+                    <h3 style="color:#fff; margin-top:0;">총 회원 수</h3>
+                    <p id="totalUsers" style="font-size:24px; color:#f39c12; font-weight:bold;">0</p>
+                </div>
+            </div>
+            
+            <div style="background:#1f253a; border-radius:8px; padding:16px; margin-bottom:16px;">
+                <h3 style="color:#fff; margin-top:0;">일별 방문자 통계</h3>
+                <div id="visitorStats" style="height:180px; overflow-y:auto; background:#2c3448; border-radius:6px; padding:10px;">
+                    <!-- 일별 방문자 통계가 여기에 표시됩니다 -->
+                </div>
+            </div>
+            
+            <div style="background:#1f253a; border-radius:8px; padding:16px;">
+                <h3 style="color:#fff; margin-top:0;">회원 목록</h3>
+                <div id="userList" style="height:180px; overflow-y:auto; background:#2c3448; border-radius:6px; padding:10px;">
+                    <!-- 회원 목록이 여기에 표시됩니다 -->
+                </div>
+            </div>
         </div>
     </div>
 
@@ -315,6 +401,224 @@
             }
         };
         updateUserBar();
+
+        // 관리자 모드 관련 코드
+        const adminBtn = document.getElementById('adminBtn');
+        const adminModal = document.getElementById('adminModal');
+        const closeAdmin = document.getElementById('closeAdmin');
+        const adminPw = document.getElementById('adminPw');
+        const adminLoginBtn = document.getElementById('adminLoginBtn');
+        const adminError = document.getElementById('adminError');
+        const adminDashboard = document.getElementById('adminDashboard');
+        const closeAdminDashboard = document.getElementById('closeAdminDashboard');
+
+        // 방문자 수 추적 함수
+        function trackVisitor() {
+            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD 형식
+            
+            // 로컬 스토리지에서 방문자 데이터 가져오기
+            let visitors = JSON.parse(localStorage.getItem('visitors') || '{}');
+            let lastVisit = localStorage.getItem('lastVisit');
+            
+            // 총 방문자 수 업데이트
+            visitors.total = (visitors.total || 0) + 1;
+            
+            // 오늘 날짜의 방문자 수 업데이트
+            visitors[today] = (visitors[today] || 0) + 1;
+            
+            // 마지막 방문 날짜가 오늘이 아니면 새로운 방문으로 기록
+            if (lastVisit !== today) {
+                localStorage.setItem('lastVisit', today);
+            }
+            
+            // 방문자 데이터 저장
+            localStorage.setItem('visitors', JSON.stringify(visitors));
+        }
+        
+        // 회원가입 추적 함수
+        function trackSignup(userId) {
+            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD 형식
+            
+            // 로컬 스토리지에서 회원가입 데이터 가져오기
+            let signups = JSON.parse(localStorage.getItem('signups') || '{}');
+            
+            // 오늘 날짜의 회원가입 수 업데이트
+            signups[today] = signups[today] || [];
+            signups[today].push(userId);
+            
+            // 회원가입 데이터 저장
+            localStorage.setItem('signups', JSON.stringify(signups));
+        }
+        
+        // 페이지 로드 시 방문자 추적
+        trackVisitor();
+        
+        // 관리자 모달 표시
+        adminBtn.onclick = function() {
+            adminModal.style.display = 'flex';
+            adminError.style.display = 'none';
+            adminPw.value = '';
+        };
+        
+        // 관리자 모달 닫기
+        closeAdmin.onclick = function() {
+            adminModal.style.display = 'none';
+        };
+        
+        // 관리자 대시보드 닫기
+        closeAdminDashboard.onclick = function() {
+            adminDashboard.style.display = 'none';
+        };
+        
+        // 관리자 로그인
+        adminLoginBtn.onclick = function() {
+            const pw = adminPw.value.trim();
+            if (pw === "knue2000") {
+                adminModal.style.display = 'none';
+                showAdminDashboard();
+            } else {
+                adminError.textContent = '비밀번호가 일치하지 않습니다.';
+                adminError.style.display = 'block';
+            }
+        };
+        
+        // 엔터키로 관리자 로그인
+        adminPw.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') adminLoginBtn.onclick();
+        });
+        
+        // 관리자 대시보드 표시
+        function showAdminDashboard() {
+            adminDashboard.style.display = 'flex';
+            updateDashboardStats();
+        }
+        
+        // 대시보드 통계 업데이트
+        function updateDashboardStats() {
+            const today = new Date().toISOString().split('T')[0];
+            
+            // 방문자 데이터
+            const visitors = JSON.parse(localStorage.getItem('visitors') || '{}');
+            const todayVisits = visitors[today] || 0;
+            const totalVisits = visitors.total || 0;
+            
+            // 회원가입 데이터
+            const signups = JSON.parse(localStorage.getItem('signups') || '{}');
+            const todaySignupCount = (signups[today] || []).length;
+            
+            // 회원 목록
+            let userCount = 0;
+            const userIds = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('user_')) {
+                    userCount++;
+                    userIds.push(key.replace('user_', ''));
+                }
+            }
+            
+            // 통계 표시
+            document.getElementById('todayVisitors').textContent = todayVisits;
+            document.getElementById('totalVisitors').textContent = totalVisits;
+            document.getElementById('todaySignups').textContent = todaySignupCount;
+            document.getElementById('totalUsers').textContent = userCount;
+            
+            // 일별 방문자 통계
+            const visitorStatsEl = document.getElementById('visitorStats');
+            visitorStatsEl.innerHTML = '';
+            
+            const visitorDates = Object.keys(visitors).filter(date => date !== 'total').sort().reverse();
+            if (visitorDates.length === 0) {
+                visitorStatsEl.innerHTML = '<p style="color:#aaa;text-align:center;">데이터가 없습니다.</p>';
+            } else {
+                const table = document.createElement('table');
+                table.style.width = '100%';
+                table.style.borderCollapse = 'collapse';
+                table.innerHTML = `
+                    <tr style="color:#fff;border-bottom:1px solid #444;">
+                        <th style="padding:8px;text-align:left;">날짜</th>
+                        <th style="padding:8px;text-align:right;">방문자 수</th>
+                    </tr>
+                `;
+                
+                visitorDates.forEach(date => {
+                    const row = document.createElement('tr');
+                    row.style.borderBottom = '1px solid #333';
+                    row.innerHTML = `
+                        <td style="padding:8px;color:#ddd;">${date}</td>
+                        <td style="padding:8px;color:#3498db;text-align:right;">${visitors[date]}</td>
+                    `;
+                    table.appendChild(row);
+                });
+                
+                visitorStatsEl.appendChild(table);
+            }
+            
+            // 회원 목록
+            const userListEl = document.getElementById('userList');
+            userListEl.innerHTML = '';
+            
+            if (userIds.length === 0) {
+                userListEl.innerHTML = '<p style="color:#aaa;text-align:center;">가입된 회원이 없습니다.</p>';
+            } else {
+                const table = document.createElement('table');
+                table.style.width = '100%';
+                table.style.borderCollapse = 'collapse';
+                table.innerHTML = `
+                    <tr style="color:#fff;border-bottom:1px solid #444;">
+                        <th style="padding:8px;text-align:left;">아이디</th>
+                        <th style="padding:8px;text-align:right;">가입일</th>
+                    </tr>
+                `;
+                
+                userIds.forEach(userId => {
+                    // 사용자의 가입일 찾기
+                    let signupDate = '';
+                    for (const date in signups) {
+                        if (signups[date].includes(userId)) {
+                            signupDate = date;
+                            break;
+                        }
+                    }
+                    
+                    const row = document.createElement('tr');
+                    row.style.borderBottom = '1px solid #333';
+                    row.innerHTML = `
+                        <td style="padding:8px;color:#ddd;">${userId}</td>
+                        <td style="padding:8px;color:#f39c12;text-align:right;">${signupDate || '알 수 없음'}</td>
+                    `;
+                    table.appendChild(row);
+                });
+                
+                userListEl.appendChild(table);
+            }
+        }
+        
+        // 회원가입 함수 수정
+        const originalSignupFunc = signupBtn.onclick;
+        signupBtn.onclick = function() {
+            const id = document.getElementById('signupId').value.trim();
+            const pw = document.getElementById('signupPw').value.trim();
+            if (!id || !pw) {
+                signupError.textContent = '아이디와 비밀번호를 입력하세요.';
+                signupError.style.display = 'block';
+                return;
+            }
+            if (localStorage.getItem('user_' + id)) {
+                signupError.textContent = '이미 존재하는 아이디입니다.';
+                signupError.style.display = 'block';
+                return;
+            }
+            localStorage.setItem('user_' + id, pw);
+            
+            // 회원가입 추적
+            trackSignup(id);
+            
+            signupError.style.display = 'none';
+            alert('회원가입이 완료되었습니다!');
+            closeSignupModal();
+            showLoginModal();
+        };
     });
     </script>
 </body>

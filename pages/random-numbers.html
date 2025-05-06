@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>저번주/이번주 당첨번호 2개 랜덤뽑기</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 30px;
+            width: 100%;
+            position: relative;
+        }
+        
+        .back-btn {
+            position: absolute;
+            left: 0;
+            padding: 5px 8px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.8em;
+        }
+        
+        .generate-btn {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        
+        .generate-btn:hover {
+            background-color: #218838;
+        }
+        
+        .title {
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            max-width: 300px;
+            background: linear-gradient(135deg, #3498db, #1976D2);
+            color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .title:hover {
+            background: linear-gradient(135deg, #2980b9, #1565C0);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            width: 90%;
+            max-width: 900px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .box {
+            border: 1px solid #000;
+            padding: 1px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transform-origin: top left;
+        }
+        
+        .box.matching {
+            transform: scale(2);
+            z-index: 5;
+            background-color: rgba(255, 249, 219, 0.95);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid #e74c3c;
+            margin: 40px 0;
+            position: relative;
+            grid-column: span 2;
+        }
+        
+        /* 필터링 시 박스들을 세로로 배치 */
+        .filtered-view .box.matching {
+            display: block !important;
+            width: 90%;
+            margin: 40px auto;
+            transform: none;
+            position: relative;
+            clear: both;
+            float: none;
+            box-sizing: border-box;
+        }
+        
+        .filtered-view .container {
+            display: flex;
+            flex-direction: column;
+            gap: 60px;
+            padding-top: 20px;
+            padding-bottom: 60px;
+        }
+        
+        /* 필터링 모드에서 숨겨진 박스 */
+        .filtered-view .box.hidden {
+            display: none !important;
+        }
+        
+        /* 추가 - 필터링 시 모든 박스에 충분한 여백 부여 */
+        .filtered-view .box {
+            margin-bottom: 200px;
+        }
+        
+        /* 추가 - 필터링 모드에서만 보이는 안내 텍스트 */
+        .filter-notice {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .filtered-view + .filter-notice {
+            display: block;
+        }
+        
+        .matching-label {
+            position: absolute;
+            top: -13px;
+            right: 5px;
+            background-color: #e74c3c;
+            color: white;
+            font-size: 7px;
+            padding: 2px 4px;
+            border-radius: 3px;
+            display: none;
+            z-index: 3;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        
+        .row {
+            display: flex;
+            align-items: center;
+        }
+        
+        .draw-number {
+            width: 30px;
+            font-weight: bold;
+            border: 1px solid #000;
+            padding: 2px;
+            text-align: center;
+            font-size: 10px;
+        }
+        
+        .numbers {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+        }
+        
+        .circle {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            border: 1px solid #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 1px;
+            font-weight: bold;
+            font-size: 8px;
+        }
+        
+        /* 헤더 버튼 그룹 스타일 */
+        .header-buttons {
+            display: flex;
+            align-items: center;
+            gap: 20px; /* 버튼 사이 간격 */
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html" class="back-btn">← 뒤로가기</a>
+        <div class="header-buttons">
+            <button class="generate-btn" id="generateBtn">번호 생성하기</button>
+            <div class="title" id="titleBtn">1170랜덤번호 4개이상 맞춘 박스 모으기</div>
+        </div>
+    </div>
+    
+    <div class="container" id="boxContainer">
+        <!-- 박스 내용은 자바스크립트로 동적 생성됩니다 -->
+    </div>
+    
+    <script>
+        // 페이지 로드 시 초기 박스 생성
+        document.addEventListener('DOMContentLoaded', function() {
+            createBoxes();
+            generateRandomNumbers();
+            
+            // 제목 버튼 클릭 이벤트
+            document.getElementById('titleBtn').addEventListener('click', function() {
+                filterMatchingBoxes();
+            });
+        });
+        
+        // 생성 버튼 클릭 이벤트
+        document.getElementById('generateBtn').addEventListener('click', function() {
+            const container = document.getElementById('boxContainer');
+            container.classList.remove('filtered-view');
+            
+            // 모든 박스의 스타일 초기화
+            const boxes = document.querySelectorAll('.box');
+            boxes.forEach(box => {
+                box.style.transform = '';
+                box.style.margin = '';
+            });
+            
+            generateRandomNumbers();
+        });
+        
+        // 500개 박스 생성 함수 (4열 x 125행 = 500개)
+        function createBoxes() {
+            const container = document.getElementById('boxContainer');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < 500; i++) {
+                const box = document.createElement('div');
+                box.className = 'box';
+                box.dataset.matchCount = 0;
+                box.style.position = 'relative';
+                
+                // 매칭 개수 표시 라벨
+                const matchLabel = document.createElement('div');
+                matchLabel.className = 'matching-label';
+                matchLabel.textContent = '0개 일치';
+                box.appendChild(matchLabel);
+                
+                // 첫 번째 행 (1170회차)
+                const row1 = document.createElement('div');
+                row1.className = 'row';
+                
+                const drawNumber1 = document.createElement('div');
+                drawNumber1.className = 'draw-number';
+                drawNumber1.textContent = '1170';
+                
+                const numbers1 = document.createElement('div');
+                numbers1.className = 'numbers';
+                
+                // 6개의 원 생성 (1170회차)
+                for (let j = 0; j < 6; j++) {
+                    const circle = document.createElement('div');
+                    circle.className = 'circle';
+                    circle.dataset.row = 1170;
+                    circle.dataset.position = j;
+                    numbers1.appendChild(circle);
+                }
+                
+                row1.appendChild(drawNumber1);
+                row1.appendChild(numbers1);
+                
+                // 두 번째 행 (1171회차)
+                const row2 = document.createElement('div');
+                row2.className = 'row';
+                
+                const drawNumber2 = document.createElement('div');
+                drawNumber2.className = 'draw-number';
+                drawNumber2.textContent = '1171';
+                
+                const numbers2 = document.createElement('div');
+                numbers2.className = 'numbers';
+                
+                // 6개의 원 생성 (1171회차)
+                for (let j = 0; j < 6; j++) {
+                    const circle = document.createElement('div');
+                    circle.className = 'circle';
+                    circle.dataset.row = 1171;
+                    circle.dataset.position = j;
+                    numbers2.appendChild(circle);
+                }
+                
+                row2.appendChild(drawNumber2);
+                row2.appendChild(numbers2);
+                
+                box.appendChild(row1);
+                box.appendChild(row2);
+                container.appendChild(box);
+            }
+        }
+        
+        // 저장된 당첨번호 데이터 가져오기
+        function getWinningNumbers() {
+            // 로컬 스토리지에서 당첨번호 데이터 가져오기
+            const winningNumbersData = localStorage.getItem('winningNumbers');
+            let latestWinningNumber = null;
+            
+            if (winningNumbersData) {
+                try {
+                    latestWinningNumber = JSON.parse(winningNumbersData);
+                } catch(e) {
+                    console.error('당첨번호 데이터 파싱 오류:', e);
+                }
+            }
+            
+            // 1170회 당첨번호 (저장된 데이터가 없으면 예시 데이터 사용)
+            // 관리자 모드에서 저장된 당첨번호 데이터가 있다면 그것을 사용
+            const winningNumbers1170 = latestWinningNumber && latestWinningNumber.drawNumber === '1170' 
+                ? latestWinningNumber.numbers 
+                : [3, 10, 19, 24, 32, 42]; // 예시 데이터
+                
+            console.log('1170회 당첨번호:', winningNumbers1170);
+            
+            return winningNumbers1170;
+        }
+        
+        // 랜덤 번호 생성 및 적용 함수
+        function generateRandomNumbers() {
+            // 실제 당첨번호 가져오기
+            const winningNumbers1170 = getWinningNumbers();
+            
+            // 모든 박스 요소
+            const boxes = document.querySelectorAll('.box');
+            
+            boxes.forEach(box => {
+                // 일치하는 번호 카운트 초기화
+                let matchCount = 0;
+                
+                // 매칭 클래스 제거
+                box.classList.remove('matching');
+                
+                // 1170회차 원 요소들
+                const circles1170 = box.querySelectorAll('.circle[data-row="1170"]');
+                const numbers1170 = [];
+                
+                // 각 원에 랜덤 번호 부여
+                circles1170.forEach(circle => {
+                    // 1-45 사이의 랜덤 숫자 생성
+                    const randomNum = Math.floor(Math.random() * 45) + 1;
+                    numbers1170.push(randomNum);
+                    
+                    // 기본 스타일 설정 (배경색을 흰색으로)
+                    circle.style.backgroundColor = '#ffffff';
+                    circle.style.color = '#000000';
+                    
+                    // 1170회차 번호가 실제 당첨번호와 일치하는지 확인
+                    if (winningNumbers1170.includes(randomNum)) {
+                        circle.style.backgroundColor = '#dc3545'; // 빨간색
+                        circle.style.color = '#ffffff'; // 글자색 흰색
+                        matchCount++;
+                    }
+                    
+                    circle.textContent = randomNum;
+                });
+                
+                // 1171회차 원 요소들도 랜덤 번호 부여
+                const circles1171 = box.querySelectorAll('.circle[data-row="1171"]');
+                const numbers1171 = [];
+                
+                circles1171.forEach(circle => {
+                    const randomNum = Math.floor(Math.random() * 45) + 1;
+                    numbers1171.push(randomNum);
+                    circle.style.backgroundColor = '#ffffff';
+                    circle.style.color = '#000000';
+                    circle.textContent = randomNum;
+                });
+                
+                // 박스에 매칭 카운트 저장
+                box.dataset.matchCount = matchCount;
+                
+                // 매칭 라벨 업데이트
+                const matchLabel = box.querySelector('.matching-label');
+                matchLabel.textContent = `${matchCount}개 일치`;
+                
+                // 4개 이상 맞으면 라벨 표시 및 박스 강조
+                if (matchCount >= 4) {
+                    matchLabel.style.display = 'block';
+                    box.classList.add('matching');
+                } else {
+                    matchLabel.style.display = 'none';
+                }
+                
+                // 6개 모두 일치하면 랭킹 목록에 추가
+                if (matchCount === 6) {
+                    // 숫자 정렬
+                    const sortedNumbers = [...numbers1170].sort((a, b) => a - b);
+                    savePerfectMatch(sortedNumbers);
+                }
+                
+                // 모든 박스 표시 (필터링 초기화)
+                box.classList.remove('hidden');
+            });
+        }
+        
+        // 6개 완전일치 번호 저장 함수
+        function savePerfectMatch(numbers) {
+            // 현재 시간 생성
+            const timestamp = new Date().getTime();
+            
+            // 번호 생성기에서 생성된 완전일치 번호
+            const perfectMatch = {
+                userName: "번호생성기(완전일치)",
+                numbers: numbers,
+                timestamp: timestamp,
+                source: 'random-generator',
+                perfectMatch: true
+            };
+            
+            // 페이지5의 6개 일치 목록에 저장
+            let perfectMatches = JSON.parse(localStorage.getItem('perfectMatches') || '[]');
+            perfectMatches.push(perfectMatch);
+            localStorage.setItem('perfectMatches', JSON.stringify(perfectMatches));
+            
+            // 현재 주 예측 목록에도 추가
+            let currentPredictions = JSON.parse(localStorage.getItem('currentWeekPredictions') || '[]');
+            currentPredictions.push(perfectMatch);
+            localStorage.setItem('currentWeekPredictions', JSON.stringify(currentPredictions));
+            
+            // 완전일치 메시지 표시
+            alert("축하합니다! 6개 번호 완전일치 조합이 생성되었습니다!\n이 번호는 자동으로 랭킹표에 저장됩니다.");
+        }
+        
+        // 4개 이상 맞춘 박스만 표시하는 함수
+        function filterMatchingBoxes() {
+            const boxes = document.querySelectorAll('.box');
+            const container = document.getElementById('boxContainer');
+            
+            // 컨테이너에 필터링 클래스 추가
+            container.classList.add('filtered-view');
+            
+            // 모든 박스 초기화 (매칭된 박스도 크기 재설정)
+            boxes.forEach(box => {
+                box.style.transform = 'none'; // 기존 transform 제거
+                box.style.margin = '40px auto'; // 여백 설정
+                
+                const matchCount = parseInt(box.dataset.matchCount);
+                
+                if (matchCount >= 4) {
+                    box.classList.remove('hidden');
+                } else {
+                    box.classList.add('hidden');
+                }
+            });
+            
+            // 레이아웃 재설정을 위한 약간의 시간 지연
+            setTimeout(() => {
+                document.body.scrollTop = 0;
+                document.documentElement.scrollTop = 0;
+            }, 50);
+        }
+    </script>
+</body>
+</html> 
