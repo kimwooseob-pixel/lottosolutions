@@ -5,121 +5,194 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>저번주/이번주 당첨번호 2개 랜덤뽑기</title>
     <style>
+        :root {
+            --primary-color: #2196F3;
+            --primary-dark: #1976D2;
+            --secondary-color: #FF4081;
+            --accent-color: #4CAF50;
+            --danger-color: #f44336;
+            --text-color: #333;
+            --light-bg: #f8f9fa;
+            --dark-bg: #263238;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #f8f9fa;
-            color: #333;
+            background-color: var(--light-bg);
+            color: var(--text-color);
             display: flex;
             flex-direction: column;
             align-items: center;
+            line-height: 1.6;
         }
         
         .header {
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
             margin-bottom: 30px;
             width: 100%;
-            position: relative;
+            max-width: 900px;
+            gap: 16px;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            width: 100%;
+            justify-content: space-between;
+            margin-bottom: 10px;
         }
         
         .back-btn {
-            position: absolute;
-            left: 0;
-            padding: 5px 8px;
-            background-color: #007bff;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #546e7a, #37474f);
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
             text-decoration: none;
-            font-size: 0.8em;
+            font-size: 0.9rem;
+            font-weight: 500;
+            box-shadow: var(--box-shadow);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .back-btn:hover {
+            background: linear-gradient(135deg, #455a64, #263238);
+            transform: translateY(-2px);
         }
         
         .generate-btn {
-            padding: 10px 15px;
-            background-color: #28a745;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #4CAF50, #388E3C);
             color: white;
             border: none;
-            border-radius: 4px;
-            font-size: 14px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
             cursor: pointer;
-            margin-left: 10px;
+            box-shadow: var(--box-shadow);
+            transition: all 0.3s ease;
         }
         
         .generate-btn:hover {
-            background-color: #218838;
+            background: linear-gradient(135deg, #43A047, #2E7D32);
+            transform: translateY(-2px);
+        }
+        
+        .auto-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: var(--box-shadow);
+            transition: all 0.3s ease;
+            margin-right: 10px;
+        }
+        
+        .auto-btn:hover {
+            background: linear-gradient(135deg, #FB8C00, #EF6C00);
+            transform: translateY(-2px);
+        }
+        
+        .auto-btn.active {
+            background: linear-gradient(135deg, #E65100, #D84315);
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+            transform: translateY(0);
+        }
+        
+        .title-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
         }
         
         .title {
-            font-size: 14px;
-            font-weight: bold;
+            font-size: 1rem;
+            font-weight: 600;
             text-align: center;
-            padding: 6px 12px;
+            padding: 12px 24px;
             border: none;
             border-radius: 10px;
             cursor: pointer;
-            max-width: 300px;
-            background: linear-gradient(135deg, #3498db, #1976D2);
+            width: 100%;
+            max-width: 400px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
             color: white;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            box-shadow: var(--box-shadow);
             transition: all 0.3s ease;
         }
         
         .title:hover {
-            background: linear-gradient(135deg, #2980b9, #1565C0);
+            background: linear-gradient(135deg, #1E88E5, #1565C0);
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
         }
         
         .container {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
             gap: 8px;
-            width: 90%;
+            width: 100%;
             max-width: 900px;
-            margin-bottom: 20px;
+            margin-bottom: 40px;
             position: relative;
         }
         
         .box {
-            border: 1px solid #000;
-            padding: 1px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 4px 6px;
+            background-color: white;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
-            transform-origin: top left;
+            transform-origin: center;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .box:hover {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         
         .box.matching {
-            transform: scale(2);
+            transform: scale(1.05);
             z-index: 5;
-            background-color: rgba(255, 249, 219, 0.95);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            border: 1px solid #e74c3c;
-            margin: 40px 0;
+            background-color: #f9fbe7;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            border: 2px solid var(--danger-color);
             position: relative;
-            grid-column: span 2;
         }
         
         /* 필터링 시 박스들을 세로로 배치 */
         .filtered-view .box.matching {
             display: block !important;
-            width: 90%;
-            margin: 40px auto;
+            width: 100%;
+            max-width: 300px;
+            margin: 12px auto;
             transform: none;
             position: relative;
-            clear: both;
-            float: none;
-            box-sizing: border-box;
         }
         
         .filtered-view .container {
             display: flex;
             flex-direction: column;
-            gap: 60px;
-            padding-top: 20px;
-            padding-bottom: 60px;
+            gap: 24px;
+            padding: 16px 0;
         }
         
         /* 필터링 모드에서 숨겨진 박스 */
@@ -127,94 +200,222 @@
             display: none !important;
         }
         
-        /* 추가 - 필터링 시 모든 박스에 충분한 여백 부여 */
-        .filtered-view .box {
-            margin-bottom: 200px;
-        }
-        
-        /* 추가 - 필터링 모드에서만 보이는 안내 텍스트 */
-        .filter-notice {
-            display: none;
-            text-align: center;
-            margin: 20px 0;
-            padding: 10px;
-            background-color: #f8f9fa;
-            border-radius: 5px;
-            font-size: 14px;
-            font-weight: bold;
-        }
-        
-        .filtered-view + .filter-notice {
-            display: block;
-        }
-        
+        /* 매칭 라벨 */
         .matching-label {
             position: absolute;
-            top: -13px;
+            top: -10px;
             right: 5px;
-            background-color: #e74c3c;
+            background-color: var(--danger-color);
             color: white;
-            font-size: 7px;
-            padding: 2px 4px;
-            border-radius: 3px;
+            font-size: 0.6rem;
+            padding: 2px 5px;
+            border-radius: 10px;
             display: none;
             z-index: 3;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            font-weight: 600;
         }
         
         .row {
             display: flex;
             align-items: center;
+            margin: 3px 0;
         }
         
         .draw-number {
-            width: 30px;
+            min-width: 14px;
             font-weight: bold;
-            border: 1px solid #000;
-            padding: 2px;
+            border: 1px solid #e0e0e0;
+            border-radius: 3px;
+            padding: 1px 1px;
             text-align: center;
-            font-size: 10px;
+            font-size: 0.48rem;
+            background-color: #f5f5f5;
+            margin-right: 2px;
         }
         
         .numbers {
             display: flex;
-            justify-content: space-around;
-            width: 100%;
+            justify-content: space-between;
+            flex-grow: 1;
+            min-width: 0;
+            overflow: hidden;
         }
         
         .circle {
-            width: 15px;
-            height: 15px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            border: 1px solid #000;
+            border: 1px solid #e0e0e0;
             display: flex;
             justify-content: center;
             align-items: center;
-            margin: 1px;
+            margin: 0;
             font-weight: bold;
-            font-size: 8px;
+            font-size: 0.4rem;
+            background-color: white;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
         }
         
-        /* 헤더 버튼 그룹 스타일 */
-        .header-buttons {
+        /* 반응형 스타일 */
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+                gap: 6px;
+            }
+            
+            .title {
+                font-size: 0.9rem;
+                padding: 10px 16px;
+            }
+            
+            .back-btn, .generate-btn {
+                padding: 8px 16px;
+                font-size: 0.85rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+                gap: 4px;
+            }
+            
+            .circle {
+                width: 9px;
+                height: 9px;
+                font-size: 0.35rem;
+                margin: 0;
+            }
+            
+            .draw-number {
+                min-width: 13px;
+                font-size: 0.44rem;
+                margin-right: 1px;
+                padding: 0px;
+            }
+            
+            .nav-buttons {
+                flex-direction: row;
+                gap: 8px;
+            }
+            
+            .back-btn, .generate-btn {
+                padding: 8px 12px;
+                font-size: 0.8rem;
+            }
+        }
+        
+        /* 팝업 스타일 추가 */
+        .stats-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            max-width: 90%;
+            width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 10000;
+        }
+        
+        .stats-popup-header {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 20px; /* 버튼 사이 간격 */
-            margin-left: 10px;
+            margin-bottom: 16px;
+        }
+        
+        .stats-popup-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary-dark);
+        }
+        
+        .stats-popup-close {
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: #777;
+            padding: 0 8px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+        
+        .number-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 8px 4px;
+        }
+        
+        .number-value {
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .number-count {
+            font-size: 0.8rem;
+            color: var(--primary-dark);
+            margin-top: 4px;
+        }
+        
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <a href="../index.html" class="back-btn">← 뒤로가기</a>
-        <div class="header-buttons">
-            <button class="generate-btn" id="generateBtn">번호 생성하기</button>
-            <div class="title" id="titleBtn">1170랜덤번호 4개이상 맞춘 박스 모으기</div>
+        <div class="nav-buttons">
+            <a href="../index.html" class="back-btn">← 뒤로가기</a>
+            <div style="display: flex;">
+                <button class="auto-btn" id="autoBtn">자동생성</button>
+                <button class="generate-btn" id="generateBtn">번호 생성하기</button>
+            </div>
+        </div>
+        <div class="title-container">
+            <button class="title" id="titleBtn">1170회차 4개이상 맞춘 번호 모으기</button>
         </div>
     </div>
     
     <div class="container" id="boxContainer">
         <!-- 박스 내용은 자바스크립트로 동적 생성됩니다 -->
+    </div>
+    
+    <!-- 통계 팝업창 -->
+    <div class="popup-overlay" id="statsOverlay"></div>
+    <div class="stats-popup" id="statsPopup">
+        <div class="stats-popup-header">
+            <div class="stats-popup-title">1171회차 번호 통계</div>
+            <span class="stats-popup-close" id="closeStatsPopup">×</span>
+        </div>
+        <div id="statsContent">
+            <div class="stats-grid" id="statsGrid">
+                <!-- 번호 통계가 여기에 들어갑니다 -->
+            </div>
+        </div>
     </div>
     
     <script>
@@ -227,7 +428,97 @@
             document.getElementById('titleBtn').addEventListener('click', function() {
                 filterMatchingBoxes();
             });
+            
+            // 자동 생성 버튼 이벤트 설정
+            const autoBtn = document.getElementById('autoBtn');
+            autoBtn.addEventListener('click', toggleAutoGeneration);
         });
+        
+        // 자동 생성 상태 변수
+        let isAutoGenerating = false;
+        let autoGenerationInterval = null;
+        let autoStepCount = 0;
+        let matchedBoxes1171 = []; // 5개 이상 맞춘 박스들의 1171회차 번호 저장
+        
+        // 자동 생성 토글 함수
+        function toggleAutoGeneration() {
+            const autoBtn = document.getElementById('autoBtn');
+            
+            if (isAutoGenerating) {
+                // 자동 생성 중지
+                clearInterval(autoGenerationInterval);
+                autoBtn.textContent = '자동생성';
+                autoBtn.classList.remove('active');
+                isAutoGenerating = false;
+                
+                // 통계 분석 및 팝업창 표시
+                showNumberStatistics();
+            } else {
+                // 자동 생성 시작
+                autoBtn.textContent = '중지';
+                autoBtn.classList.add('active');
+                isAutoGenerating = true;
+                autoStepCount = 0;
+                matchedBoxes1171 = []; // 배열 초기화
+                
+                // 첫 단계 즉시 실행
+                performAutoStep();
+                
+                // 일정 간격으로 다음 단계 실행
+                autoGenerationInterval = setInterval(performAutoStep, 800);
+            }
+        }
+        
+        // 자동 생성 단계 실행 함수
+        function performAutoStep() {
+            autoStepCount++;
+            
+            if (autoStepCount % 2 === 1) {
+                // 홀수 단계: 번호 생성하기
+                document.getElementById('generateBtn').click();
+            } else {
+                // 짝수 단계: 필터링
+                document.getElementById('titleBtn').click();
+                
+                // 6개 모두 일치하는 번호가 있는지 확인
+                checkForPerfectMatch();
+            }
+        }
+        
+        // 완벽한 일치(6개)가 있는지 확인하는 함수
+        function checkForPerfectMatch() {
+            const boxes = document.querySelectorAll('.box');
+            
+            for (let box of boxes) {
+                const matchCount = parseInt(box.dataset.matchCount);
+                
+                if (matchCount === 6) {
+                    // 6개 모두 일치하면 자동 생성 중지
+                    if (isAutoGenerating) {
+                        toggleAutoGeneration();
+                        
+                        // 강조 표시를 위해 약간의 지연 후 스크롤
+                        setTimeout(() => {
+                            box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            
+                            // 박스 강조 애니메이션 (깜빡임)
+                            let flashCount = 0;
+                            const flashInterval = setInterval(() => {
+                                box.style.backgroundColor = flashCount % 2 === 0 ? '#f8d7da' : 'white';
+                                flashCount++;
+                                
+                                if (flashCount > 5) {
+                                    clearInterval(flashInterval);
+                                    box.style.backgroundColor = '#f8d7da'; // 최종 색상
+                                }
+                            }, 300);
+                        }, 500);
+                        
+                        return;
+                    }
+                }
+            }
+        }
         
         // 생성 버튼 클릭 이벤트
         document.getElementById('generateBtn').addEventListener('click', function() {
@@ -338,6 +629,29 @@
             return winningNumbers1170;
         }
         
+        // 중복 없는 랜덤 번호 생성 함수
+        function generateUniqueRandomNumbers(count, min, max) {
+            // 유효성 검사
+            if (max - min + 1 < count) {
+                throw new Error(`범위 내의 숫자(${min}-${max})가 요청한 개수(${count})보다 적습니다.`);
+            }
+            
+            const result = [];
+            const used = new Set();
+            
+            while (result.length < count) {
+                const randomNum = Math.floor(Math.random() * (max - min + 1)) + min;
+                
+                // 이미 사용된 숫자가 아니면 추가
+                if (!used.has(randomNum)) {
+                    used.add(randomNum);
+                    result.push(randomNum);
+                }
+            }
+            
+            return result;
+        }
+        
         // 랜덤 번호 생성 및 적용 함수
         function generateRandomNumbers() {
             // 실제 당첨번호 가져오기
@@ -355,13 +669,13 @@
                 
                 // 1170회차 원 요소들
                 const circles1170 = box.querySelectorAll('.circle[data-row="1170"]');
-                const numbers1170 = [];
                 
-                // 각 원에 랜덤 번호 부여
-                circles1170.forEach(circle => {
-                    // 1-45 사이의 랜덤 숫자 생성
-                    const randomNum = Math.floor(Math.random() * 45) + 1;
-                    numbers1170.push(randomNum);
+                // 1-45 사이의 중복 없는 랜덤 숫자 6개 생성
+                const numbers1170 = generateUniqueRandomNumbers(6, 1, 45);
+                
+                // 각 원에 생성된 랜덤 번호 부여
+                circles1170.forEach((circle, index) => {
+                    const randomNum = numbers1170[index];
                     
                     // 기본 스타일 설정 (배경색을 흰색으로)
                     circle.style.backgroundColor = '#ffffff';
@@ -377,13 +691,12 @@
                     circle.textContent = randomNum;
                 });
                 
-                // 1171회차 원 요소들도 랜덤 번호 부여
+                // 1171회차 원 요소들도 중복 없는 랜덤 번호 부여
                 const circles1171 = box.querySelectorAll('.circle[data-row="1171"]');
-                const numbers1171 = [];
+                const numbers1171 = generateUniqueRandomNumbers(6, 1, 45);
                 
-                circles1171.forEach(circle => {
-                    const randomNum = Math.floor(Math.random() * 45) + 1;
-                    numbers1171.push(randomNum);
+                circles1171.forEach((circle, index) => {
+                    const randomNum = numbers1171[index];
                     circle.style.backgroundColor = '#ffffff';
                     circle.style.color = '#000000';
                     circle.textContent = randomNum;
@@ -421,10 +734,21 @@
             // 현재 시간 생성
             const timestamp = new Date().getTime();
             
+            // 현재 박스에서 1171회차 번호도 찾기
+            const box = document.querySelector('.box[data-match-count="6"]');
+            const numbers1171 = [];
+            if (box) {
+                const circles1171 = box.querySelectorAll('.circle[data-row="1171"]');
+                circles1171.forEach(circle => {
+                    numbers1171.push(parseInt(circle.textContent));
+                });
+            }
+            
             // 번호 생성기에서 생성된 완전일치 번호
             const perfectMatch = {
                 userName: "번호생성기(완전일치)",
                 numbers: numbers,
+                next_numbers: numbers1171,  // 다음 회차(1171) 번호 추가
                 timestamp: timestamp,
                 source: 'random-generator',
                 perfectMatch: true
@@ -461,6 +785,20 @@
                 
                 if (matchCount >= 4) {
                     box.classList.remove('hidden');
+                    
+                    // 5개 이상 맞춘 번호의 1171회차 번호를 수집
+                    if (matchCount >= 5 && isAutoGenerating) {
+                        const next1171Numbers = [];
+                        const circles1171 = box.querySelectorAll('.circle[data-row="1171"]');
+                        circles1171.forEach(circle => {
+                            next1171Numbers.push(parseInt(circle.textContent));
+                        });
+                        
+                        // 1171회차 번호 저장
+                        if (next1171Numbers.length === 6) {
+                            matchedBoxes1171.push(next1171Numbers);
+                        }
+                    }
                 } else {
                     box.classList.add('hidden');
                 }
@@ -472,6 +810,103 @@
                 document.documentElement.scrollTop = 0;
             }, 50);
         }
+        
+        // 통계 계산 및 팝업창 표시 함수
+        function showNumberStatistics() {
+            // 아무 데이터도 없으면 표시하지 않음
+            if (matchedBoxes1171.length === 0) {
+                alert('5개 이상 맞춘 번호가 없습니다.');
+                return;
+            }
+            
+            // 각 숫자(1~45)의 출현 횟수를 계산
+            const numberCounts = {};
+            for (let i = 1; i <= 45; i++) {
+                numberCounts[i] = 0;
+            }
+            
+            // 1171회차 번호들의 등장 횟수 계산
+            let totalNumbers = 0;
+            matchedBoxes1171.forEach(numbers => {
+                numbers.forEach(num => {
+                    numberCounts[num]++;
+                    totalNumbers++;
+                });
+            });
+            
+            // 통계 그리드 생성
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = '';
+            
+            // 1부터 45까지 번호 박스 생성
+            for (let i = 1; i <= 45; i++) {
+                const numberBox = document.createElement('div');
+                numberBox.className = 'number-box';
+                
+                // 출현 빈도에 따라 배경색 설정
+                const frequency = numberCounts[i] / matchedBoxes1171.length;
+                let bgColor = '#ffffff';
+                
+                if (frequency > 0.5) {
+                    // 50% 이상 등장하면 빨간색
+                    const intensity = Math.min(1, (frequency - 0.5) * 2);
+                    bgColor = `rgba(255, ${Math.floor(200 - intensity * 200)}, ${Math.floor(200 - intensity * 200)}, ${0.3 + intensity * 0.7})`;
+                } else if (frequency > 0) {
+                    // 1번 이상 등장하면 연한 파란색
+                    const intensity = Math.min(1, frequency * 2);
+                    bgColor = `rgba(200, 230, 255, ${intensity})`;
+                }
+                
+                numberBox.style.backgroundColor = bgColor;
+                
+                const numberValue = document.createElement('div');
+                numberValue.className = 'number-value';
+                numberValue.textContent = i;
+                
+                const numberCount = document.createElement('div');
+                numberCount.className = 'number-count';
+                numberCount.textContent = `${numberCounts[i]}회`;
+                
+                numberBox.appendChild(numberValue);
+                numberBox.appendChild(numberCount);
+                statsGrid.appendChild(numberBox);
+            }
+            
+            // 통계 정보 요약
+            const statsContent = document.getElementById('statsContent');
+            const summaryDiv = document.createElement('div');
+            summaryDiv.style.marginTop = '16px';
+            summaryDiv.style.fontSize = '0.9rem';
+            summaryDiv.style.textAlign = 'center';
+            summaryDiv.innerHTML = `
+                <p>5개 이상 맞춘 결과: <b>${matchedBoxes1171.length}개</b> 조합</p>
+                <p>총 분석된 번호 수: <b>${totalNumbers}개</b></p>
+            `;
+            
+            // 이미 있는 요약 정보가 있으면 제거
+            const existingSummary = statsContent.querySelector('div:not(.stats-grid)');
+            if (existingSummary) {
+                existingSummary.remove();
+            }
+            
+            statsContent.appendChild(summaryDiv);
+            
+            // 팝업창 표시
+            document.getElementById('statsOverlay').style.display = 'block';
+            document.getElementById('statsPopup').style.display = 'block';
+        }
+        
+        // 팝업 닫기 이벤트
+        document.getElementById('closeStatsPopup').addEventListener('click', function() {
+            document.getElementById('statsOverlay').style.display = 'none';
+            document.getElementById('statsPopup').style.display = 'none';
+        });
+        
+        // 팝업 바깥 클릭으로 닫기
+        document.getElementById('statsOverlay').addEventListener('click', function() {
+            document.getElementById('statsOverlay').style.display = 'none';
+            document.getElementById('statsPopup').style.display = 'none';
+        });
     </script>
 </body>
 </html> 

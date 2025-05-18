@@ -373,16 +373,21 @@
         #userWelcome {
             margin-right: 16px;
             color: var(--text-secondary);
+            font-size: 0.8rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 80px;
         }
         
         #logoutBtn {
-            padding: 8px 16px;
+            padding: 6px 10px;
             background: #e74c3c;
             color: #fff;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.75rem;
             transition: all 0.2s ease;
         }
         
@@ -474,6 +479,21 @@
         <div class="header">
             <h1>Lotto Solutions</h1>
             <div class="subtitle">AI 기반 로또 번호 예측 시스템</div>
+        </div>
+        
+        <div class="section-title">실시간 이슈 채팅방</div>
+        <div class="button-grid" style="display: flex; justify-content: space-between; gap: 16px;">
+            <button class="nav-button" style="background: linear-gradient(135deg, #20303d, #3a4a5a); border-left: 4px solid var(--primary-color); aspect-ratio: 1/1; flex: 1; height: auto; display: flex; flex-direction: column; justify-content: center; text-align: center;" onclick="location.href='pages/chat-room.html'">
+                <div class="button-icon" style="font-size: 2rem; margin: 0 auto 10px auto;">💬</div>
+                <span class="button-title" style="font-size: 1rem; text-align: center; margin: 0 auto;">실시간 채팅방</span>
+                <span class="button-description" id="live-news-keywords" style="text-align: center; margin: 0 auto;">로또 이슈와 정보 공유</span>
+            </button>
+            
+            <button class="nav-button" style="background: linear-gradient(135deg, #2c273a, #433d5f); border-left: 4px solid var(--secondary-color); aspect-ratio: 1/1; flex: 1; height: auto; display: flex; flex-direction: column; justify-content: center; text-align: center;" onclick="location.href='pages/hot-predictions.html'">
+                <div class="button-icon" style="font-size: 2rem; margin: 0 auto 10px auto;">🔥</div>
+                <span class="button-title" style="font-size: 1rem; text-align: center; margin: 0 auto;">인기 예측</span>
+                <span class="button-description" style="text-align: center; margin: 0 auto;">회원들의 HOT 번호</span>
+            </button>
         </div>
         
         <div class="section-title">커뮤니티 게시판</div>
@@ -581,16 +601,124 @@
         </div>
     </div>
 
+    <!-- 관리자 대시보드 모달 -->
+    <div id="adminDashboardModal" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.75); z-index:10001; justify-content:center; align-items:center; backdrop-filter:blur(6px);">
+        <div style="background:#23283a; border-radius:18px; padding:36px 32px 28px 32px; min-width:380px; max-width:90vw; box-shadow:0 8px 32px rgba(0,0,0,0.4); display:flex; flex-direction:column; align-items:center; position:relative; color:#fff; max-height:90vh; overflow-y:auto;">
+            <span id="closeAdminDashboard" style="position:absolute; right:24px; top:18px; font-size:1.7em; color:#aaa; cursor:pointer;">&times;</span>
+            <h2 style="margin-bottom:18px; font-size:1.7rem; font-weight:800; letter-spacing:-0.02em;">관리자 대시보드</h2>
+            <div id="adminStats" style="width:100%; margin-bottom:24px;"></div>
+            <div style="width:100%; margin-bottom:24px;">
+                <h3 style="font-size:1.2rem; margin-bottom:8px; color:#90caf9;">회원 전체 목록</h3>
+                <div id="userListTable" style="overflow-x:auto;"></div>
+            </div>
+            <div style="width:100%; margin-bottom:24px;">
+                <h3 style="font-size:1.2rem; margin-bottom:8px; color:#90caf9;">날짜별 방문자수</h3>
+                <div id="visitorStatsTable" style="overflow-x:auto;"></div>
+            </div>
+            <div style="width:100%;">
+                <h3 style="font-size:1.2rem; margin-bottom:8px; color:#90caf9;">로또번호 업데이트 현황</h3>
+                <div id="lottoUpdateStatus" style="overflow-x:auto;"></div>
+            </div>
+        </div>
+    </div>
+    <!-- 관리자 비밀번호 입력 모달 -->
+    <div id="adminPwModal" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.45); z-index:10001; justify-content:center; align-items:center; backdrop-filter:blur(6px);">
+        <div style="background:#23283a; border-radius:16px; padding:32px 28px 24px 28px; min-width:320px; box-shadow:0 8px 32px rgba(0,0,0,0.4); display:flex; flex-direction:column; align-items:center; position:relative;">
+            <span id="closeAdminPwModal" style="position:absolute; right:20px; top:16px; font-size:1.5em; color:#aaa; cursor:pointer;">&times;</span>
+            <h2 style="margin-bottom:24px; color:#fff; font-size:1.5rem; font-weight:700;">관리자 비밀번호</h2>
+            <input type="password" id="adminPwInput" placeholder="비밀번호 입력" style="margin-bottom:16px; padding:12px 16px; border-radius:8px; border:1px solid #3c4154; width:100%; background:#2a2f42; color:#fff; font-size:1rem;">
+            <button id="adminPwCheckBtn" style="padding:12px 0; width:100%; background:linear-gradient(45deg,#2196F3,#1976D2); color:#fff; border:none; border-radius:8px; font-size:1rem; font-weight:600; cursor:pointer; transition:all 0.3s ease;">확인</button>
+            <div id="adminPwError" style="color:#e74c3c; margin-top:8px; display:none;"></div>
+        </div>
+    </div>
+
     <script>
         // 기존 자바스크립트 코드가 여기에 위치해야 합니다
         document.getElementById('adminBtn').addEventListener('click', function() {
-            document.getElementById('loginModal').style.display = 'flex';
+            document.getElementById('adminPwModal').style.display = 'flex';
+            document.getElementById('adminPwInput').value = '';
+            document.getElementById('adminPwError').style.display = 'none';
         });
 
-        document.getElementById('closeLogin').addEventListener('click', function() {
-            document.getElementById('loginModal').style.display = 'none';
+        document.getElementById('closeAdminPwModal').onclick = function() {
+            document.getElementById('adminPwModal').style.display = 'none';
+        };
+        // 엔터키로도 확인
+        document.getElementById('adminPwInput').addEventListener('keypress', function(e) {
+            if(e.key === 'Enter') document.getElementById('adminPwCheckBtn').click();
         });
-        
+        // 비밀번호 확인
+        document.getElementById('adminPwCheckBtn').onclick = function() {
+            const pw = document.getElementById('adminPwInput').value;
+            if(pw === 'knue2000') {
+                document.getElementById('adminPwModal').style.display = 'none';
+                showAdminDashboard();
+            } else {
+                document.getElementById('adminPwError').textContent = '비밀번호가 올바르지 않습니다.';
+                document.getElementById('adminPwError').style.display = 'block';
+            }
+        };
+        // 관리자 대시보드 닫기
+        document.getElementById('closeAdminDashboard').onclick = function() {
+            document.getElementById('adminDashboardModal').style.display = 'none';
+        };
+        // 관리자 대시보드 표시 함수
+        function showAdminDashboard() {
+            // 회원 전체 목록
+            let users = JSON.parse(localStorage.getItem('users') || '[]');
+            let userTableHtml = '<table style="width:100%; border-collapse:collapse; background:#1e1e1e; color:#fff;">';
+            userTableHtml += '<tr style="background:#263238;"><th style="padding:8px;">아이디</th><th style="padding:8px;">이메일</th><th style="padding:8px;">가입일</th></tr>';
+            users.forEach(u => {
+                userTableHtml += `<tr><td style='padding:8px;'>${u.id}</td><td style='padding:8px;'>${u.email}</td><td style='padding:8px;'>${u.joinDate ? u.joinDate.slice(0,10) : ''}</td></tr>`;
+            });
+            userTableHtml += '</table>';
+            document.getElementById('userListTable').innerHTML = userTableHtml;
+
+            // 날짜별 방문자수
+            let visitorStats = JSON.parse(localStorage.getItem('visitorStats') || '{}');
+            let visitorTableHtml = '<table style="width:100%; border-collapse:collapse; background:#1e1e1e; color:#fff;">';
+            visitorTableHtml += '<tr style="background:#263238;"><th style="padding:8px;">날짜</th><th style="padding:8px;">방문자수</th></tr>';
+            Object.keys(visitorStats).sort((a,b)=>b.localeCompare(a)).forEach(date => {
+                visitorTableHtml += `<tr><td style='padding:8px;'>${date}</td><td style='padding:8px;'>${visitorStats[date]}</td></tr>`;
+            });
+            visitorTableHtml += '</table>';
+            document.getElementById('visitorStatsTable').innerHTML = visitorTableHtml;
+
+            // 로또번호 업데이트 현황 (page5와 동일 구조)
+            // page5는 localStorage 또는 당첨번호_데이터(혹은 latestWinningNumber) 사용
+            let lottoData = null;
+            try {
+                lottoData = JSON.parse(localStorage.getItem('latestWinningNumber'));
+            } catch(e) {}
+            let lottoStatusHtml = '';
+            if(lottoData && lottoData.drawNumber && lottoData.numbers) {
+                lottoStatusHtml += `<div style='margin-bottom:8px;'>최신 업데이트 회차: <b style='color:#ff9800;'>${lottoData.drawNumber}회</b></div>`;
+                lottoStatusHtml += `<div>업데이트 날짜: <b style='color:#90caf9;'>${lottoData.date ? lottoData.date.slice(0,10) : '알수없음'}</b></div>`;
+                lottoStatusHtml += `<div style='margin-top:8px;'>번호: <span style='color:#fff;'>${lottoData.numbers.join(', ')}</span></div>`;
+            } else {
+                lottoStatusHtml = '<div style="color:#e57373;">로또번호 업데이트 기록이 없습니다.</div>';
+            }
+            document.getElementById('lottoUpdateStatus').innerHTML = lottoStatusHtml;
+
+            // 통계 요약
+            let statsHtml = '';
+            statsHtml += `<div style='margin-bottom:8px;'><b>총 회원수:</b> <span style='color:#ffb300;'>${users.length}</span></div>`;
+            statsHtml += `<div style='margin-bottom:8px;'><b>오늘 방문자수:</b> <span style='color:#4caf50;'>${visitorStats[new Date().toISOString().slice(0,10)] || 0}</span></div>`;
+            statsHtml += `<div style='margin-bottom:8px;'><b>로또 최신 회차:</b> <span style='color:#2196f3;'>${lottoData && lottoData.drawNumber ? lottoData.drawNumber : '없음'}</span></div>`;
+            document.getElementById('adminStats').innerHTML = statsHtml;
+
+            document.getElementById('adminDashboardModal').style.display = 'flex';
+        }
+
+        // 방문자수 집계: 날짜별로 localStorage에 저장
+        function updateVisitorCount() {
+            const today = new Date().toISOString().slice(0,10);
+            let visitorStats = JSON.parse(localStorage.getItem('visitorStats') || '{}');
+            visitorStats[today] = (visitorStats[today] || 0) + 1;
+            localStorage.setItem('visitorStats', JSON.stringify(visitorStats));
+        }
+        updateVisitorCount();
+
         // 버튼들에 대한 이벤트 리스너 유지
         if(document.getElementById('btn-predict')) {
             document.getElementById('btn-predict').addEventListener('click', function() {
@@ -598,7 +726,7 @@
                 const loggedInUser = sessionStorage.getItem('loggedInUser');
                 if (loggedInUser) {
                     // 로그인된 경우 페이지로 이동
-                    location.href = 'pages/page3.html'; // 이번주 번호 예측 페이지
+                    location.href = 'pages/page4.html'; // 이번주 번호 예측 페이지
                 } else {
                     // 회원 전용 기능 알림 메시지 표시
                     alert('회원 전용 기능입니다. 회원가입 후 이용해주세요.');
@@ -698,7 +826,7 @@
             if(id === 'admin' && pw === '1234') {
                 document.getElementById('loginModal').style.display = 'none';
                 document.getElementById('userBar').style.display = 'flex';
-                document.getElementById('userWelcome').textContent = 'admin님 환영합니다!';
+                document.getElementById('userWelcome').textContent = 'admin님';
             } else {
                 // 일반 사용자 로그인 처리
                 const users = JSON.parse(localStorage.getItem('users') || '[]');
@@ -707,7 +835,7 @@
                 if (user) {
                     document.getElementById('loginModal').style.display = 'none';
                     document.getElementById('userBar').style.display = 'flex';
-                    document.getElementById('userWelcome').textContent = user.id + '님 환영합니다!';
+                    document.getElementById('userWelcome').textContent = user.id + '님';
                     
                     // 로그인 정보 세션 저장
                     sessionStorage.setItem('loggedInUser', user.id);
@@ -722,7 +850,7 @@
             const loggedInUser = sessionStorage.getItem('loggedInUser');
             if (loggedInUser) {
                 document.getElementById('userBar').style.display = 'flex';
-                document.getElementById('userWelcome').textContent = loggedInUser + '님 환영합니다!';
+                document.getElementById('userWelcome').textContent = loggedInUser + '님';
             }
         });
         
@@ -730,6 +858,110 @@
             document.getElementById('userBar').style.display = 'none';
             // 로그인 세션 정보 제거
             sessionStorage.removeItem('loggedInUser');
+        });
+
+        // 실시간 뉴스 키워드 업데이트 함수
+        async function updateNewsKeywords() {
+            try {
+                // CORS 문제 해결을 위한 프록시 서버
+                const corsProxy = 'https://cors-anywhere.herokuapp.com/';
+                
+                // 네이버 뉴스 RSS 피드 URL (속보)
+                const rssFeedUrl = 'https://news.naver.com/rss/main/055.xml';
+                
+                // RSS 피드 가져오기
+                const response = await fetch(corsProxy + rssFeedUrl);
+                const xmlText = await response.text();
+                
+                // XML 파싱
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+                
+                // 뉴스 제목 추출 (최대 10개)
+                const newsTitles = [];
+                const items = xmlDoc.getElementsByTagName('item');
+                
+                for (let i = 0; i < Math.min(items.length, 10); i++) {
+                    const title = items[i].getElementsByTagName('title')[0].textContent;
+                    newsTitles.push(title);
+                }
+                
+                // 랜덤으로 2-3개 제목 선택
+                const randomTitles = [];
+                const titleCount = Math.floor(Math.random() * 2) + 2; // 2~3개
+                
+                for (let i = 0; i < titleCount && newsTitles.length > 0; i++) {
+                    const randomIndex = Math.floor(Math.random() * newsTitles.length);
+                    randomTitles.push(newsTitles[randomIndex]);
+                    newsTitles.splice(randomIndex, 1); // 선택된 제목 제거
+                }
+                
+                // 키워드 추출 (각 제목에서 처음 2-3단어만 사용)
+                const keywords = randomTitles.map(title => {
+                    // 괄호와 내용 제거 (예: '제목 (내용)' -> '제목')
+                    const cleanTitle = title.replace(/\([^)]*\)/g, '').trim();
+                    
+                    // 제목에서 앞부분 단어 2-3개만 사용
+                    const words = cleanTitle.split(' ');
+                    const keywordLength = Math.min(words.length, Math.floor(Math.random() * 2) + 2);
+                    return words.slice(0, keywordLength).join(' ');
+                });
+                
+                // 버튼 설명 업데이트
+                const keywordsText = keywords.join(' • ');
+                document.getElementById('live-news-keywords').textContent = keywordsText;
+                
+                // 업데이트 시간 및 키워드 저장
+                localStorage.setItem('lastNewsUpdate', Date.now().toString());
+                localStorage.setItem('newsKeywords', keywordsText);
+                console.log('뉴스 키워드 업데이트: ' + keywordsText);
+                
+            } catch (error) {
+                console.error('뉴스 키워드 업데이트 실패:', error);
+                
+                // API 호출 실패 시 백업 키워드 목록 사용
+                const backupKeywords = [
+                    '경제 이슈', '정치 소식', '사회 뉴스',
+                    '스포츠 소식', '속보 뉴스', '로또 정보'
+                ];
+                
+                // 랜덤으로 2-3개 선택
+                const randomKeywords = [];
+                const keywordCount = Math.floor(Math.random() * 2) + 2; // 2~3개
+                
+                for (let i = 0; i < keywordCount; i++) {
+                    const randomIndex = Math.floor(Math.random() * backupKeywords.length);
+                    if (!randomKeywords.includes(backupKeywords[randomIndex])) {
+                        randomKeywords.push(backupKeywords[randomIndex]);
+                    }
+                }
+                
+                // 버튼 설명 업데이트
+                const keywordsText = randomKeywords.join(' • ');
+                document.getElementById('live-news-keywords').textContent = keywordsText;
+            }
+        }
+        
+        // 페이지 로드 시 뉴스 키워드 초기화
+        window.addEventListener('load', function() {
+            // 마지막 업데이트 시간 확인
+            const lastUpdate = localStorage.getItem('lastNewsUpdate');
+            const currentTime = Date.now();
+            const updateInterval = 4 * 60 * 60 * 1000; // 4시간 (밀리초)
+            
+            if (!lastUpdate || (currentTime - parseInt(lastUpdate)) > updateInterval) {
+                // 4시간 이상 지났거나 처음 로드할 때 업데이트
+                updateNewsKeywords();
+            } else {
+                // 저장된 키워드가 있으면 복원
+                const savedKeywords = localStorage.getItem('newsKeywords');
+                if (savedKeywords) {
+                    document.getElementById('live-news-keywords').textContent = savedKeywords;
+                }
+            }
+            
+            // 4시간마다 업데이트하는 타이머 설정
+            setInterval(updateNewsKeywords, updateInterval);
         });
     </script>
 </body>

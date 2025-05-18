@@ -751,9 +751,23 @@
                     const matchElement = document.createElement('div');
                     matchElement.className = 'prediction-row perfect-match';
                     
+                    // 1170회차 번호 (맞춘 번호)
                     const numbersHtml = match.numbers.map(num => 
                         `<div class="number-ball winning-number">${num}</div>`
                     ).join('');
+                    
+                    // 1171회차 번호가 있으면 표시
+                    let nextNumbersHtml = '';
+                    if (match.next_numbers && match.next_numbers.length > 0) {
+                        nextNumbersHtml = `
+                            <div style="margin-top: 10px; font-size: 0.85rem; color: #aaa;">다음 회차 예상번호:</div>
+                            <div class="prediction-numbers" style="margin-top: 5px;">
+                                ${match.next_numbers.map(num => 
+                                    `<div class="number-ball" style="background-color: #555;">${num}</div>`
+                                ).join('')}
+                            </div>
+                        `;
+                    }
                     
                     matchElement.innerHTML = `
                         <div class="user-name">${match.userName}</div>
@@ -761,6 +775,7 @@
                             ${numbersHtml}
                         </div>
                         <div class="perfect-match-badge">완전일치</div>
+                        ${nextNumbersHtml}
                         <div class="timestamp">${new Date(match.timestamp).toLocaleString()}</div>
                     `;
                     perfectMatchList.appendChild(matchElement);

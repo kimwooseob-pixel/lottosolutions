@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>실시간 이슈 채팅방 - Lotto Solutions</title>
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --primary-dark: #1976D2;
+            --secondary-color: #FF4081;
+            --secondary-dark: #E91E63;
+            --green-color: #4CAF50;
+            --green-dark: #388E3C;
+            --purple-color: #9C27B0;
+            --purple-dark: #7B1FA2;
+            --orange-color: #FF9800;
+            --orange-dark: #F57C00;
+            --text-color: #ffffff;
+            --text-secondary: #b0bec5;
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --card-hover: #2c2c2c;
+            --chat-bg: #262626;
+            --chat-self: #0d47a1;
+            --chat-other: #303f9f;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background-color: var(--card-bg);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .back-btn {
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #546e7a, #37474f);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .back-btn:hover {
+            background: linear-gradient(135deg, #455a64, #263238);
+            transform: translateY(-2px);
+        }
+        
+        .page-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            text-align: center;
+            flex-grow: 1;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 16px;
+        }
+        
+        .chat-area {
+            flex: 1;
+            background-color: var(--chat-bg);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            overflow-y: auto;
+            max-height: calc(100vh - 200px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .message {
+            margin-bottom: 12px;
+            padding: 10px 14px;
+            border-radius: 18px;
+            max-width: 75%;
+            word-break: break-word;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message.self {
+            background-color: var(--chat-self);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message.other {
+            background-color: var(--chat-other);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        
+        .username {
+            font-weight: 700;
+            margin-right: 8px;
+            font-size: 0.9rem;
+            color: #ffeb3b;
+        }
+        
+        .timestamp {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+        
+        .message-content {
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+        
+        .chat-input-area {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 24px;
+            border: none;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        
+        .chat-input:focus {
+            box-shadow: 0 0 0 2px var(--primary-dark);
+        }
+        
+        .send-btn {
+            padding: 8px 20px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 24px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .send-btn:hover {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+            transform: translateY(-2px);
+        }
+        
+        .welcome-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        
+        .welcome-card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .welcome-title {
+            font-size: 1.4rem;
+            margin-bottom: 16px;
+            text-align: center;
+            font-weight: 700;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .welcome-input {
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            border: none;
+            background-color: var(--chat-bg);
+            color: var(--text-color);
+            font-size: 1rem;
+            outline: none;
+        }
+        
+        .welcome-input:focus {
+            box-shadow: 0 0 0 2px var(--primary-dark);
+        }
+        
+        .welcome-button {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .welcome-button:hover {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+            transform: translateY(-2px);
+        }
+        
+        .info-text {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            text-align: center;
+            margin-top: 8px;
+        }
+        
+        .online-users-box {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .online-users-title {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .online-users-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .online-user {
+            background-color: var(--chat-bg);
+            border-radius: 16px;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .online-user:hover {
+            background-color: var(--card-hover);
+            transform: translateY(-2px);
+        }
+        
+        .online-user.selected {
+            background-color: var(--secondary-color);
+        }
+        
+        .online-indicator {
+            width: 8px;
+            height: 8px;
+            background-color: var(--green-color);
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        
+        .timer-container {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .timer-label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        
+        .timer-value {
+            background: linear-gradient(45deg, var(--secondary-color), var(--secondary-dark));
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .matching-info {
+            background-color: rgba(255, 152, 0, 0.15);
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 14px;
+            font-size: 0.9rem;
+            display: none;
+        }
+        
+        .matching-info.active {
+            display: block;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { background-color: rgba(255, 152, 0, 0.15); }
+            50% { background-color: rgba(255, 152, 0, 0.3); }
+            100% { background-color: rgba(255, 152, 0, 0.15); }
+        }
+        
+        .matching-status {
+            color: var(--orange-color);
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        
+        .matching-user {
+            color: #ffeb3b;
+            font-weight: 600;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(3px);
+        }
+        
+        .modal-content {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+        }
+        
+        .modal-title {
+            font-size: 1.4rem;
+            margin-bottom: 16px;
+            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+        
+        .modal-message {
+            color: var(--text-color);
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        
+        .modal-button {
+            padding: 10px 24px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-button-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+        }
+        
+        .modal-button-secondary {
+            background: transparent;
+            color: var(--text-color);
+            border: 1px solid var(--text-secondary);
+        }
+        
+        @media (max-width: 768px) {
+            .message {
+                max-width: 85%;
+            }
+            
+            .chat-area {
+                max-height: calc(100vh - 180px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html" class="back-btn">← 뒤로가기</a>
+        <h1 class="page-title">실시간 이슈 채팅방</h1>
+    </div>
+    
+    <div class="chat-container">
+        <div class="timer-container">
+            <div class="timer-label">다음 채팅방 이동까지:</div>
+            <div class="timer-value" id="resetTimer">03:59:59</div>
+        </div>
+        
+        <div class="matching-info" id="matchingInfo">
+            <div class="matching-status">1:1 매칭 모드 활성화</div>
+            <div>대화하고 싶은 상대방을 선택하세요. 서로 선택하면 1:1 채팅방으로 이동합니다.</div>
+            <div id="matchingSelection"></div>
+        </div>
+        
+        <div class="online-users-box">
+            <div class="online-users-title">접속자 현황 (클릭하여 1:1 대화 상대 선택)</div>
+            <div class="online-users-list" id="onlineUsersList">
+                <!-- 온라인 유저 목록 동적 생성 -->
+            </div>
+        </div>
+        
+        <div class="chat-area" id="chatArea">
+            <!-- 채팅 메시지 동적 생성 -->
+        </div>
+        
+        <div class="chat-input-area">
+            <input type="text" class="chat-input" id="messageInput" placeholder="메시지를 입력하세요..." autocomplete="off">
+            <button class="send-btn" id="sendBtn">전송</button>
+        </div>
+    </div>
+    
+    <div class="welcome-overlay" id="welcomeOverlay">
+        <div class="welcome-card">
+            <h2 class="welcome-title">채팅방에 오신 것을 환영합니다!</h2>
+            <input type="text" class="welcome-input" id="usernameInput" placeholder="사용할 닉네임을 입력하세요" maxlength="20">
+            <button class="welcome-button" id="startChatBtn">채팅 시작하기</button>
+            <p class="info-text">* 닉네임은 최대 20자까지 입력 가능합니다.</p>
+        </div>
+    </div>
+    
+    <!-- 매칭 결과 모달 -->
+    <div class="modal-overlay" id="matchResultModal">
+        <div class="modal-content">
+            <h2 class="modal-title" id="matchModalTitle">매칭 성공!</h2>
+            <p class="modal-message" id="matchModalMessage">
+                상대방과 매칭되었습니다. 1:1 채팅방으로 이동하시겠습니까?
+            </p>
+            <div class="modal-buttons">
+                <button class="modal-button modal-button-primary" id="goToPrivateChatBtn">이동하기</button>
+                <button class="modal-button modal-button-secondary" id="stayInChatBtn">여기 남기</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let currentUser = '';
+        let chatMessages = [];
+        let onlineUsers = [];
+        let selectedUser = null;
+        let resetTimerInterval = null;
+        let resetTimeLeft = 4 * 60 * 60; // 4시간(초 단위)
+        let matchingMode = false;
+        
+        // DOM 요소
+        const chatArea = document.getElementById('chatArea');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const welcomeOverlay = document.getElementById('welcomeOverlay');
+        const usernameInput = document.getElementById('usernameInput');
+        const startChatBtn = document.getElementById('startChatBtn');
+        const onlineUsersList = document.getElementById('onlineUsersList');
+        const resetTimerElement = document.getElementById('resetTimer');
+        const matchingInfoElement = document.getElementById('matchingInfo');
+        const matchingSelectionElement = document.getElementById('matchingSelection');
+        const matchResultModal = document.getElementById('matchResultModal');
+        const matchModalTitle = document.getElementById('matchModalTitle');
+        const matchModalMessage = document.getElementById('matchModalMessage');
+        const goToPrivateChatBtn = document.getElementById('goToPrivateChatBtn');
+        const stayInChatBtn = document.getElementById('stayInChatBtn');
+        
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            // 로컬스토리지에서 채팅 데이터 로드
+            loadChatData();
+            
+            // 타이머 초기화
+            initializeResetTimer();
+            
+            // 엔터 키 이벤트 설정
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') sendMessage();
+            });
+            
+            usernameInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') startChat();
+            });
+            
+            // 버튼 클릭 이벤트 설정
+            sendBtn.addEventListener('click', sendMessage);
+            startChatBtn.addEventListener('click', startChat);
+            
+            // 매칭 모달 버튼 이벤트
+            goToPrivateChatBtn.addEventListener('click', handleGoToPrivateChat);
+            stayInChatBtn.addEventListener('click', handleStayInChat);
+            
+            // 로그인한 사용자 정보 확인
+            const loggedInUser = sessionStorage.getItem('loggedInUser');
+            if (loggedInUser) {
+                usernameInput.value = loggedInUser;
+            }
+            
+            // 일정 시간마다 온라인 상태 업데이트
+            setInterval(updateOnlineStatus, 30000); // 30초마다
+            
+            // 매칭 상태 체크
+            setInterval(checkMatchingStatus, 10000); // 10초마다
+        });
+        
+        // 리셋 타이머 초기화
+        function initializeResetTimer() {
+            // 저장된 타이머 값 확인
+            const savedResetTime = localStorage.getItem('chatResetTime');
+            
+            if (savedResetTime) {
+                const targetTime = parseInt(savedResetTime);
+                const currentTime = Date.now();
+                
+                if (targetTime > currentTime) {
+                    // 남은 시간 계산
+                    resetTimeLeft = Math.floor((targetTime - currentTime) / 1000);
+                } else {
+                    // 이미 시간이 지났으면 새로운 타이머 설정
+                    setNewResetTimer();
+                }
+            } else {
+                // 저장된 값이 없으면 새로운 타이머 설정
+                setNewResetTimer();
+            }
+            
+            // 타이머 시작
+            updateTimerDisplay();
+            resetTimerInterval = setInterval(updateResetTimer, 1000);
+            
+            // 매칭 모드 활성화 시간 확인
+            const remainingMinutes = Math.floor(resetTimeLeft / 60);
+            if (remainingMinutes <= 30) {
+                // 남은 시간이 30분 이하면 매칭 모드 활성화
+                activateMatchingMode();
+            }
+        }
+        
+        // 새로운 리셋 타이머 설정
+        function setNewResetTimer() {
+            resetTimeLeft = 4 * 60 * 60; // 4시간(초 단위)
+            const targetTime = Date.now() + (resetTimeLeft * 1000);
+            localStorage.setItem('chatResetTime', targetTime.toString());
+        }
+        
+        // 리셋 타이머 업데이트
+        function updateResetTimer() {
+            resetTimeLeft--;
+            
+            if (resetTimeLeft <= 0) {
+                // 타이머가 끝나면 채팅방 리셋
+                clearInterval(resetTimerInterval);
+                resetChatRoom();
+                return;
+            }
+            
+            // 남은 시간이 30분이면 매칭 모드 활성화
+            const remainingMinutes = Math.floor(resetTimeLeft / 60);
+            if (remainingMinutes === 30) {
+                activateMatchingMode();
+            }
+            
+            updateTimerDisplay();
+        }
+        
+        // 타이머 표시 업데이트
+        function updateTimerDisplay() {
+            const hours = Math.floor(resetTimeLeft / 3600);
+            const minutes = Math.floor((resetTimeLeft % 3600) / 60);
+            const seconds = resetTimeLeft % 60;
+            
+            const formattedTime = 
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            resetTimerElement.textContent = formattedTime;
+            
+            // 30분 이하면 색상 변경
+            if (resetTimeLeft <= 30 * 60) {
+                resetTimerElement.style.background = 'linear-gradient(45deg, #e53935, #e91e63)';
+            }
+        }
+        
+        // 매칭 모드 활성화
+        function activateMatchingMode() {
+            matchingMode = true;
+            matchingInfoElement.classList.add('active');
+            
+            // 시스템 메시지 추가
+            addSystemMessage("🔔 1:1 매칭 모드가 활성화되었습니다. 30분 후 채팅방이 리셋됩니다. 대화를 계속하고 싶은 상대방을 선택하세요.");
+            
+            // 매칭 가능한 사용자 목록 업데이트
+            renderOnlineUsers();
+        }
+        
+        // 채팅방 리셋
+        function resetChatRoom() {
+            // 매칭 결과에 따라 처리
+            processMatchingResults();
+            
+            // 새로운 타이머 설정
+            setNewResetTimer();
+            updateTimerDisplay();
+            resetTimerInterval = setInterval(updateResetTimer, 1000);
+            
+            // 매칭 모드 비활성화
+            matchingMode = false;
+            matchingInfoElement.classList.remove('active');
+            selectedUser = null;
+            
+            // 시스템 메시지 추가
+            addSystemMessage("🔄 채팅방이 리셋되었습니다.");
+        }
+        
+        // 매칭 결과 처리
+        function processMatchingResults() {
+            // 로컬스토리지에서 매칭 정보 가져오기
+            const matchingData = JSON.parse(localStorage.getItem('matchingSelections') || '[]');
+            
+            if (!currentUser || matchingData.length === 0) return;
+            
+            // 현재 사용자의 선택 확인
+            const mySelection = matchingData.find(item => item.user === currentUser);
+            if (!mySelection || !mySelection.selectedUser) return;
+            
+            // 상대방의 선택 확인
+            const partnerSelection = matchingData.find(item => 
+                item.user === mySelection.selectedUser && 
+                item.selectedUser === currentUser
+            );
+            
+            // 상호 선택된 경우 매칭 성공
+            if (partnerSelection) {
+                showMatchResult(true, mySelection.selectedUser);
+            } else {
+                // 일방적 선택인 경우
+                showMatchResult(false);
+            }
+        }
+        
+        // 매칭 결과 표시
+        function showMatchResult(isMatched, matchedUser = null) {
+            if (isMatched && matchedUser) {
+                matchModalTitle.textContent = "매칭 성공!";
+                matchModalMessage.innerHTML = `<b class="matching-user">${matchedUser}</b>님과 매칭되었습니다.<br>1:1 채팅방으로 이동하시겠습니까?`;
+                goToPrivateChatBtn.style.display = "block";
+                
+                // 매칭 정보 저장
+                sessionStorage.setItem('matchedUser', matchedUser);
+            } else {
+                matchModalTitle.textContent = "매칭 실패";
+                matchModalMessage.innerHTML = "상호 선택된 사용자가 없습니다.<br>다른 채팅방으로 이동합니다.";
+                goToPrivateChatBtn.style.display = "none";
+            }
+            
+            // 모달 표시
+            matchResultModal.style.display = "flex";
+        }
+        
+        // 1:1 채팅방으로 이동
+        function handleGoToPrivateChat() {
+            const matchedUser = sessionStorage.getItem('matchedUser');
+            
+            if (matchedUser) {
+                // 1:1 채팅방 URL (채팅방 페이지 생성 필요)
+                location.href = `private-chat.html?partner=${encodeURIComponent(matchedUser)}`;
+            } else {
+                handleStayInChat();
+            }
+        }
+        
+        // 일반 채팅방 유지
+        function handleStayInChat() {
+            matchResultModal.style.display = "none";
+            
+            // 새로운 일반 채팅방으로 이동 (동일한 페이지 새로고침)
+            // 실제 구현에서는 다른 채팅방 URL로 변경 가능
+            location.reload();
+        }
+        
+        // 채팅 데이터 로드
+        function loadChatData() {
+            // 로컬스토리지에서 채팅 메시지 로드
+            try {
+                const savedMessages = localStorage.getItem('chatMessages');
+                if (savedMessages) {
+                    chatMessages = JSON.parse(savedMessages);
+                    renderChatMessages();
+                }
+                
+                // 온라인 유저 로드
+                const savedOnlineUsers = localStorage.getItem('onlineUsers');
+                if (savedOnlineUsers) {
+                    onlineUsers = JSON.parse(savedOnlineUsers);
+                    
+                    // 마지막 활동 시간이 5분 이상 지난 유저 제거
+                    const currentTime = Date.now();
+                    onlineUsers = onlineUsers.filter(user => {
+                        return (currentTime - user.lastActive) < 5 * 60 * 1000;
+                    });
+                    
+                    renderOnlineUsers();
+                }
+            } catch (error) {
+                console.error('채팅 데이터 로드 오류:', error);
+                chatMessages = [];
+                onlineUsers = [];
+            }
+        }
+        
+        // 채팅 시작
+        function startChat() {
+            const username = usernameInput.value.trim();
+            
+            if (username) {
+                currentUser = username;
+                welcomeOverlay.style.display = 'none';
+                
+                // 온라인 유저 목록에 추가
+                addOnlineUser(username);
+                
+                // 시스템 메시지 추가
+                addSystemMessage(`${username}님이 입장했습니다.`);
+                
+                // 메시지 입력 필드에 포커스
+                messageInput.focus();
+            } else {
+                alert('닉네임을 입력해주세요.');
+                usernameInput.focus();
+            }
+        }
+        
+        // 온라인 유저 추가
+        function addOnlineUser(username) {
+            // 이미 있는 유저인지 확인
+            const existingUserIndex = onlineUsers.findIndex(user => user.name === username);
+            
+            if (existingUserIndex >= 0) {
+                // 기존 유저의 마지막 활동 시간 업데이트
+                onlineUsers[existingUserIndex].lastActive = Date.now();
+            } else {
+                // 새 유저 추가
+                onlineUsers.push({
+                    name: username,
+                    lastActive: Date.now()
+                });
+            }
+            
+            // 로컬스토리지에 저장
+            localStorage.setItem('onlineUsers', JSON.stringify(onlineUsers));
+            
+            // 온라인 유저 목록 렌더링
+            renderOnlineUsers();
+        }
+        
+        // 온라인 상태 업데이트
+        function updateOnlineStatus() {
+            if (currentUser) {
+                addOnlineUser(currentUser);
+            }
+        }
+        
+        // 온라인 유저 목록 렌더링
+        function renderOnlineUsers() {
+            onlineUsersList.innerHTML = '';
+            
+            onlineUsers.forEach(user => {
+                if (user.name === currentUser) return; // 자기 자신은 제외
+                
+                const userElement = document.createElement('div');
+                userElement.className = 'online-user';
+                
+                // 매칭 모드에서 선택된 유저 하이라이트
+                if (matchingMode && selectedUser === user.name) {
+                    userElement.classList.add('selected');
+                }
+                
+                const indicator = document.createElement('div');
+                indicator.className = 'online-indicator';
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = user.name;
+                
+                userElement.appendChild(indicator);
+                userElement.appendChild(nameSpan);
+                
+                // 매칭 모드에서 유저 선택 가능
+                if (matchingMode) {
+                    userElement.addEventListener('click', () => {
+                        selectUserForMatching(user.name);
+                    });
+                }
+                
+                onlineUsersList.appendChild(userElement);
+            });
+            
+            // 매칭 모드에서 선택 정보 표시
+            updateMatchingSelectionDisplay();
+        }
+        
+        // 매칭을 위한 유저 선택
+        function selectUserForMatching(username) {
+            if (!matchingMode || !currentUser) return;
+            
+            // 현재 선택된 유저와 같으면 선택 취소
+            if (selectedUser === username) {
+                selectedUser = null;
+            } else {
+                selectedUser = username;
+            }
+            
+            // 선택 정보 저장
+            saveMatchingSelection();
+            
+            // 유저 목록 업데이트
+            renderOnlineUsers();
+        }
+        
+        // 매칭 선택 정보 저장
+        function saveMatchingSelection() {
+            // 로컬스토리지에서 기존 선택 정보 가져오기
+            let matchingSelections = JSON.parse(localStorage.getItem('matchingSelections') || '[]');
+            
+            // 현재 사용자의 선택 정보 찾기
+            const userIndex = matchingSelections.findIndex(item => item.user === currentUser);
+            
+            if (userIndex >= 0) {
+                // 기존 정보 업데이트
+                matchingSelections[userIndex].selectedUser = selectedUser;
+                matchingSelections[userIndex].timestamp = Date.now();
+            } else {
+                // 새 선택 정보 추가
+                matchingSelections.push({
+                    user: currentUser,
+                    selectedUser: selectedUser,
+                    timestamp: Date.now()
+                });
+            }
+            
+            // 로컬스토리지에 저장
+            localStorage.setItem('matchingSelections', JSON.stringify(matchingSelections));
+        }
+        
+        // 매칭 선택 정보 표시 업데이트
+        function updateMatchingSelectionDisplay() {
+            if (!matchingMode || !matchingSelectionElement) return;
+            
+            if (selectedUser) {
+                matchingSelectionElement.innerHTML = `<div style="margin-top:8px;">선택한 상대: <span class="matching-user">${selectedUser}</span></div>`;
+            } else {
+                matchingSelectionElement.innerHTML = '';
+            }
+        }
+        
+        // 매칭 상태 확인
+        function checkMatchingStatus() {
+            if (!matchingMode || !currentUser) return;
+            
+            // 로컬스토리지에서 매칭 정보 가져오기
+            const matchingSelections = JSON.parse(localStorage.getItem('matchingSelections') || '[]');
+            
+            // 현재 사용자의 선택 확인
+            const mySelection = matchingSelections.find(item => item.user === currentUser);
+            if (!mySelection || !mySelection.selectedUser) return;
+            
+            // 상대방의 선택 확인
+            const partnerSelection = matchingSelections.find(item => 
+                item.user === mySelection.selectedUser && 
+                item.selectedUser === currentUser
+            );
+            
+            // 상호 선택된 경우
+            if (partnerSelection) {
+                // 매칭 성공 메시지 (실제 서버 구현에서는 즉시 처리)
+                addSystemMessage(`🎉 ${mySelection.selectedUser}님과 매칭되었습니다!`);
+            }
+        }
+        
+        // 시스템 메시지 추가
+        function addSystemMessage(text) {
+            const systemMessage = {
+                type: 'system',
+                content: text,
+                timestamp: Date.now()
+            };
+            
+            chatMessages.push(systemMessage);
+            
+            // 최대 100개 메시지만 유지
+            if (chatMessages.length > 100) {
+                chatMessages = chatMessages.slice(-100);
+            }
+            
+            // 로컬스토리지에 저장
+            localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
+            
+            // 채팅창 업데이트
+            renderChatMessages();
+        }
+        
+        // 메시지 전송
+        function sendMessage() {
+            const messageText = messageInput.value.trim();
+            
+            if (messageText && currentUser) {
+                const newMessage = {
+                    type: 'user',
+                    username: currentUser,
+                    content: messageText,
+                    timestamp: Date.now()
+                };
+                
+                // 메시지 배열에 추가
+                chatMessages.push(newMessage);
+                
+                // 최대 100개 메시지만 유지
+                if (chatMessages.length > 100) {
+                    chatMessages = chatMessages.slice(-100);
+                }
+                
+                // 로컬스토리지에 저장
+                localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
+                
+                // 입력 필드 초기화
+                messageInput.value = '';
+                
+                // 채팅창 업데이트
+                renderChatMessages();
+                
+                // 유저 활동 상태 업데이트
+                addOnlineUser(currentUser);
+                
+                // 한 달 이상 된 메시지 삭제
+                cleanupOldMessages();
+            }
+        }
+        
+        // 채팅 메시지 렌더링
+        function renderChatMessages() {
+            chatArea.innerHTML = '';
+            
+            chatMessages.forEach(msg => {
+                const messageElement = document.createElement('div');
+                
+                if (msg.type === 'system') {
+                    // 시스템 메시지
+                    messageElement.className = 'message system';
+                    messageElement.style.alignSelf = 'center';
+                    messageElement.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                    messageElement.style.color = 'var(--text-secondary)';
+                    messageElement.style.fontSize = '0.85rem';
+                    messageElement.style.padding = '6px 12px';
+                    messageElement.style.borderRadius = '12px';
+                    messageElement.textContent = msg.content;
+                } else {
+                    // 사용자 메시지
+                    const isSelf = msg.username === currentUser;
+                    messageElement.className = `message ${isSelf ? 'self' : 'other'}`;
+                    
+                    const header = document.createElement('div');
+                    header.className = 'message-header';
+                    
+                    const username = document.createElement('span');
+                    username.className = 'username';
+                    username.textContent = msg.username;
+                    
+                    const timestamp = document.createElement('span');
+                    timestamp.className = 'timestamp';
+                    timestamp.textContent = formatTime(msg.timestamp);
+                    
+                    const content = document.createElement('div');
+                    content.className = 'message-content';
+                    content.textContent = msg.content;
+                    
+                    header.appendChild(username);
+                    header.appendChild(timestamp);
+                    messageElement.appendChild(header);
+                    messageElement.appendChild(content);
+                }
+                
+                chatArea.appendChild(messageElement);
+            });
+            
+            // 스크롤을 맨 아래로 이동
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+        
+        // 시간 포맷팅
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            let hours = date.getHours();
+            let minutes = date.getMinutes();
+            
+            // 10보다 작은 경우 앞에 0 추가
+            hours = hours < 10 ? '0' + hours : hours;
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            
+            return `${hours}:${minutes}`;
+        }
+        
+        // 오래된 메시지 정리
+        function cleanupOldMessages() {
+            const oneMonthAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+            chatMessages = chatMessages.filter(msg => msg.timestamp > oneMonthAgo);
+            localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
+        }
+    </script>
+</body>
+</html> 
