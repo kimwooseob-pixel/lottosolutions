@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lotto Solutions</title>
     <link rel="manifest" href="manifest.json">
+    <!-- Firebase SDK 추가 -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <style>
         :root {
             --primary-color: #2196F3;
@@ -569,7 +573,7 @@
             <span id="closeLogin">&times;</span>
             <h2 class="modal-title">로그인</h2>
             <div class="input-field">
-                <input type="text" id="loginId" placeholder="아이디">
+                <input type="email" id="loginId" placeholder="이메일">
             </div>
             <div class="input-field">
                 <input type="password" id="loginPw" placeholder="비밀번호">
@@ -588,13 +592,13 @@
                 <input type="text" id="signupId" placeholder="아이디">
             </div>
             <div class="input-field">
+                <input type="email" id="signupEmail" placeholder="이메일">
+            </div>
+            <div class="input-field">
                 <input type="password" id="signupPw" placeholder="비밀번호">
             </div>
             <div class="input-field">
                 <input type="password" id="signupPwConfirm" placeholder="비밀번호 확인">
-            </div>
-            <div class="input-field">
-                <input type="email" id="signupEmail" placeholder="이메일">
             </div>
             <button id="registerBtn" class="login-btn">가입하기</button>
             <button id="backToLoginBtn" class="signup-btn">로그인으로 돌아가기</button>
@@ -633,6 +637,24 @@
     </div>
 
     <script>
+        // Firebase 초기화
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwh55rLOQkY8ZVCzaC4ZF3iaUVU5Vu0GM",
+            authDomain: "ai-lottosolutions.firebaseapp.com",
+            projectId: "ai-lottosolutions",
+            storageBucket: "ai-lottosolutions.appspot.com",
+            messagingSenderId: "616782090306",
+            appId: "1:616782090306:web:688c710998dfce8e4d5ddb",
+            measurementId: "G-NEXMN4FFJG"
+        };
+        
+        // Firebase 초기화
+        firebase.initializeApp(firebaseConfig);
+        
+        // Firestore와 Auth 참조 생성
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        
         // 기존 자바스크립트 코드가 여기에 위치해야 합니다
         document.getElementById('adminBtn').addEventListener('click', function() {
             document.getElementById('adminPwModal').style.display = 'flex';
@@ -792,72 +814,119 @@
                 return;
             }
             
-            // 회원 정보 로컬 스토리지에 저장 (실제 서비스에서는 서버에 저장)
-            const userData = {
-                id: id,
-                pw: pw,  // 실제 서비스에서는 암호화 필요
-                email: email,
-                joinDate: new Date().toISOString()
-            };
-            
-            // 기존 사용자 확인
-            let users = JSON.parse(localStorage.getItem('users') || '[]');
-            
-            // 중복 아이디 확인
-            if (users.some(user => user.id === id)) {
-                alert('이미 사용 중인 아이디입니다.');
-                return;
-            }
-            
-            // 새 사용자 추가
-            users.push(userData);
-            localStorage.setItem('users', JSON.stringify(users));
-            
-            alert('회원가입이 완료되었습니다. 로그인해주세요.');
-            document.getElementById('signupModal').style.display = 'none';
-            document.getElementById('loginModal').style.display = 'flex';
+            // Firebase Authentication으로 사용자 생성
+            auth.createUserWithEmailAndPassword(email, pw)
+                .then((userCredential) => {
+                    // Firebase에 사용자 추가 성공
+                    const user = userCredential.user;
+                    
+                    // Firestore에 사용자 추가 정보 저장
+                    return db.collection('users').doc(user.uid).set({
+                        id: id,
+                        email: email,
+                        joinDate: new Date().toISOString()
+                    });
+                })
+                .then(() => {
+                    alert('회원가입이 완료되었습니다. 로그인해주세요.');
+                    document.getElementById('signupModal').style.display = 'none';
+                    document.getElementById('loginModal').style.display = 'flex';
+                })
+                .catch((error) => {
+                    console.error('회원가입 오류:', error);
+                    if (error.code === 'auth/email-already-in-use') {
+                        alert('이미 사용 중인 이메일입니다.');
+                    } else {
+                        alert('회원가입 중 오류가 발생했습니다: ' + error.message);
+                    }
+                });
         });
         
         // 로그인 기능 업데이트
         document.getElementById('loginBtn').addEventListener('click', function() {
-            const id = document.getElementById('loginId').value;
+            const email = document.getElementById('loginId').value;
             const pw = document.getElementById('loginPw').value;
             
-            if(id === 'admin' && pw === '1234') {
-                document.getElementById('loginModal').style.display = 'none';
-                document.getElementById('userBar').style.display = 'flex';
-                document.getElementById('userWelcome').textContent = 'admin님';
-            } else {
-                // 일반 사용자 로그인 처리
-                const users = JSON.parse(localStorage.getItem('users') || '[]');
-                const user = users.find(u => u.id === id && u.pw === pw);
-                
-                if (user) {
-                    document.getElementById('loginModal').style.display = 'none';
-                    document.getElementById('userBar').style.display = 'flex';
-                    document.getElementById('userWelcome').textContent = user.id + '님';
-                    
-                    // 로그인 정보 세션 저장
-                    sessionStorage.setItem('loggedInUser', user.id);
-                } else {
-                    alert('아이디 또는 비밀번호가 일치하지 않습니다.');
-                }
+            if (!email || !pw) {
+                alert('이메일과 비밀번호를 모두 입력해주세요.');
+                return;
             }
+            
+            // Firebase Authentication으로 로그인
+            auth.signInWithEmailAndPassword(email, pw)
+                .then((userCredential) => {
+                    // 로그인 성공
+                    const user = userCredential.user;
+                    
+                    // 사용자 정보 가져오기
+                    return db.collection('users').doc(user.uid).get();
+                })
+                .then((doc) => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        
+                        // UI 업데이트
+                        document.getElementById('loginModal').style.display = 'none';
+                        document.getElementById('userBar').style.display = 'flex';
+                        document.getElementById('userWelcome').textContent = userData.id + '님';
+                        
+                        // 로그인 정보 세션 저장
+                        sessionStorage.setItem('loggedInUser', userData.id);
+                        sessionStorage.setItem('userUid', auth.currentUser.uid);
+                    } else {
+                        console.warn('사용자 문서가 존재하지 않습니다.');
+                        // 기본 정보로 처리
+                        document.getElementById('loginModal').style.display = 'none';
+                        document.getElementById('userBar').style.display = 'flex';
+                        document.getElementById('userWelcome').textContent = email.split('@')[0] + '님';
+                        sessionStorage.setItem('loggedInUser', email.split('@')[0]);
+                        sessionStorage.setItem('userUid', auth.currentUser.uid);
+                    }
+                })
+                .catch((error) => {
+                    console.error('로그인 오류:', error);
+                    alert('로그인 실패: 이메일 또는 비밀번호가 올바르지 않습니다.');
+                });
         });
         
         // 페이지 로드 시 로그인 상태 확인
         window.addEventListener('load', function() {
-            const loggedInUser = sessionStorage.getItem('loggedInUser');
-            if (loggedInUser) {
-                document.getElementById('userBar').style.display = 'flex';
-                document.getElementById('userWelcome').textContent = loggedInUser + '님';
-            }
+            auth.onAuthStateChanged(function(user) {
+                if (user) {
+                    // 사용자가 로그인한 상태
+                    db.collection('users').doc(user.uid).get()
+                        .then((doc) => {
+                            if (doc.exists) {
+                                const userData = doc.data();
+                                document.getElementById('userBar').style.display = 'flex';
+                                document.getElementById('userWelcome').textContent = userData.id + '님';
+                                sessionStorage.setItem('loggedInUser', userData.id);
+                                sessionStorage.setItem('userUid', user.uid);
+                            } else {
+                                // 기본 정보로 처리
+                                document.getElementById('userBar').style.display = 'flex';
+                                document.getElementById('userWelcome').textContent = user.email.split('@')[0] + '님';
+                                sessionStorage.setItem('loggedInUser', user.email.split('@')[0]);
+                                sessionStorage.setItem('userUid', user.uid);
+                            }
+                        })
+                        .catch((error) => {
+                            console.error('사용자 정보 가져오기 오류:', error);
+                        });
+                }
+            });
         });
         
         document.getElementById('logoutBtn').addEventListener('click', function() {
-            document.getElementById('userBar').style.display = 'none';
-            // 로그인 세션 정보 제거
-            sessionStorage.removeItem('loggedInUser');
+            auth.signOut().then(() => {
+                // 로그아웃 성공
+                document.getElementById('userBar').style.display = 'none';
+                // 로그인 세션 정보 제거
+                sessionStorage.removeItem('loggedInUser');
+                sessionStorage.removeItem('userUid');
+            }).catch((error) => {
+                console.error('로그아웃 오류:', error);
+            });
         });
 
         // 실시간 뉴스 키워드 업데이트 함수

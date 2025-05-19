@@ -646,12 +646,13 @@
 
         // Firebase 초기화
         const firebaseConfig = {
-            apiKey: "AIzaSyCQbqmHVfb0uI_aJl0I55xR9YycRbVdEHY",
-            authDomain: "lottosolutions-ac43a.firebaseapp.com",
-            projectId: "lottosolutions-ac43a",
-            storageBucket: "lottosolutions-ac43a.appspot.com",
-            messagingSenderId: "1032660524358",
-            appId: "1:1032660524358:web:5d57b4ea7dd9244e92ef21"
+            apiKey: "AIzaSyAwh55rLOQkY8ZVCzaC4ZF3iaUVU5Vu0GM",
+            authDomain: "ai-lottosolutions.firebaseapp.com",
+            projectId: "ai-lottosolutions",
+            storageBucket: "ai-lottosolutions.appspot.com",
+            messagingSenderId: "616782090306",
+            appId: "1:616782090306:web:688c710998dfce8e4d5ddb",
+            measurementId: "G-NEXMN4FFJG"
         };
         
         // Firebase 초기화
@@ -757,99 +758,271 @@
                     return;
                 }
 
-                const prediction = {
-                    userName: userId,
-                    numbers: numbers,
-                    timestamp: new Date().getTime()
-                };
+                // 현재 회차 정보 가져오기
+                db.collection('drawInfo').doc('current').get().then((doc) => {
+                    let currentDrawInfo;
+                    
+                    if (doc.exists) {
+                        currentDrawInfo = doc.data();
+                    } else {
+                        // 문서가 없으면 기본값 사용
+                        currentDrawInfo = {"drawNumber": 1168};
+                    }
+                    
+                    const prediction = {
+                        userName: userId,
+                        numbers: numbers,
+                        timestamp: new Date().getTime(),
+                        drawNumber: currentDrawInfo.drawNumber + 1 // 다음 회차에 대한 예측
+                    };
 
-                const currentPredictions = JSON.parse(localStorage.getItem('currentWeekPredictions') || '[]');
-                currentPredictions.push(prediction);
-                localStorage.setItem('currentWeekPredictions', JSON.stringify(currentPredictions));
-                localStorage.setItem('userId', userId);
+                    // Firestore에 예측 저장
+                    db.collection('predictions').add(prediction)
+                    .then((docRef) => {
+                        console.log("예측번호가 성공적으로 저장되었습니다:", docRef.id);
+                        
+                        // 로컬에도 저장 (현재 버전과의 호환성)
+                        const currentPredictions = JSON.parse(localStorage.getItem('currentWeekPredictions') || '[]');
+                        currentPredictions.push(prediction);
+                        localStorage.setItem('currentWeekPredictions', JSON.stringify(currentPredictions));
+                        localStorage.setItem('userId', userId);
 
-                // 입력 폼을 숨기고 예측 목록에 추가
-                document.getElementById('predictionInputForm').style.display = 'none';
-                displayThisWeekPredictions();
+                        // 입력 폼을 숨기고 예측 목록에 추가
+                        document.getElementById('predictionInputForm').style.display = 'none';
+                        displayThisWeekPredictions();
+                    })
+                    .catch((error) => {
+                        console.error("예측번호 저장 오류:", error);
+                        alert("예측번호 저장 중 오류가 발생했습니다.");
+                    });
+                }).catch((error) => {
+                    console.error("현재 회차 정보 가져오기 중 오류 발생:", error);
+                    alert("현재 회차 정보를 가져오는 중 오류가 발생했습니다.");
+                });
             }
 
             // 이번 주 예측 데이터 표시
             function displayThisWeekPredictions() {
-                const currentPredictions = JSON.parse(localStorage.getItem('currentWeekPredictions') || '[]');
-                const predictionsContainer = document.getElementById('thisWeekPredictions');
-                
-                // 기존 예측들만 표시 (입력 폼 제외)
-                const predictions = Array.from(predictionsContainer.children)
-                    .filter(child => child.id !== 'predictionInputForm');
-                predictions.forEach(pred => pred.remove());
-
-                currentPredictions.forEach(prediction => {
-                    const predictionElement = document.createElement('div');
-                    predictionElement.className = 'prediction-row';
+                // 현재 회차 정보 가져오기
+                db.collection('drawInfo').doc('current').get().then((doc) => {
+                    let currentDrawNumber;
                     
-                    const numbersHtml = prediction.numbers.map(num => 
-                        `<div class="number-ball">${num}</div>`
-                    ).join('');
-
-                    predictionElement.innerHTML = `
-                        <div class="user-name">${prediction.userName}</div>
-                        <div class="prediction-numbers">
-                            ${numbersHtml}
-                        </div>
-                        <div class="timestamp">${new Date(prediction.timestamp).toLocaleString()}</div>
-                    `;
-                    predictionsContainer.appendChild(predictionElement);
+                    if (doc.exists) {
+                        currentDrawNumber = doc.data().drawNumber + 1; // 다음 회차
+                    } else {
+                        currentDrawNumber = 1169; // 기본값
+                    }
+                    
+                    // Firestore에서 현재 회차 예측 가져오기
+                    db.collection('predictions')
+                        .where('drawNumber', '==', currentDrawNumber)
+                        .orderBy('timestamp', 'desc')
+                        .get()
+                        .then((querySnapshot) => {
+                            const predictionsContainer = document.getElementById('thisWeekPredictions');
+                            
+                            // 기존 예측들만 표시 (입력 폼 제외)
+                            const predictions = Array.from(predictionsContainer.children)
+                                .filter(child => child.id !== 'predictionInputForm');
+                            predictions.forEach(pred => pred.remove());
+                            
+                            querySnapshot.forEach((doc) => {
+                                const prediction = doc.data();
+                                const predictionElement = document.createElement('div');
+                                predictionElement.className = 'prediction-row';
+                                predictionElement.setAttribute('data-id', doc.id);
+                                
+                                const numbersHtml = prediction.numbers.map(num => 
+                                    `<div class="number-ball">${num}</div>`
+                                ).join('');
+                                
+                                predictionElement.innerHTML = `
+                                    <div class="user-name">${prediction.userName}</div>
+                                    <div class="prediction-numbers">
+                                        ${numbersHtml}
+                                    </div>
+                                    <div class="timestamp">${new Date(prediction.timestamp).toLocaleString()}</div>
+                                `;
+                                predictionsContainer.appendChild(predictionElement);
+                            });
+                            
+                            // 오류 시 로컬 데이터 사용
+                            if (querySnapshot.empty) {
+                                console.log("Firestore에 예측이 없어 로컬 데이터 사용");
+                                const currentPredictions = JSON.parse(localStorage.getItem('currentWeekPredictions') || '[]');
+                                
+                                currentPredictions.forEach(prediction => {
+                                    const predictionElement = document.createElement('div');
+                                    predictionElement.className = 'prediction-row';
+                                    
+                                    const numbersHtml = prediction.numbers.map(num => 
+                                        `<div class="number-ball">${num}</div>`
+                                    ).join('');
+                                    
+                                    predictionElement.innerHTML = `
+                                        <div class="user-name">${prediction.userName}</div>
+                                        <div class="prediction-numbers">
+                                            ${numbersHtml}
+                                        </div>
+                                        <div class="timestamp">${new Date(prediction.timestamp).toLocaleString()}</div>
+                                    `;
+                                    predictionsContainer.appendChild(predictionElement);
+                                });
+                            }
+                        })
+                        .catch((error) => {
+                            console.error("예측 목록 가져오기 오류:", error);
+                            
+                            // 오류 시 로컬 데이터 사용
+                            const currentPredictions = JSON.parse(localStorage.getItem('currentWeekPredictions') || '[]');
+                            const predictionsContainer = document.getElementById('thisWeekPredictions');
+                            
+                            // 기존 예측들만 표시 (입력 폼 제외)
+                            const predictions = Array.from(predictionsContainer.children)
+                                .filter(child => child.id !== 'predictionInputForm');
+                            predictions.forEach(pred => pred.remove());
+                            
+                            currentPredictions.forEach(prediction => {
+                                const predictionElement = document.createElement('div');
+                                predictionElement.className = 'prediction-row';
+                                
+                                const numbersHtml = prediction.numbers.map(num => 
+                                    `<div class="number-ball">${num}</div>`
+                                ).join('');
+                                
+                                predictionElement.innerHTML = `
+                                    <div class="user-name">${prediction.userName}</div>
+                                    <div class="prediction-numbers">
+                                        ${numbersHtml}
+                                    </div>
+                                    <div class="timestamp">${new Date(prediction.timestamp).toLocaleString()}</div>
+                                `;
+                                predictionsContainer.appendChild(predictionElement);
+                            });
+                        });
+                }).catch((error) => {
+                    console.error("현재 회차 정보 가져오기 오류:", error);
+                    
+                    // 오류 시 로컬 데이터 사용
+                    const currentPredictions = JSON.parse(localStorage.getItem('currentWeekPredictions') || '[]');
+                    const predictionsContainer = document.getElementById('thisWeekPredictions');
+                    
+                    // 기존 예측들만 표시 (입력 폼 제외)
+                    const predictions = Array.from(predictionsContainer.children)
+                        .filter(child => child.id !== 'predictionInputForm');
+                    predictions.forEach(pred => pred.remove());
+                    
+                    currentPredictions.forEach(prediction => {
+                        const predictionElement = document.createElement('div');
+                        predictionElement.className = 'prediction-row';
+                        
+                        const numbersHtml = prediction.numbers.map(num => 
+                            `<div class="number-ball">${num}</div>`
+                        ).join('');
+                        
+                        predictionElement.innerHTML = `
+                            <div class="user-name">${prediction.userName}</div>
+                            <div class="prediction-numbers">
+                                ${numbersHtml}
+                            </div>
+                            <div class="timestamp">${new Date(prediction.timestamp).toLocaleString()}</div>
+                        `;
+                        predictionsContainer.appendChild(predictionElement);
+                    });
                 });
             }
 
             // 완전일치 번호 목록 표시 함수 추가
             function displayPerfectMatches() {
-                const perfectMatches = JSON.parse(localStorage.getItem('perfectMatches') || '[]');
-                const perfectMatchList = document.getElementById('perfectMatchList');
+                db.collection('perfectMatches')
+                    .orderBy('timestamp', 'desc')
+                    .get()
+                    .then((querySnapshot) => {
+                        const perfectMatchList = document.getElementById('perfectMatchList');
+                        
+                        if (querySnapshot.empty) {
+                            perfectMatchList.innerHTML = '<div class="no-match-message">아직 완전일치 번호가 없습니다.</div>';
+                            // 로컬 데이터 사용
+                            const perfectMatches = JSON.parse(localStorage.getItem('perfectMatches') || '[]');
+                            if (perfectMatches.length > 0) {
+                                perfectMatchList.innerHTML = '';
+                                
+                                // 최신순으로 정렬
+                                perfectMatches.sort((a, b) => b.timestamp - a.timestamp);
+                                
+                                perfectMatches.forEach(match => {
+                                    const matchElement = createPerfectMatchElement(match);
+                                    perfectMatchList.appendChild(matchElement);
+                                });
+                            }
+                            return;
+                        }
+                        
+                        perfectMatchList.innerHTML = '';
+                        
+                        querySnapshot.forEach((doc) => {
+                            const match = doc.data();
+                            const matchElement = createPerfectMatchElement(match);
+                            perfectMatchList.appendChild(matchElement);
+                        });
+                    })
+                    .catch((error) => {
+                        console.error("완전일치 목록 가져오기 오류:", error);
+                        
+                        // 오류 시 로컬 데이터 사용
+                        const perfectMatches = JSON.parse(localStorage.getItem('perfectMatches') || '[]');
+                        const perfectMatchList = document.getElementById('perfectMatchList');
+                        
+                        if (perfectMatches.length === 0) {
+                            perfectMatchList.innerHTML = '<div class="no-match-message">아직 완전일치 번호가 없습니다.</div>';
+                            return;
+                        }
+                        
+                        perfectMatchList.innerHTML = '';
+                        
+                        // 최신순으로 정렬
+                        perfectMatches.sort((a, b) => b.timestamp - a.timestamp);
+                        
+                        perfectMatches.forEach(match => {
+                            const matchElement = createPerfectMatchElement(match);
+                            perfectMatchList.appendChild(matchElement);
+                        });
+                    });
+            }
+            
+            // 완전일치 요소 생성 함수
+            function createPerfectMatchElement(match) {
+                const matchElement = document.createElement('div');
+                matchElement.className = 'prediction-row perfect-match';
                 
-                if (perfectMatches.length === 0) {
-                    perfectMatchList.innerHTML = '<div class="no-match-message">아직 완전일치 번호가 없습니다.</div>';
-                    return;
+                // 1170회차 번호 (맞춘 번호)
+                const numbersHtml = match.numbers.map(num => 
+                    `<div class="number-ball winning-number">${num}</div>`
+                ).join('');
+                
+                // 1171회차 번호가 있으면 표시
+                let nextNumbersHtml = '';
+                if (match.next_numbers && match.next_numbers.length > 0) {
+                    nextNumbersHtml = `
+                        <div style="margin-top: 10px; font-size: 0.85rem; color: #aaa;">다음 회차 예상번호:</div>
+                        <div class="prediction-numbers" style="margin-top: 5px;">
+                            ${match.next_numbers.map(num => 
+                                `<div class="number-ball" style="background-color: #555;">${num}</div>`
+                            ).join('')}
+                        </div>
+                    `;
                 }
                 
-                perfectMatchList.innerHTML = '';
-                
-                // 최신순으로 정렬
-                perfectMatches.sort((a, b) => b.timestamp - a.timestamp);
-                
-                perfectMatches.forEach(match => {
-                    const matchElement = document.createElement('div');
-                    matchElement.className = 'prediction-row perfect-match';
-                    
-                    // 1170회차 번호 (맞춘 번호)
-                    const numbersHtml = match.numbers.map(num => 
-                        `<div class="number-ball winning-number">${num}</div>`
-                    ).join('');
-                    
-                    // 1171회차 번호가 있으면 표시
-                    let nextNumbersHtml = '';
-                    if (match.next_numbers && match.next_numbers.length > 0) {
-                        nextNumbersHtml = `
-                            <div style="margin-top: 10px; font-size: 0.85rem; color: #aaa;">다음 회차 예상번호:</div>
-                            <div class="prediction-numbers" style="margin-top: 5px;">
-                                ${match.next_numbers.map(num => 
-                                    `<div class="number-ball" style="background-color: #555;">${num}</div>`
-                                ).join('')}
-                            </div>
-                        `;
-                    }
-                    
-                    matchElement.innerHTML = `
-                        <div class="user-name">${match.userName}</div>
-                        <div class="prediction-numbers">
-                            ${numbersHtml}
-                        </div>
-                        <div class="perfect-match-badge">완전일치</div>
-                        ${nextNumbersHtml}
-                        <div class="timestamp">${new Date(match.timestamp).toLocaleString()}</div>
-                    `;
-                    perfectMatchList.appendChild(matchElement);
-                });
+                matchElement.innerHTML = `
+                    <div class="user-name">${match.userName}</div>
+                    <div class="prediction-numbers">
+                        ${numbersHtml}
+                    </div>
+                    <div class="perfect-match-badge">완전일치</div>
+                    ${nextNumbersHtml}
+                    <div class="timestamp">${new Date(match.timestamp).toLocaleString()}</div>
+                `;
+                return matchElement;
             }
 
             // 이벤트 리스너 설정 - null 체크 추가
