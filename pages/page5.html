@@ -644,6 +644,22 @@
     <script>
         const 당첨번호 = [9, 21, 24, 30, 33, 37]; // 1168회 당첨번호
 
+        // Firebase 초기화
+        const firebaseConfig = {
+            apiKey: "AIzaSyCQbqmHVfb0uI_aJl0I55xR9YycRbVdEHY",
+            authDomain: "lottosolutions-ac43a.firebaseapp.com",
+            projectId: "lottosolutions-ac43a",
+            storageBucket: "lottosolutions-ac43a.appspot.com",
+            messagingSenderId: "1032660524358",
+            appId: "1:1032660524358:web:5d57b4ea7dd9244e92ef21"
+        };
+        
+        // Firebase 초기화
+        firebase.initializeApp(firebaseConfig);
+        
+        // Firestore 참조 생성
+        const db = firebase.firestore();
+
         function 맞은개수계산(예측번호들) {
             return 예측번호들.filter(번호 => 당첨번호.includes(번호)).length;
         }
@@ -976,67 +992,87 @@
                     numbers.sort((a, b) => a - b);
 
                     // 현재 회차 정보 가져오기
-                    const currentDrawInfo = JSON.parse(localStorage.getItem('currentDrawInfo') || '{"drawNumber": 1168}');
-                    const nextDrawNumber = currentDrawInfo.drawNumber + 1;
-
-                    // 당첨번호 저장
-                    const winningNumber = {
-                        drawNumber: nextDrawNumber,
-                        numbers: numbers,
-                        timestamp: new Date().getTime()
-                    };
-
-                    // 당첨번호 저장
-                    localStorage.setItem('latestWinningNumber', JSON.stringify(winningNumber));
-                    
-                    // 현재 회차 정보 업데이트
-                    localStorage.setItem('currentDrawInfo', JSON.stringify({
-                        drawNumber: nextDrawNumber,
-                        timestamp: new Date().getTime()
-                    }));
-
-                    // 이전 예측 결과를 지난주 예측 결과로 이동
-                    const currentPredictions = JSON.parse(localStorage.getItem('currentWeekPredictions') || '[]');
-                    
-                    // 예측 결과에 맞은 개수 계산 추가
-                    const scoredPredictions = currentPredictions.map(prediction => ({
-                        ...prediction,
-                        matchCount: prediction.numbers.filter(num => numbers.includes(num)).length
-                    }));
-
-                    // 지난주 예측 결과 저장
-                    localStorage.setItem('lastWeekPredictions', JSON.stringify(scoredPredictions));
-                    
-                    // 현재 예측 초기화
-                    localStorage.setItem('currentWeekPredictions', '[]');
-
-                    // 페이지 업데이트
-                    updatePageContent(winningNumber);
-
-                    // 팝업 닫기
-                    adminPopup.classList.remove('show');
-                    popupOverlay.classList.remove('show');
-
-                    alert('당첨번호가 저장되었습니다.');
-                    
-                    // 페이지4의 회차 범위 업데이트
-                    localStorage.setItem('drawRange', JSON.stringify({
-                        start: nextDrawNumber - 14,
-                        end: nextDrawNumber,
-                        prediction: nextDrawNumber + 1
-                    }));
-                    
-                    // 화살표 게임 페이지도 회차 범위를 인식할 수 있도록 이벤트 발생
-                    const arrowGameUpdateEvent = new CustomEvent('arrowGameRangeUpdate', {
-                        detail: {
-                            startNumber: nextDrawNumber - 14,
-                            endNumber: nextDrawNumber
+                    db.collection('drawInfo').doc('current').get().then((doc) => {
+                        let currentDrawInfo;
+                        
+                        if (doc.exists) {
+                            currentDrawInfo = doc.data();
+                        } else {
+                            // 문서가 없으면 기본값 사용
+                            currentDrawInfo = {"drawNumber": 1168};
                         }
-                    });
-                    window.dispatchEvent(arrowGameUpdateEvent);
+                        
+                        const nextDrawNumber = currentDrawInfo.drawNumber + 1;
 
-                    // 다른 열린 창에도 회차 범위 업데이트를 알리기 위한 이벤트
-                    localStorage.setItem('lastDrawRangeUpdate', new Date().getTime().toString());
+                        // 당첨번호 저장
+                        const winningNumber = {
+                            drawNumber: nextDrawNumber,
+                            numbers: numbers,
+                            timestamp: new Date().getTime()
+                        };
+
+                        // Firestore에 당첨번호 저장
+                        db.collection('winningNumbers').doc(nextDrawNumber.toString()).set(winningNumber)
+                        .then(() => {
+                            console.log("당첨번호가 Firestore에 저장되었습니다.");
+                            
+                            // 현재 회차 정보도 Firestore에 업데이트
+                            return db.collection('drawInfo').doc('current').set({
+                                drawNumber: nextDrawNumber,
+                                timestamp: new Date().getTime()
+                            });
+                        })
+                        .then(() => {
+                            console.log("현재 회차 정보가 Firestore에 업데이트되었습니다.");
+                            
+                            // 이전 예측 결과를 지난주 예측 결과로 이동
+                            return db.collection('predictions').where('drawNumber', '==', currentDrawInfo.drawNumber).get();
+                        })
+                        .then((querySnapshot) => {
+                            // 이전 예측 결과에 맞은 개수 계산 추가
+                            const batch = db.batch();
+                            querySnapshot.forEach((doc) => {
+                                const prediction = doc.data();
+                                const matchCount = prediction.numbers.filter(num => numbers.includes(num)).length;
+                                
+                                // 맞은 개수 업데이트
+                                batch.update(doc.ref, { matchCount: matchCount });
+                            });
+                            
+                            return batch.commit();
+                        })
+                        .then(() => {
+                            // 로컬 동기화를 위해 localStorage에도 저장
+                            localStorage.setItem('latestWinningNumber', JSON.stringify(winningNumber));
+                            localStorage.setItem('currentDrawInfo', JSON.stringify({
+                                drawNumber: nextDrawNumber,
+                                timestamp: new Date().getTime()
+                            }));
+                            
+                            // 페이지 업데이트
+                            updatePageContent(winningNumber);
+
+                            // 팝업 닫기
+                            adminPopup.classList.remove('show');
+                            popupOverlay.classList.remove('show');
+
+                            alert('당첨번호가 저장되었습니다.');
+                            
+                            // 페이지4의 회차 범위 업데이트
+                            localStorage.setItem('drawRange', JSON.stringify({
+                                start: nextDrawNumber - 14,
+                                end: nextDrawNumber,
+                                prediction: nextDrawNumber + 1
+                            }));
+                        })
+                        .catch((error) => {
+                            console.error("당첨번호 저장 중 오류 발생:", error);
+                            alert("당첨번호 저장 중 오류가 발생했습니다.");
+                        });
+                    }).catch((error) => {
+                        console.error("현재 회차 정보 가져오기 중 오류 발생:", error);
+                        alert("현재 회차 정보를 가져오는 중 오류가 발생했습니다.");
+                    });
                 });
             }
 
@@ -1059,15 +1095,50 @@
 
             // 페이지 로드 시 최신 정보로 업데이트
             function initializePageContent() {
-                const currentDrawInfo = JSON.parse(localStorage.getItem('currentDrawInfo') || '{"drawNumber": 1168}');
-                const latestWinningNumber = JSON.parse(localStorage.getItem('latestWinningNumber'));
-                if (latestWinningNumber) {
-                    updatePageContent(latestWinningNumber);
-                } else {
-                    // 초기 상태에서는 1168회차 당첨번호로 표시
-                    const winningNumberTitle = document.querySelector('.section-header');
-                    winningNumberTitle.textContent = '1168회차 당첨번호';
-                }
+                // Firestore에서 최신 당첨번호 가져오기
+                db.collection('drawInfo').doc('current').get().then((doc) => {
+                    if (doc.exists) {
+                        const currentDrawInfo = doc.data();
+                        
+                        // 현재 회차의 당첨번호 가져오기
+                        db.collection('winningNumbers').doc(currentDrawInfo.drawNumber.toString()).get().then((winningDoc) => {
+                            if (winningDoc.exists) {
+                                const latestWinningNumber = winningDoc.data();
+                                updatePageContent(latestWinningNumber);
+                                
+                                // 로컬 저장소에도 동기화
+                                localStorage.setItem('latestWinningNumber', JSON.stringify(latestWinningNumber));
+                                localStorage.setItem('currentDrawInfo', JSON.stringify(currentDrawInfo));
+                            } else {
+                                // 초기 상태에서는 1168회차 당첨번호로 표시
+                                const winningNumberTitle = document.querySelector('.section-header');
+                                winningNumberTitle.textContent = '1168회차 당첨번호';
+                            }
+                        });
+                    } else {
+                        // 초기 상태 설정
+                        db.collection('drawInfo').doc('current').set({
+                            drawNumber: 1168,
+                            timestamp: new Date().getTime()
+                        });
+                        
+                        const winningNumberTitle = document.querySelector('.section-header');
+                        winningNumberTitle.textContent = '1168회차 당첨번호';
+                    }
+                }).catch((error) => {
+                    console.error("Firestore에서 데이터 가져오기 오류:", error);
+                    
+                    // 오류 발생 시 로컬 저장소의 데이터 사용
+                    const currentDrawInfo = JSON.parse(localStorage.getItem('currentDrawInfo') || '{"drawNumber": 1168}');
+                    const latestWinningNumber = JSON.parse(localStorage.getItem('latestWinningNumber'));
+                    if (latestWinningNumber) {
+                        updatePageContent(latestWinningNumber);
+                    } else {
+                        // 초기 상태에서는 1168회차 당첨번호로 표시
+                        const winningNumberTitle = document.querySelector('.section-header');
+                        winningNumberTitle.textContent = '1168회차 당첨번호';
+                    }
+                });
             }
 
             // 초기화 함수 호출
