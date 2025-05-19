@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1:1 채팅방 - Lotto Solutions</title>
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --primary-dark: #1976D2;
+            --secondary-color: #FF4081;
+            --secondary-dark: #E91E63;
+            --text-color: #ffffff;
+            --text-secondary: #b0bec5;
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --chat-bg: #262626;
+            --chat-self: #0d47a1;
+            --chat-other: #303f9f;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background-color: var(--card-bg);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .back-btn {
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #546e7a, #37474f);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .back-btn:hover {
+            background: linear-gradient(135deg, #455a64, #263238);
+            transform: translateY(-2px);
+        }
+        
+        .page-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            text-align: center;
+            flex-grow: 1;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 16px;
+        }
+        
+        .chat-area {
+            flex: 1;
+            background-color: var(--chat-bg);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            overflow-y: auto;
+            max-height: calc(100vh - 200px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .message {
+            margin-bottom: 12px;
+            padding: 10px 14px;
+            border-radius: 18px;
+            max-width: 75%;
+            word-break: break-word;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message.self {
+            background-color: var(--chat-self);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message.other {
+            background-color: var(--chat-other);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        
+        .username {
+            font-weight: 700;
+            margin-right: 8px;
+            font-size: 0.9rem;
+            color: #ffeb3b;
+        }
+        
+        .timestamp {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+        
+        .message-content {
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+        
+        .chat-input-area {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 24px;
+            border: none;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        
+        .chat-input:focus {
+            box-shadow: 0 0 0 2px var(--primary-dark);
+        }
+        
+        .send-btn {
+            padding: 8px 20px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 24px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .send-btn:hover {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+            transform: translateY(-2px);
+        }
+        
+        .video-container {
+            width: 100%;
+            max-width: 640px;
+            margin: 0 auto 16px;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .video-placeholder {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background-color: var(--chat-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .message {
+                max-width: 85%;
+            }
+            
+            .chat-area {
+                max-height: calc(100vh - 180px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="chat-room.html" class="back-btn">← 뒤로가기</a>
+        <h1 class="page-title">1:1 채팅방</h1>
+    </div>
+    
+    <div class="chat-container">
+        <div class="video-container">
+            <div class="video-placeholder" id="videoPlaceholder">
+                동영상 공유 기능 준비 중...
+            </div>
+        </div>
+        
+        <div class="chat-area" id="chatArea">
+            <!-- 채팅 메시지 동적 생성 -->
+        </div>
+        
+        <div class="chat-input-area">
+            <input type="text" class="chat-input" id="messageInput" placeholder="메시지를 입력하세요..." autocomplete="off">
+            <button class="send-btn" id="sendBtn">전송</button>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let currentUser = '';
+        let chatPartner = '';
+        let chatMessages = [];
+        let ws = null; // WebSocket 연결
+        
+        // DOM 요소
+        const chatArea = document.getElementById('chatArea');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const videoPlaceholder = document.getElementById('videoPlaceholder');
+        
+        // WebSocket 연결 설정
+        function connectWebSocket() {
+            // URL에서 채팅 상대방 정보 가져오기
+            const urlParams = new URLSearchParams(window.location.search);
+            chatPartner = urlParams.get('partner');
+            
+            if (!chatPartner) {
+                alert('잘못된 접근입니다.');
+                location.href = 'chat-room.html';
+                return;
+            }
+            
+            // WebSocket 서버 URL (실제 서버 URL로 변경 필요)
+            const wsUrl = `ws://your-websocket-server.com/private-chat?partner=${encodeURIComponent(chatPartner)}`;
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = function() {
+                console.log('WebSocket 연결됨');
+                if (currentUser) {
+                    // 연결 시 사용자 정보 전송
+                    sendWebSocketMessage({
+                        type: 'join',
+                        username: currentUser,
+                        partner: chatPartner
+                    });
+                }
+            };
+            
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                handleWebSocketMessage(data);
+            };
+            
+            ws.onclose = function() {
+                console.log('WebSocket 연결 끊김');
+                // 3초 후 재연결 시도
+                setTimeout(connectWebSocket, 3000);
+            };
+            
+            ws.onerror = function(error) {
+                console.error('WebSocket 에러:', error);
+            };
+        }
+        
+        // WebSocket 메시지 전송
+        function sendWebSocketMessage(data) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(data));
+            }
+        }
+        
+        // WebSocket 메시지 처리
+        function handleWebSocketMessage(data) {
+            switch (data.type) {
+                case 'chat':
+                    // 채팅 메시지 처리
+                    chatMessages.push({
+                        type: 'user',
+                        username: data.username,
+                        content: data.content,
+                        timestamp: data.timestamp
+                    });
+                    renderChatMessages();
+                    break;
+                    
+                case 'system':
+                    // 시스템 메시지 처리
+                    chatMessages.push({
+                        type: 'system',
+                        content: data.content,
+                        timestamp: data.timestamp
+                    });
+                    renderChatMessages();
+                    break;
+                    
+                case 'video':
+                    // 동영상 공유 처리
+                    handleVideoShare(data);
+                    break;
+            }
+        }
+        
+        // 동영상 공유 처리
+        function handleVideoShare(data) {
+            // 동영상 서버 API 연동 (실제 구현 필요)
+            videoPlaceholder.textContent = '동영상 로딩 중...';
+            
+            // 예시: 동영상 플레이어 생성
+            const videoElement = document.createElement('video');
+            videoElement.controls = true;
+            videoElement.style.width = '100%';
+            videoElement.style.height = 'auto';
+            
+            // 동영상 소스 설정 (실제 URL로 변경 필요)
+            videoElement.src = data.videoUrl;
+            
+            // 플레이어 교체
+            videoPlaceholder.innerHTML = '';
+            videoPlaceholder.appendChild(videoElement);
+        }
+        
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            // 로그인한 사용자 정보 확인
+            currentUser = sessionStorage.getItem('loggedInUser');
+            if (!currentUser) {
+                alert('로그인이 필요합니다.');
+                location.href = '../index.html';
+                return;
+            }
+            
+            // WebSocket 연결
+            connectWebSocket();
+            
+            // 엔터 키 이벤트 설정
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') sendMessage();
+            });
+            
+            // 버튼 클릭 이벤트 설정
+            sendBtn.addEventListener('click', sendMessage);
+        });
+        
+        // 메시지 전송
+        function sendMessage() {
+            const messageText = messageInput.value.trim();
+            
+            if (messageText && currentUser) {
+                // WebSocket으로 메시지 전송
+                sendWebSocketMessage({
+                    type: 'chat',
+                    username: currentUser,
+                    content: messageText,
+                    timestamp: Date.now()
+                });
+                
+                // 입력 필드 초기화
+                messageInput.value = '';
+            }
+        }
+        
+        // 채팅 메시지 렌더링
+        function renderChatMessages() {
+            chatArea.innerHTML = '';
+            
+            chatMessages.forEach(msg => {
+                const messageElement = document.createElement('div');
+                
+                if (msg.type === 'system') {
+                    // 시스템 메시지
+                    messageElement.className = 'message system';
+                    messageElement.style.alignSelf = 'center';
+                    messageElement.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                    messageElement.style.color = 'var(--text-secondary)';
+                    messageElement.style.fontSize = '0.85rem';
+                    messageElement.style.padding = '6px 12px';
+                    messageElement.style.borderRadius = '12px';
+                    messageElement.textContent = msg.content;
+                } else {
+                    // 사용자 메시지
+                    const isSelf = msg.username === currentUser;
+                    messageElement.className = `message ${isSelf ? 'self' : 'other'}`;
+                    
+                    const header = document.createElement('div');
+                    header.className = 'message-header';
+                    
+                    const username = document.createElement('span');
+                    username.className = 'username';
+                    username.textContent = msg.username;
+                    
+                    const timestamp = document.createElement('span');
+                    timestamp.className = 'timestamp';
+                    timestamp.textContent = formatTime(msg.timestamp);
+                    
+                    const content = document.createElement('div');
+                    content.className = 'message-content';
+                    content.textContent = msg.content;
+                    
+                    header.appendChild(username);
+                    header.appendChild(timestamp);
+                    messageElement.appendChild(header);
+                    messageElement.appendChild(content);
+                }
+                
+                chatArea.appendChild(messageElement);
+            });
+            
+            // 스크롤을 맨 아래로 이동
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+        
+        // 시간 포맷팅
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            let hours = date.getHours();
+            let minutes = date.getMinutes();
+            
+            // 10보다 작은 경우 앞에 0 추가
+            hours = hours < 10 ? '0' + hours : hours;
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            
+            return `${hours}:${minutes}`;
+        }
+    </script>
+</body>
+</html> 

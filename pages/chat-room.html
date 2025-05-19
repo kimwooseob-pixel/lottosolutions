@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>실시간 이슈 채팅방 - Lotto Solutions</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-analytics-compat.js"></script>
     <style>
         :root {
             --primary-color: #2196F3;
@@ -503,6 +509,24 @@
     </div>
 
     <script>
+        // Firebase 설정
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwh55rLOQkY8ZVCzaC4ZF3iaUVU5Vu0GM",
+            authDomain: "ai-lottosolutions.firebaseapp.com",
+            projectId: "ai-lottosolutions",
+            storageBucket: "ai-lottosolutions.firebasestorage.app",
+            messagingSenderId: "616782090306",
+            appId: "1:616782090306:web:688c710998dfce8e4d5ddb",
+            measurementId: "G-NEXMN4FFJG"
+        };
+
+        // Firebase 초기화
+        firebase.initializeApp(firebaseConfig);
+        const analytics = firebase.analytics();
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        const storage = firebase.storage();
+
         // 전역 변수
         let currentUser = '';
         let chatMessages = [];
@@ -528,12 +552,20 @@
         const matchModalMessage = document.getElementById('matchModalMessage');
         const goToPrivateChatBtn = document.getElementById('goToPrivateChatBtn');
         const stayInChatBtn = document.getElementById('stayInChatBtn');
-        
+
         // 페이지 로드 시 초기화
         document.addEventListener('DOMContentLoaded', function() {
-            // 로컬스토리지에서 채팅 데이터 로드
-            loadChatData();
-            
+            // Firebase 인증 상태 확인
+            auth.onAuthStateChanged(function(user) {
+                if (user) {
+                    currentUser = user.displayName || user.email;
+                    welcomeOverlay.style.display = 'none';
+                    initializeChat();
+                } else {
+                    welcomeOverlay.style.display = 'flex';
+                }
+            });
+
             // 타이머 초기화
             initializeResetTimer();
             
@@ -553,246 +585,147 @@
             // 매칭 모달 버튼 이벤트
             goToPrivateChatBtn.addEventListener('click', handleGoToPrivateChat);
             stayInChatBtn.addEventListener('click', handleStayInChat);
-            
-            // 로그인한 사용자 정보 확인
-            const loggedInUser = sessionStorage.getItem('loggedInUser');
-            if (loggedInUser) {
-                usernameInput.value = loggedInUser;
-            }
-            
-            // 일정 시간마다 온라인 상태 업데이트
-            setInterval(updateOnlineStatus, 30000); // 30초마다
-            
-            // 매칭 상태 체크
-            setInterval(checkMatchingStatus, 10000); // 10초마다
         });
-        
-        // 리셋 타이머 초기화
-        function initializeResetTimer() {
-            // 저장된 타이머 값 확인
-            const savedResetTime = localStorage.getItem('chatResetTime');
+
+        // 채팅 초기화
+        function initializeChat() {
+            // 실시간 메시지 리스너
+            db.collection('chat_messages')
+                .orderBy('timestamp', 'asc')
+                .limit(100)
+                .onSnapshot(function(snapshot) {
+                    snapshot.docChanges().forEach(function(change) {
+                        if (change.type === 'added') {
+                            const message = change.doc.data();
+                            chatMessages.push(message);
+                            renderChatMessages();
+                        }
+                    });
+                });
+
+            // 온라인 유저 리스너
+            db.collection('online_users')
+                .onSnapshot(function(snapshot) {
+                    onlineUsers = [];
+                    snapshot.forEach(function(doc) {
+                        const user = doc.data();
+                        if (user.lastActive > Date.now() - 5 * 60 * 1000) { // 5분 이내 활동
+                            onlineUsers.push(user);
+                        }
+                    });
+                    renderOnlineUsers();
+                });
+
+            // 현재 사용자 온라인 상태 업데이트
+            updateOnlineStatus();
+        }
+
+        // 메시지 전송
+        function sendMessage() {
+            const messageText = messageInput.value.trim();
             
-            if (savedResetTime) {
-                const targetTime = parseInt(savedResetTime);
-                const currentTime = Date.now();
+            if (messageText && currentUser) {
+                const message = {
+                    type: 'user',
+                    username: currentUser,
+                    content: messageText,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                // Firestore에 메시지 저장
+                db.collection('chat_messages').add(message);
                 
-                if (targetTime > currentTime) {
-                    // 남은 시간 계산
-                    resetTimeLeft = Math.floor((targetTime - currentTime) / 1000);
-                } else {
-                    // 이미 시간이 지났으면 새로운 타이머 설정
-                    setNewResetTimer();
-                }
+                // 입력 필드 초기화
+                messageInput.value = '';
+            }
+        }
+
+        // 온라인 상태 업데이트
+        function updateOnlineStatus() {
+            if (!currentUser) return;
+
+            const userRef = db.collection('online_users').doc(currentUser);
+            
+            // 사용자 정보 업데이트
+            userRef.set({
+                name: currentUser,
+                lastActive: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+
+            // 30초마다 상태 업데이트
+            setInterval(function() {
+                userRef.update({
+                    lastActive: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }, 30000);
+        }
+
+        // 매칭을 위한 유저 선택
+        function selectUserForMatching(username) {
+            if (!matchingMode || !currentUser) return;
+            
+            // 현재 선택된 유저와 같으면 선택 취소
+            if (selectedUser === username) {
+                selectedUser = null;
             } else {
-                // 저장된 값이 없으면 새로운 타이머 설정
-                setNewResetTimer();
+                selectedUser = username;
             }
             
-            // 타이머 시작
-            updateTimerDisplay();
-            resetTimerInterval = setInterval(updateResetTimer, 1000);
+            // Firestore에 매칭 선택 저장
+            db.collection('matching_selections').doc(currentUser).set({
+                selectedUser: selectedUser,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
             
-            // 매칭 모드 활성화 시간 확인
-            const remainingMinutes = Math.floor(resetTimeLeft / 60);
-            if (remainingMinutes <= 30) {
-                // 남은 시간이 30분 이하면 매칭 모드 활성화
-                activateMatchingMode();
-            }
-        }
-        
-        // 새로운 리셋 타이머 설정
-        function setNewResetTimer() {
-            resetTimeLeft = 4 * 60 * 60; // 4시간(초 단위)
-            const targetTime = Date.now() + (resetTimeLeft * 1000);
-            localStorage.setItem('chatResetTime', targetTime.toString());
-        }
-        
-        // 리셋 타이머 업데이트
-        function updateResetTimer() {
-            resetTimeLeft--;
-            
-            if (resetTimeLeft <= 0) {
-                // 타이머가 끝나면 채팅방 리셋
-                clearInterval(resetTimerInterval);
-                resetChatRoom();
-                return;
-            }
-            
-            // 남은 시간이 30분이면 매칭 모드 활성화
-            const remainingMinutes = Math.floor(resetTimeLeft / 60);
-            if (remainingMinutes === 30) {
-                activateMatchingMode();
-            }
-            
-            updateTimerDisplay();
-        }
-        
-        // 타이머 표시 업데이트
-        function updateTimerDisplay() {
-            const hours = Math.floor(resetTimeLeft / 3600);
-            const minutes = Math.floor((resetTimeLeft % 3600) / 60);
-            const seconds = resetTimeLeft % 60;
-            
-            const formattedTime = 
-                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            
-            resetTimerElement.textContent = formattedTime;
-            
-            // 30분 이하면 색상 변경
-            if (resetTimeLeft <= 30 * 60) {
-                resetTimerElement.style.background = 'linear-gradient(45deg, #e53935, #e91e63)';
-            }
-        }
-        
-        // 매칭 모드 활성화
-        function activateMatchingMode() {
-            matchingMode = true;
-            matchingInfoElement.classList.add('active');
-            
-            // 시스템 메시지 추가
-            addSystemMessage("🔔 1:1 매칭 모드가 활성화되었습니다. 30분 후 채팅방이 리셋됩니다. 대화를 계속하고 싶은 상대방을 선택하세요.");
-            
-            // 매칭 가능한 사용자 목록 업데이트
+            // 유저 목록 업데이트
             renderOnlineUsers();
         }
-        
-        // 채팅방 리셋
-        function resetChatRoom() {
-            // 매칭 결과에 따라 처리
-            processMatchingResults();
-            
-            // 새로운 타이머 설정
-            setNewResetTimer();
-            updateTimerDisplay();
-            resetTimerInterval = setInterval(updateResetTimer, 1000);
-            
-            // 매칭 모드 비활성화
-            matchingMode = false;
-            matchingInfoElement.classList.remove('active');
-            selectedUser = null;
-            
-            // 시스템 메시지 추가
-            addSystemMessage("🔄 채팅방이 리셋되었습니다.");
-        }
-        
-        // 매칭 결과 처리
-        function processMatchingResults() {
-            // 로컬스토리지에서 매칭 정보 가져오기
-            const matchingData = JSON.parse(localStorage.getItem('matchingSelections') || '[]');
-            
-            if (!currentUser || matchingData.length === 0) return;
-            
-            // 현재 사용자의 선택 확인
-            const mySelection = matchingData.find(item => item.user === currentUser);
-            if (!mySelection || !mySelection.selectedUser) return;
-            
-            // 상대방의 선택 확인
-            const partnerSelection = matchingData.find(item => 
-                item.user === mySelection.selectedUser && 
-                item.selectedUser === currentUser
-            );
-            
-            // 상호 선택된 경우 매칭 성공
-            if (partnerSelection) {
-                showMatchResult(true, mySelection.selectedUser);
-            } else {
-                // 일방적 선택인 경우
-                showMatchResult(false);
-            }
-        }
-        
-        // 매칭 결과 표시
-        function showMatchResult(isMatched, matchedUser = null) {
-            if (isMatched && matchedUser) {
-                matchModalTitle.textContent = "매칭 성공!";
-                matchModalMessage.innerHTML = `<b class="matching-user">${matchedUser}</b>님과 매칭되었습니다.<br>1:1 채팅방으로 이동하시겠습니까?`;
-                goToPrivateChatBtn.style.display = "block";
-                
-                // 매칭 정보 저장
-                sessionStorage.setItem('matchedUser', matchedUser);
-            } else {
-                matchModalTitle.textContent = "매칭 실패";
-                matchModalMessage.innerHTML = "상호 선택된 사용자가 없습니다.<br>다른 채팅방으로 이동합니다.";
-                goToPrivateChatBtn.style.display = "none";
-            }
-            
-            // 모달 표시
-            matchResultModal.style.display = "flex";
-        }
-        
+
         // 1:1 채팅방으로 이동
         function handleGoToPrivateChat() {
             const matchedUser = sessionStorage.getItem('matchedUser');
             
             if (matchedUser) {
-                // 1:1 채팅방 URL (채팅방 페이지 생성 필요)
-                location.href = `private-chat.html?partner=${encodeURIComponent(matchedUser)}`;
+                // Firestore에 1:1 채팅방 생성
+                db.collection('private_chats').add({
+                    users: [currentUser, matchedUser],
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(function(docRef) {
+                    // 1:1 채팅방 URL로 이동
+                    location.href = `private-chat.html?room=${docRef.id}&partner=${encodeURIComponent(matchedUser)}`;
+                });
             } else {
                 handleStayInChat();
             }
         }
-        
-        // 일반 채팅방 유지
-        function handleStayInChat() {
-            matchResultModal.style.display = "none";
-            
-            // 새로운 일반 채팅방으로 이동 (동일한 페이지 새로고침)
-            // 실제 구현에서는 다른 채팅방 URL로 변경 가능
-            location.reload();
-        }
-        
-        // 채팅 데이터 로드
-        function loadChatData() {
-            // 로컬스토리지에서 채팅 메시지 로드
-            try {
-                const savedMessages = localStorage.getItem('chatMessages');
-                if (savedMessages) {
-                    chatMessages = JSON.parse(savedMessages);
-                    renderChatMessages();
-                }
-                
-                // 온라인 유저 로드
-                const savedOnlineUsers = localStorage.getItem('onlineUsers');
-                if (savedOnlineUsers) {
-                    onlineUsers = JSON.parse(savedOnlineUsers);
-                    
-                    // 마지막 활동 시간이 5분 이상 지난 유저 제거
-                    const currentTime = Date.now();
-                    onlineUsers = onlineUsers.filter(user => {
-                        return (currentTime - user.lastActive) < 5 * 60 * 1000;
-                    });
-                    
-                    renderOnlineUsers();
-                }
-            } catch (error) {
-                console.error('채팅 데이터 로드 오류:', error);
-                chatMessages = [];
-                onlineUsers = [];
-            }
-        }
-        
+
         // 채팅 시작
         function startChat() {
             const username = usernameInput.value.trim();
             
             if (username) {
-                currentUser = username;
-                welcomeOverlay.style.display = 'none';
-                
-                // 온라인 유저 목록에 추가
-                addOnlineUser(username);
-                
-                // 시스템 메시지 추가
-                addSystemMessage(`${username}님이 입장했습니다.`);
-                
-                // 메시지 입력 필드에 포커스
-                messageInput.focus();
+                // 익명 로그인
+                auth.signInAnonymously()
+                    .then(function(result) {
+                        currentUser = username;
+                        welcomeOverlay.style.display = 'none';
+                        initializeChat();
+                        
+                        // 사용자 프로필 업데이트
+                        result.user.updateProfile({
+                            displayName: username
+                        });
+                    })
+                    .catch(function(error) {
+                        console.error('로그인 오류:', error);
+                        alert('로그인 중 오류가 발생했습니다.');
+                    });
             } else {
                 alert('닉네임을 입력해주세요.');
                 usernameInput.focus();
             }
         }
-        
+
         // 온라인 유저 추가
         function addOnlineUser(username) {
             // 이미 있는 유저인지 확인
@@ -815,14 +748,7 @@
             // 온라인 유저 목록 렌더링
             renderOnlineUsers();
         }
-        
-        // 온라인 상태 업데이트
-        function updateOnlineStatus() {
-            if (currentUser) {
-                addOnlineUser(currentUser);
-            }
-        }
-        
+
         // 온라인 유저 목록 렌더링
         function renderOnlineUsers() {
             onlineUsersList.innerHTML = '';
@@ -859,24 +785,6 @@
             
             // 매칭 모드에서 선택 정보 표시
             updateMatchingSelectionDisplay();
-        }
-        
-        // 매칭을 위한 유저 선택
-        function selectUserForMatching(username) {
-            if (!matchingMode || !currentUser) return;
-            
-            // 현재 선택된 유저와 같으면 선택 취소
-            if (selectedUser === username) {
-                selectedUser = null;
-            } else {
-                selectedUser = username;
-            }
-            
-            // 선택 정보 저장
-            saveMatchingSelection();
-            
-            // 유저 목록 업데이트
-            renderOnlineUsers();
         }
         
         // 매칭 선택 정보 저장
@@ -959,43 +867,6 @@
             
             // 채팅창 업데이트
             renderChatMessages();
-        }
-        
-        // 메시지 전송
-        function sendMessage() {
-            const messageText = messageInput.value.trim();
-            
-            if (messageText && currentUser) {
-                const newMessage = {
-                    type: 'user',
-                    username: currentUser,
-                    content: messageText,
-                    timestamp: Date.now()
-                };
-                
-                // 메시지 배열에 추가
-                chatMessages.push(newMessage);
-                
-                // 최대 100개 메시지만 유지
-                if (chatMessages.length > 100) {
-                    chatMessages = chatMessages.slice(-100);
-                }
-                
-                // 로컬스토리지에 저장
-                localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
-                
-                // 입력 필드 초기화
-                messageInput.value = '';
-                
-                // 채팅창 업데이트
-                renderChatMessages();
-                
-                // 유저 활동 상태 업데이트
-                addOnlineUser(currentUser);
-                
-                // 한 달 이상 된 메시지 삭제
-                cleanupOldMessages();
-            }
         }
         
         // 채팅 메시지 렌더링
