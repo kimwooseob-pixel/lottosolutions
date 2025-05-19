@@ -35,9 +35,9 @@
       color: #1976d2;
     }
     .container {
-      max-width: 800px;
+      max-width: 1200px;
       margin: 0 auto;
-      padding: 16px;
+      padding: 16px 8px;
     }
     form#uploadForm {
       display: flex;
@@ -77,34 +77,39 @@
       background: #1565c0;
     }
     #videoList {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      width: 100%;
       justify-content: center;
-      gap: 26px;
     }
     .video-card {
       background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 3px 13px rgba(0,0,0,0.06);
-      padding: 13px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      padding: 10px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      max-width: 280px;
-      min-width: 0;
-      margin: 0;
+      gap: 6px;
       position: relative;
+      width: 100%;
+      margin: 0;
+      min-width: 0;
     }
     .video-card h3 {
-      margin: 0 0 6px 0;
-      font-size: 1.52em;
+      margin: 0 0 4px 0;
+      font-size: 0.9em;
       color: #1976d2;
-      word-break: break-all;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .video-card video {
       width: 100%;
-      border-radius: 10px;
+      aspect-ratio: 16/9;
+      border-radius: 6px;
       background: #000;
+      object-fit: cover;
       margin: 0;
     }
     .video-card .commentForm {
@@ -200,8 +205,8 @@
       background-color: #e74c3c;
       border-radius: 50%;
       position: absolute;
-      top: 10px;
-      right: 10px;
+      top: 5px;
+      right: 5px;
       cursor: pointer;
       z-index: 5;
     }
@@ -211,12 +216,11 @@
     }
     @media (max-width: 600px) {
       .container {
-        max-width: 100vw;
-        padding: 10px;
+        padding: 6px 4px;
       }
       form#uploadForm {
-        padding: 8px; /* 16px의 50% */
-        max-width: 80%; /* 모바일에서는 80%로 제한 */
+        padding: 8px;
+        max-width: 80%;
         width: 80%;
       }
       .video-card, .review-board {
@@ -225,6 +229,15 @@
       }
       h1 {
         font-size: 2.1em;
+      }
+      #videoList {
+        gap: 6px;
+      }
+      .video-card {
+        padding: 8px;
+      }
+      .video-card h3 {
+        font-size: 0.8em;
       }
     }
   </style>
@@ -258,7 +271,7 @@
     <ul class="reviewList" id="reviewList"></ul>
   </div>
   <script type="module">
-    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
     const db = window.db;
     const storage = window.storage;
@@ -270,50 +283,57 @@
     const adminPwError = document.getElementById('adminPwError');
     let allowUpload = false;
     let currentVideoId = null; // 현재 선택된 비디오 ID
+    let isDeleteMode = false; // 삭제 모드 플래그
 
     function showPwModal(videoId = null) {
       adminPwModal.style.display = 'flex';
       adminPwInput.value = '';
       adminPwError.style.display = 'none';
-      allowUpload = false;
-      currentVideoId = videoId;
       
-      // 모달 제목 설정
-      const adminPwTitle = document.querySelector('#adminPwModal h3');
       if (videoId) {
-        // 동영상 삭제 모드
-        adminPwTitle.textContent = '동영상 삭제 비밀번호';
+        // 삭제 모드
+        currentVideoId = videoId;
+        isDeleteMode = true;
+        document.querySelector('#adminPwModal h3').textContent = '동영상 삭제 비밀번호';
       } else {
         // 업로드 모드
-        adminPwTitle.textContent = '관리자 비밀번호';
+        currentVideoId = null;
+        isDeleteMode = false;
+        allowUpload = false;
+        document.querySelector('#adminPwModal h3').textContent = '관리자 비밀번호';
       }
     }
     
     function closePw() { 
-      adminPwModal.style.display = 'none';
-      currentVideoId = null;
+      adminPwModal.style.display = 'none'; 
+      if (!isDeleteMode) {
+        allowUpload = false;
+      }
     }
     
     closePwModal.onclick = closePw;
     
     adminPwCheckBtn.onclick = function() {
-      if (adminPwInput.value === 'knue2000') {
-        allowUpload = true;
-        closePw();
-        
-        if (currentVideoId) {
-          // 비밀번호 맞을 경우 바로 삭제 확인
-          if (confirm('정말 이 동영상을 삭제하시겠습니까?')) {
-            // 동영상 삭제 진행
-            deleteVideo(currentVideoId);
-          }
-        } else {
-          // 업로드 이벤트 발생
-          document.getElementById('uploadForm').dispatchEvent(new Event('pw-ok'));
-        }
-      } else {
+      const password = adminPwInput.value;
+      
+      if (password !== 'knue2000') {
         adminPwError.textContent = '비밀번호가 올바르지 않습니다.';
         adminPwError.style.display = 'block';
+        return;
+      }
+      
+      // 비밀번호 확인 성공
+      adminPwModal.style.display = 'none';
+      
+      if (isDeleteMode && currentVideoId) {
+        // 삭제 모드: 삭제 확인 후 진행
+        if (confirm('정말 이 동영상을 삭제하시겠습니까?')) {
+          deleteVideo(currentVideoId);
+        }
+      } else {
+        // 업로드 모드: 업로드 허용 플래그 설정
+        allowUpload = true;
+        document.getElementById('uploadForm').dispatchEvent(new Event('pw-ok'));
       }
     };
     
@@ -321,12 +341,18 @@
     async function deleteVideo(videoId) {
       try {
         // 동영상 데이터 가져오기
-        const videoDoc = await db.collection('brush-videos').doc(videoId).get();
-        const videoData = videoDoc.data();
+        const videoDocRef = doc(db, 'brush-videos', videoId);
+        const videoDocSnap = await getDoc(videoDocRef);
+        
+        if (!videoDocSnap.exists()) {
+          throw new Error('동영상을 찾을 수 없습니다.');
+        }
+        
+        const videoData = videoDocSnap.data();
         const videoUrl = videoData.url;
         
         // Firestore에서 문서 삭제
-        await deleteDoc(doc(db, 'brush-videos', videoId));
+        await deleteDoc(videoDocRef);
         
         // Storage에서 파일 삭제 시도
         try {
@@ -338,7 +364,10 @@
         }
         
         alert('동영상이 삭제되었습니다.');
+        // 페이지 새로고침으로 목록 갱신
+        // window.location.reload();
       } catch (error) {
+        console.error('삭제 실패:', error);
         alert('삭제 실패: ' + error.message);
       }
     }

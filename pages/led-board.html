@@ -36,9 +36,9 @@
       color: #1976d2;
     }
     .container {
-      max-width: 500px;
+      max-width: 1200px;
       margin: 0 auto;
-      padding: 16px;
+      padding: 16px 8px;
     }
     form#uploadForm {
       display: flex;
@@ -74,33 +74,37 @@
       background: #1565c0;
     }
     #videoList {
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      width: 100%;
     }
     .video-card {
       background: #fff;
       border-radius: 10px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-      padding: 16px;
+      padding: 10px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 6px;
       position: relative;
-      width: 70%;
-      margin: 0 auto;
+      width: 100%;
+      margin: 0;
     }
     .video-card h3 {
-      margin: 0 0 6px 0;
-      font-size: 1.1em;
+      margin: 0 0 4px 0;
+      font-size: 0.9em;
       color: #1976d2;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .video-card video {
-      width: 70%;
-      border-radius: 8px;
+      width: 100%;
+      aspect-ratio: 16/9;
+      border-radius: 6px;
       background: #000;
-      display: block;
-      margin: 0 auto;
+      object-fit: cover;
     }
     .video-card .commentForm {
       display: flex;
@@ -145,9 +149,14 @@
       background-color: #e74c3c;
       border-radius: 50%;
       position: absolute;
-      top: 10px;
-      right: 10px;
+      top: 5px;
+      right: 5px;
       cursor: pointer;
+      z-index: 5;
+    }
+    .admin-dot:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
     }
     .delete-btn {
       background: #e74c3c;
@@ -165,14 +174,16 @@
     }
     @media (max-width: 600px) {
       .container {
-        max-width: 100vw;
-        padding: 6px;
+        padding: 6px 4px;
       }
-      form#uploadForm, .video-card {
-        padding: 10px;
+      #videoList {
+        gap: 6px;
       }
-      h1 {
-        font-size: 1.3em;
+      .video-card {
+        padding: 8px;
+      }
+      .video-card h3 {
+        font-size: 0.8em;
       }
     }
   </style>
@@ -209,7 +220,7 @@
   </div>
 
   <script type="module">
-    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
     // head에서 window.app, window.db, window.storage로 할당됨
     const db = window.db;
@@ -222,83 +233,66 @@
     const adminPwError = document.getElementById('adminPwError');
     let allowUpload = false;
     let currentVideoId = null; // 현재 선택된 비디오 ID
+    let uploadFile = null; // 업로드용 파일 참조
+    let uploadTitle = null; // 업로드용 제목 참조
+    let isDeleteMode = false; // 삭제 모드 여부 플래그
 
     function showPwModal(videoId = null) {
       adminPwModal.style.display = 'flex';
       adminPwInput.value = '';
       adminPwError.style.display = 'none';
-      allowUpload = false;
-      currentVideoId = videoId;
       
-      // 모달 제목 설정
-      const adminPwTitle = document.getElementById('adminPwTitle');
       if (videoId) {
-        // 동영상 삭제 모드
-        adminPwTitle.textContent = '동영상 삭제 비밀번호';
+        // 삭제 모드
+        currentVideoId = videoId;
+        isDeleteMode = true;
+        document.getElementById('adminPwTitle').textContent = '동영상 삭제 비밀번호';
       } else {
         // 업로드 모드
-        adminPwTitle.textContent = '업로드 비밀번호';
+        currentVideoId = null;
+        isDeleteMode = false;
+        allowUpload = false;
+        document.getElementById('adminPwTitle').textContent = '업로드 비밀번호';
       }
     }
     
     function closePw() { 
       adminPwModal.style.display = 'none'; 
-      currentVideoId = null;
+      if (!isDeleteMode) {
+        allowUpload = false;
+      }
+      // isDeleteMode 상태는 유지 (처리 완료 시까지)
     }
     
     closePwModal.onclick = closePw;
     
     adminPwCheckBtn.onclick = function() {
-      if (adminPwInput.value === 'knue2000') {
-        allowUpload = true;
-        closePw();
-        
-        if (currentVideoId) {
-          // 비밀번호 맞을 경우 바로 삭제 확인
-          if (confirm('정말 이 동영상을 삭제하시겠습니까?')) {
-            // 동영상 삭제 진행
-            deleteVideo(currentVideoId);
-          }
-        } else {
-          // 업로드 이벤트 발생
-          document.getElementById('uploadForm').dispatchEvent(new Event('pw-ok'));
-        }
-      } else {
+      const password = adminPwInput.value;
+      
+      if (password !== 'knue2000') {
         adminPwError.textContent = '비밀번호가 올바르지 않습니다.';
         adminPwError.style.display = 'block';
+        return;
+      }
+      
+      // 비밀번호 확인 성공
+      adminPwModal.style.display = 'none';
+      
+      if (isDeleteMode && currentVideoId) {
+        // 삭제 모드: 삭제 확인 후 진행
+        if (confirm('정말 이 동영상을 삭제하시겠습니까?')) {
+          deleteVideo(currentVideoId);
+        }
+      } else {
+        // 업로드 모드: 업로드 허용 플래그 설정
+        allowUpload = true;
+        document.getElementById('uploadForm').dispatchEvent(new Event('pw-ok'));
       }
     };
     
-    // 동영상 삭제 함수
-    async function deleteVideo(videoId) {
-      try {
-        // 동영상 데이터 가져오기
-        const videoDoc = await db.collection('led-videos').doc(videoId).get();
-        const videoData = videoDoc.data();
-        const videoUrl = videoData.url;
-        
-        // Firestore에서 문서 삭제
-        await deleteDoc(doc(db, 'led-videos', videoId));
-        
-        // Storage에서 파일 삭제 시도
-        try {
-          const storageRef = ref(storage, videoUrl);
-          await deleteObject(storageRef);
-        } catch (storageError) {
-          console.error('Storage 파일 삭제 실패:', storageError);
-          // 실패해도 Firestore 문서는 이미 삭제됨
-        }
-        
-        alert('동영상이 삭제되었습니다.');
-      } catch (error) {
-        alert('삭제 실패: ' + error.message);
-      }
-    }
     // 업로드 폼 가로채기
     const uploadForm = document.getElementById('uploadForm');
     const uploadBtn = uploadForm.querySelector('button[type="submit"]');
-    let uploadFile = null;
-    let uploadTitle = null;
 
     uploadForm.onsubmit = (e) => {
       e.preventDefault();
@@ -318,31 +312,71 @@
       }
       
       allowUpload = false;
-      uploadVideo(uploadFile, uploadTitle);
+      doVideoUpload();
     };
 
-    async function uploadVideo(file, title) {
-      if (!file) return alert('동영상을 선택하세요.');
-      const storageRef = ref(storage, 'led-videos/' + Date.now() + '_' + file.name);
-      const uploadTask = uploadBytesResumable(storageRef, file);
+    // 실제 업로드 작업을 수행하는 함수 (삭제 함수와 완전히 분리)
+    async function doVideoUpload() {
+      if (!uploadFile || !uploadTitle) {
+        alert('동영상 정보가 유효하지 않습니다. 다시 시도해주세요.');
+        return;
+      }
+      
+      const storageRef = ref(storage, 'led-videos/' + Date.now() + '_' + uploadFile.name);
+      const uploadTask = uploadBytesResumable(storageRef, uploadFile);
+      
       uploadTask.on('state_changed', null, (error) => {
         alert('업로드 실패: ' + error.message);
       }, async () => {
         const url = await getDownloadURL(uploadTask.snapshot.ref);
         await addDoc(collection(db, 'led-videos'), {
-          title,
+          title: uploadTitle,
           url,
           createdAt: new Date().toISOString(),
           comments: []
         });
         uploadForm.reset();
+        uploadFile = null;
+        uploadTitle = null;
       });
     }
     
-    uploadForm.addEventListener('pw-ok', async () => {
-      // 저장된 파일과 제목 사용
-      uploadVideo(uploadFile, uploadTitle);
+    uploadForm.addEventListener('pw-ok', () => {
+      // 저장된 파일과 제목으로 업로드 실행
+      doVideoUpload();
     });
+    
+    // 동영상 삭제 함수
+    async function deleteVideo(videoId) {
+      try {
+        // 동영상 데이터 가져오기
+        const videoDocRef = doc(db, 'led-videos', videoId);
+        const videoDocSnap = await getDoc(videoDocRef);
+        
+        if (!videoDocSnap.exists()) {
+          throw new Error('동영상을 찾을 수 없습니다.');
+        }
+        
+        const videoData = videoDocSnap.data();
+        const videoUrl = videoData.url;
+        
+        // Firestore에서 문서 삭제
+        await deleteDoc(videoDocRef);
+        
+        // Storage에서 파일 삭제 시도
+        try {
+          const storageRef = ref(storage, videoUrl);
+          await deleteObject(storageRef);
+        } catch (storageError) {
+          console.error('Storage 파일 삭제 실패:', storageError);
+          // 실패해도 Firestore 문서는 이미 삭제됨
+        }
+        
+        alert('동영상이 삭제되었습니다.');
+      } catch (error) {
+        alert('삭제 실패: ' + error.message);
+      }
+    }
     // 동영상 목록 및 댓글 표시
     const videoList = document.getElementById('videoList');
     onSnapshot(query(collection(db, 'led-videos'), orderBy('createdAt', 'desc')), (snapshot) => {
