@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>로또 예상번호 순위표</title>
+    <!-- Firebase SDK (정확한 버전 명시) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -314,20 +320,31 @@
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             margin-top: 15px;
+            justify-items: center;
         }
 
         .admin-popup .number-input-container.show {
             display: grid;
         }
 
-        .admin-popup input[type="number"] {
-            width: 100%;
+        .admin-popup .number-input-container input[type="number"] {
+            width: 60px;
             padding: 10px;
             border: 2px solid #3498db;
             border-radius: 5px;
             background-color: #1a1f2e;
             color: white;
             text-align: center;
+            font-size: 1.1em;
+        }
+
+        .admin-popup .draw-label {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: #90caf9;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+            font-weight: bold;
         }
 
         .admin-popup button {
@@ -586,8 +603,7 @@
         <div id="thisWeekPredictions">
             <!-- 입력 폼 -->
             <div id="predictionInputForm" class="prediction-row">
-                <input type="text" class="user-id-input" placeholder="아이디" maxlength="20" autocomplete="off">
-                <button class="confirm-button">확인</button>
+                <button class="confirm-button">예측번호 저장하기</button>
                 <div class="prediction-numbers">
                     <!-- 페이지4에서 가져온 번호들이 여기에 표시됩니다 -->
                 </div>
@@ -613,6 +629,7 @@
             <button id="passwordSubmit">확인</button>
         </div>
         <div class="number-input-container">
+            <div class="draw-label" id="drawLabel">1171회차 당첨번호 입력</div>
             <input type="number" min="1" max="45" placeholder="1번">
             <input type="number" min="1" max="45" placeholder="2번">
             <input type="number" min="1" max="45" placeholder="3번">

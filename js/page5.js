@@ -2,6 +2,18 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('페이지5 로드됨');
     
+    // 현재 로그인한 유저 가져오기
+    let currentUser = '';
+    auth.onAuthStateChanged(function(user) {
+        if (user) {
+            currentUser = user.displayName || user.email || localStorage.getItem('userId') || '익명';
+            console.log('로그인된 유저:', currentUser);
+        }
+    });
+    
+    // Firestore에서 데이터 가져오기
+    loadDataFromFirestore();
+    
     // 순서 중요: 현재 예측 -> 당첨 결과 -> 지난주 결과 -> 전체 예측
     displayCurrentPrediction();
     displayLastWeekResults();
@@ -21,6 +33,281 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.key === 'Enter') {
             checkPassword();
         }
+    });
+
+    // 관리자 모드 진입 시 회차 표시 갱신
+    const adminDot = document.querySelector('.admin-dot');
+    adminDot.addEventListener('click', async function() {
+        await updateDrawLabel();
+    });
+    
+    // 당첨번호 저장 버튼 클릭 시 Firestore에 저장
+    const saveWinningNumbers = document.getElementById('saveWinningNumbers');
+    const numberInputs = document.querySelectorAll('.number-input-container input[type="number"]');
+    saveWinningNumbers.addEventListener('click', async function() {
+        const numbers = Array.from(numberInputs).map(input => parseInt(input.value));
+        if (numbers.some(num => isNaN(num) || num < 1 || num > 45)) {
+            alert('1부터 45 사이의 숫자를 입력해주세요.');
+            return;
+        }
+        if (new Set(numbers).size !== 6) {
+            alert('중복되지 않는 6개의 숫자를 입력해주세요.');
+            return;
+        }
+        numbers.sort((a, b) => a - b);
+        const nextDrawNumber = await updateDrawLabel();
+        const winningNumber = {
+            drawNumber: nextDrawNumber,
+            numbers: numbers,
+            timestamp: new Date().getTime()
+        };
+        try {
+            await db.collection('lotto_numbers').doc(nextDrawNumber.toString()).set(winningNumber);
+            alert('당첨번호가 저장되었습니다.');
+            // Firestore에서 최신 번호로 UI 갱신
+            await updateWinningNumberSection();
+            
+            // 현재 예측과 당첨번호 비교하여 완전일치 확인
+            await checkForPerfectMatches(numbers);
+        } catch (e) {
+            alert('저장 실패: ' + e.message);
+        }
+    });
+    
+    // 예측번호 저장 버튼 클릭 이벤트
+    const confirmButton = document.querySelector('.confirm-button');
+    confirmButton.addEventListener('click', savePredictionToFirestore);
+    
+    // Firestore에서 최신 당첨번호 불러와서 UI에 표시
+    async function updateWinningNumberSection() {
+        const snapshot = await db.collection('lotto_numbers').orderBy('drawNumber', 'desc').limit(1).get();
+        if (!snapshot.empty) {
+            const latest = snapshot.docs[0].data();
+            const winningNumberTitle = document.querySelector('.section-header');
+            if (winningNumberTitle) winningNumberTitle.textContent = `${latest.drawNumber}회차 당첨번호`;
+            const lastWeekNumbers = document.querySelector('.last-week-numbers');
+            if (lastWeekNumbers) lastWeekNumbers.innerHTML = latest.numbers.map(num => `<div class="number-ball">${num}</div>`).join('');
+        }
+    }
+    
+    // 페이지 로드 시 Firestore에서 최신 당첨번호 표시
+    updateWinningNumberSection();
+    
+    // Firestore에서 예측 데이터 불러오기
+    async function loadDataFromFirestore() {
+        try {
+            // 현재 예측 데이터 불러오기
+            const predictionsSnapshot = await db.collection('predictions').get();
+            
+            // 완전일치 번호 불러오기
+            const perfectMatchesSnapshot = await db.collection('perfect_matches').get();
+            
+            // 완전일치 목록 표시
+            displayPerfectMatchesFromFirestore(perfectMatchesSnapshot);
+            
+            // 현재 예측 표시
+            displayCurrentPredictionsFromFirestore(predictionsSnapshot);
+        } catch (e) {
+            console.error('Firestore 데이터 로드 실패:', e);
+        }
+    }
+    
+    // Firestore에서 현재 예측 표시
+    function displayCurrentPredictionsFromFirestore(snapshot) {
+        const predictionsContainer = document.getElementById('thisWeekPredictions');
+        const inputForm = document.getElementById('predictionInputForm');
+        
+        // 기존 예측들만 제거 (입력 폼 제외)
+        const predictions = Array.from(predictionsContainer.children)
+            .filter(child => child.id !== 'predictionInputForm');
+        predictions.forEach(pred => pred.remove());
+        
+        // Firestore에서 가져온 예측 표시
+        snapshot.forEach(doc => {
+            const prediction = doc.data();
+            const predictionElement = document.createElement('div');
+            predictionElement.className = 'prediction-row';
+            
+            const numbersHtml = prediction.numbers.map(num => 
+                `<div class="number-ball">${num}</div>`
+            ).join('');
+
+            predictionElement.innerHTML = `
+                <div class="user-name">${prediction.userName}</div>
+                <div class="prediction-numbers">
+                    ${numbersHtml}
+                </div>
+                <div class="timestamp">${new Date(prediction.timestamp).toLocaleString()}</div>
+            `;
+            predictionsContainer.appendChild(predictionElement);
+        });
+    }
+    
+    // Firestore에서 완전일치 번호 표시
+    function displayPerfectMatchesFromFirestore(snapshot) {
+        const perfectMatchList = document.getElementById('perfectMatchList');
+        
+        if (snapshot.empty) {
+            perfectMatchList.innerHTML = '<div class="no-match-message">아직 완전일치 번호가 없습니다.</div>';
+            return;
+        }
+        
+        perfectMatchList.innerHTML = '';
+        
+        // Firestore 문서를 배열로 변환
+        const perfectMatches = [];
+        snapshot.forEach(doc => {
+            perfectMatches.push(doc.data());
+        });
+        
+        // 최신순으로 정렬
+        perfectMatches.sort((a, b) => b.timestamp - a.timestamp);
+        
+        perfectMatches.forEach(match => {
+            const matchElement = document.createElement('div');
+            matchElement.className = 'prediction-row perfect-match';
+            
+            // 맞춘 번호
+            const numbersHtml = match.numbers.map(num => 
+                `<div class="number-ball winning-number">${num}</div>`
+            ).join('');
+            
+            // 다음 회차 번호가 있으면 표시
+            let nextNumbersHtml = '';
+            if (match.next_numbers && match.next_numbers.length > 0) {
+                nextNumbersHtml = `
+                    <div style="margin-top: 10px; font-size: 0.85rem; color: #aaa;">다음 회차 예상번호:</div>
+                    <div class="prediction-numbers" style="margin-top: 5px;">
+                        ${match.next_numbers.map(num => 
+                            `<div class="number-ball" style="background-color: #555;">${num}</div>`
+                        ).join('')}
+                    </div>
+                `;
+            }
+            
+            matchElement.innerHTML = `
+                <div class="user-name">${match.userName}</div>
+                <div class="prediction-numbers">
+                    ${numbersHtml}
+                </div>
+                <div class="perfect-match-badge">완전일치</div>
+                ${nextNumbersHtml}
+                <div class="timestamp">${new Date(match.timestamp).toLocaleString()}</div>
+            `;
+            perfectMatchList.appendChild(matchElement);
+        });
+    }
+    
+    // 당첨번호와 현재 예측 비교해서 완전일치 확인
+    async function checkForPerfectMatches(winningNumbers) {
+        try {
+            const predictionsSnapshot = await db.collection('predictions').get();
+            
+            predictionsSnapshot.forEach(async (doc) => {
+                const prediction = doc.data();
+                
+                // 6개 번호가 모두 일치하는지 확인
+                const userNumbers = prediction.numbers;
+                const matches = userNumbers.filter(num => winningNumbers.includes(num)).length;
+                
+                if (matches === 6) {
+                    console.log('완전일치 발견!', prediction);
+                    
+                    // 완전일치 데이터 저장
+                    const perfectMatch = {
+                        userName: prediction.userName,
+                        numbers: userNumbers,
+                        timestamp: new Date().getTime(),
+                        drawNumber: getCurrentRound(),
+                        next_numbers: [] // 다음 회차 예상번호 (필요시 추가)
+                    };
+                    
+                    await db.collection('perfect_matches').add(perfectMatch);
+                }
+            });
+        } catch (e) {
+            console.error('완전일치 확인 오류:', e);
+        }
+    }
+    
+    // 예측번호를 Firestore에 저장
+    async function savePredictionToFirestore() {
+        try {
+            // 로그인 확인
+            if (!currentUser) {
+                alert('로그인이 필요합니다.');
+                return;
+            }
+            
+            const predictionNumbers = document.querySelector('#predictionInputForm .prediction-numbers');
+            const numbers = Array.from(predictionNumbers.querySelectorAll('.number-ball'))
+                .map(ball => parseInt(ball.textContent));
+
+            if (numbers.length !== 6) {
+                alert('6개의 번호를 모두 선택해주세요.');
+                return;
+            }
+
+            const prediction = {
+                userName: currentUser,
+                numbers: numbers,
+                timestamp: new Date().getTime(),
+                drawNumber: getCurrentRound()
+            };
+
+            // Firestore에 저장
+            await db.collection('predictions').add(prediction);
+            
+            // UI 업데이트
+            alert('예측번호가 저장되었습니다.');
+            document.getElementById('predictionInputForm').style.display = 'none';
+            
+            // 데이터 다시 불러오기
+            const predictionsSnapshot = await db.collection('predictions').get();
+            displayCurrentPredictionsFromFirestore(predictionsSnapshot);
+        } catch (e) {
+            console.error('예측번호 저장 실패:', e);
+            alert('저장에 실패했습니다: ' + e.message);
+        }
+    }
+    
+    // 페이지4에서 선택한 번호 표시
+    function displayPage4Selection() {
+        const predictionNumbers = document.querySelector('#predictionInputForm .prediction-numbers');
+        if (!predictionNumbers) return;
+
+        // localStorage에서 가장 최근의 prediction 찾기
+        const keys = Object.keys(localStorage).filter(key => key.startsWith('prediction_'));
+        if (keys.length > 0) {
+            // 가장 최근의 키 찾기 (timestamp가 가장 큰 것)
+            const latestKey = keys.reduce((a, b) => {
+                const timeA = parseInt(a.split('_')[1]);
+                const timeB = parseInt(b.split('_')[1]);
+                return timeA > timeB ? a : b;
+            });
+
+            const prediction = JSON.parse(localStorage.getItem(latestKey));
+            if (prediction && prediction.source === 'page4') {
+                // 예측 번호 표시 업데이트
+                predictionNumbers.innerHTML = prediction.numbers.map(num => 
+                    `<div class="number-ball">${num}</div>`
+                ).join('');
+            }
+        }
+    }
+    
+    // 초기 데이터 표시
+    displayPage4Selection();
+    
+    // Firestore 실시간 업데이트
+    db.collection('predictions').onSnapshot(snapshot => {
+        const predictionsSnapshot = snapshot;
+        displayCurrentPredictionsFromFirestore(predictionsSnapshot);
+    });
+    
+    db.collection('perfect_matches').onSnapshot(snapshot => {
+        const perfectMatchesSnapshot = snapshot;
+        displayPerfectMatchesFromFirestore(perfectMatchesSnapshot);
     });
 });
 
@@ -407,6 +694,35 @@ function showAdminForm() {
     if (adminForm) {
         adminForm.style.display = 'block';
     }
+}
+
+// Firebase 설정
+const firebaseConfig = {
+    apiKey: "AIzaSyAwh55rLOQkY8ZVCzaC4ZF3iaUVU5Vu0GM",
+    authDomain: "ai-lottosolutions.firebaseapp.com",
+    projectId: "ai-lottosolutions",
+    storageBucket: "ai-lottosolutions.firebasestorage.app",
+    messagingSenderId: "616782090306",
+    appId: "1:616782090306:web:688c710998dfce8e4d5ddb",
+    measurementId: "G-NEXMN4FFJG"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// Firestore에서 최신 회차 불러오기 및 drawLabel 표시
+async function updateDrawLabel() {
+    const drawLabel = document.getElementById('drawLabel');
+    let nextDrawNumber = 1171;
+    try {
+        const snapshot = await db.collection('lotto_numbers').orderBy('drawNumber', 'desc').limit(1).get();
+        if (!snapshot.empty) {
+            const latest = snapshot.docs[0].data();
+            nextDrawNumber = latest.drawNumber + 1;
+        }
+    } catch (e) { console.error(e); }
+    if (drawLabel) drawLabel.textContent = `${nextDrawNumber}회차 당첨번호 입력`;
+    return nextDrawNumber;
 }
 
 // ... existing code ... 
