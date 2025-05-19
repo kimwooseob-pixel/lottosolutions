@@ -313,6 +313,7 @@
             border-radius: 5px;
             background-color: #1a1f2e;
             color: white;
+            box-sizing: border-box;
         }
 
         .admin-popup .number-input-container {
@@ -629,7 +630,7 @@
             <button id="passwordSubmit">확인</button>
         </div>
         <div class="number-input-container">
-            <div class="draw-label" id="drawLabel">1171회차 당첨번호 입력</div>
+            <div class="draw-label" id="drawLabel">당첨번호 입력</div>
             <input type="number" min="1" max="45" placeholder="1번">
             <input type="number" min="1" max="45" placeholder="2번">
             <input type="number" min="1" max="45" placeholder="3번">
@@ -652,15 +653,51 @@
             const confirmButton = document.querySelector('.confirm-button');
             const savedUserId = localStorage.getItem('userId');
             const thisWeekPredictions = document.getElementById('thisWeekPredictions');
-            const adminDot = document.querySelector('.admin-dot');
-            const adminPopup = document.querySelector('.admin-popup');
-            const popupOverlay = document.querySelector('.popup-overlay');
+            
+            // 요소 확인 및 필요시 생성
+            let adminDot = document.querySelector('.admin-dot');
+            let adminPopup = document.querySelector('.admin-popup');
+            let popupOverlay = document.querySelector('.popup-overlay');
+            
+            // 모달이 없는 경우 생성
+            if (!adminPopup) {
+                console.warn('Admin popup not found. Creating it.');
+                
+                // 오버레이 생성
+                popupOverlay = document.createElement('div');
+                popupOverlay.className = 'popup-overlay';
+                document.body.appendChild(popupOverlay);
+                
+                // 모달 팝업 생성
+                adminPopup = document.createElement('div');
+                adminPopup.className = 'admin-popup';
+                adminPopup.innerHTML = `
+                    <div class="password-section">
+                        <input type="password" placeholder="동영상 삭제 비밀번호" id="adminPassword">
+                        <div class="error-message">비밀번호가 일치하지 않습니다.</div>
+                        <button id="passwordSubmit">확인</button>
+                    </div>
+                    <div class="number-input-container">
+                        <div class="draw-label" id="drawLabel">당첨번호 입력</div>
+                        <input type="number" min="1" max="45" placeholder="1번">
+                        <input type="number" min="1" max="45" placeholder="2번">
+                        <input type="number" min="1" max="45" placeholder="3번">
+                        <input type="number" min="1" max="45" placeholder="4번">
+                        <input type="number" min="1" max="45" placeholder="5번">
+                        <input type="number" min="1" max="45" placeholder="6번">
+                        <button id="saveWinningNumbers">당첨번호 저장</button>
+                    </div>
+                `;
+                document.body.appendChild(adminPopup);
+            }
+            
+            // 모달 관련 요소들 참조 업데이트
             const passwordInput = document.getElementById('adminPassword');
             const passwordSubmit = document.getElementById('passwordSubmit');
             const numberInputContainer = document.querySelector('.number-input-container');
             const errorMessage = document.querySelector('.error-message');
             const saveWinningNumbers = document.getElementById('saveWinningNumbers');
-            const numberInputs = document.querySelectorAll('.number-input-container input');
+            const numberInputs = document.querySelectorAll('.number-input-container input[type="number"]');
 
             // 페이지4에서 선택한 번호 표시
             function displayPage4Selection() {
@@ -799,132 +836,209 @@
                 });
             }
 
-            // 이벤트 리스너 설정
-            if (savedUserId) {
+            // 이벤트 리스너 설정 - null 체크 추가
+            if (savedUserId && userIdInput) {
                 userIdInput.value = savedUserId;
             }
 
-            confirmButton.addEventListener('click', savePrediction);
-            userIdInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    savePrediction();
-                }
-            });
+            if (confirmButton) {
+                confirmButton.addEventListener('click', savePrediction);
+            }
+
+            if (userIdInput) {
+                userIdInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        savePrediction();
+                    }
+                });
+            }
 
             // 초기 데이터 표시
             displayPage4Selection();
             displayThisWeekPredictions();
             displayPerfectMatches();
 
-            // 관리자 버튼 클릭 이벤트
-            adminDot.addEventListener('click', function() {
-                adminPopup.classList.add('show');
-                popupOverlay.classList.add('show');
-                passwordInput.value = '';
-                errorMessage.style.display = 'none';
-                numberInputContainer.classList.remove('show');
-            });
-
-            // 오버레이 클릭 시 팝업 닫기
-            popupOverlay.addEventListener('click', function() {
-                adminPopup.classList.remove('show');
-                popupOverlay.classList.remove('show');
-            });
-
-            // 비밀번호 확인
-            passwordSubmit.addEventListener('click', function() {
-                const ADMIN_PASSWORD = 'knue2000';
-                if (passwordInput.value === ADMIN_PASSWORD) {
-                    numberInputContainer.classList.add('show');
-                    errorMessage.style.display = 'none';
-                    passwordInput.style.display = 'none';
-                    passwordSubmit.style.display = 'none';
-                } else {
-                    errorMessage.style.display = 'block';
-                }
-            });
-
-            // 당첨번호 저장
-            saveWinningNumbers.addEventListener('click', function() {
-                const numbers = Array.from(numberInputs).map(input => parseInt(input.value));
-                
-                // 유효성 검사
-                if (numbers.some(num => isNaN(num) || num < 1 || num > 45)) {
-                    alert('1부터 45 사이의 숫자를 입력해주세요.');
-                    return;
-                }
-                
-                if (new Set(numbers).size !== 6) {
-                    alert('중복되지 않는 6개의 숫자를 입력해주세요.');
-                    return;
-                }
-
-                // 당첨번호 정렬
-                numbers.sort((a, b) => a - b);
-
-                // 현재 회차 정보 가져오기
-                const currentDrawInfo = JSON.parse(localStorage.getItem('currentDrawInfo') || '{"drawNumber": 1168}');
-                const nextDrawNumber = currentDrawInfo.drawNumber + 1;
-
-                // 당첨번호 저장
-                const winningNumber = {
-                    drawNumber: nextDrawNumber,
-                    numbers: numbers,
-                    timestamp: new Date().getTime()
-                };
-
-                // 당첨번호 저장
-                localStorage.setItem('latestWinningNumber', JSON.stringify(winningNumber));
-                
-                // 현재 회차 정보 업데이트
-                localStorage.setItem('currentDrawInfo', JSON.stringify({
-                    drawNumber: nextDrawNumber,
-                    timestamp: new Date().getTime()
-                }));
-
-                // 이전 예측 결과를 지난주 예측 결과로 이동
-                const currentPredictions = JSON.parse(localStorage.getItem('currentWeekPredictions') || '[]');
-                
-                // 예측 결과에 맞은 개수 계산 추가
-                const scoredPredictions = currentPredictions.map(prediction => ({
-                    ...prediction,
-                    matchCount: prediction.numbers.filter(num => numbers.includes(num)).length
-                }));
-
-                // 지난주 예측 결과 저장
-                localStorage.setItem('lastWeekPredictions', JSON.stringify(scoredPredictions));
-                
-                // 현재 예측 초기화
-                localStorage.setItem('currentWeekPredictions', '[]');
-
-                // 페이지 업데이트
-                updatePageContent(winningNumber);
-
-                // 팝업 닫기
-                adminPopup.classList.remove('show');
-                popupOverlay.classList.remove('show');
-
-                alert('당첨번호가 저장되었습니다.');
-                
-                // 페이지4의 회차 범위 업데이트
-                localStorage.setItem('drawRange', JSON.stringify({
-                    start: nextDrawNumber - 14,
-                    end: nextDrawNumber,
-                    prediction: nextDrawNumber + 1
-                }));
-                
-                // 화살표 게임 페이지도 회차 범위를 인식할 수 있도록 이벤트 발생
-                const arrowGameUpdateEvent = new CustomEvent('arrowGameRangeUpdate', {
-                    detail: {
-                        startNumber: nextDrawNumber - 14,
-                        endNumber: nextDrawNumber
+            // 관리자 버튼 클릭 이벤트 - null 체크 추가
+            if (adminDot) {
+                adminDot.addEventListener('click', function() {
+                    if (adminPopup && popupOverlay) {
+                        // 현재 회차 정보 가져오기
+                        const currentDrawInfo = JSON.parse(localStorage.getItem('currentDrawInfo') || '{"drawNumber": 1168}');
+                        const nextDrawNumber = currentDrawInfo.drawNumber + 1;
+                        
+                        // 다음 회차 번호로 레이블 업데이트
+                        const drawLabel = document.getElementById('drawLabel');
+                        if (drawLabel) {
+                            drawLabel.textContent = `${nextDrawNumber}회차 당첨번호 입력`;
+                        }
+                        
+                        adminPopup.classList.add('show');
+                        popupOverlay.classList.add('show');
+                        if (passwordInput) {
+                            passwordInput.value = '';
+                        }
+                        if (errorMessage) {
+                            errorMessage.style.display = 'none';
+                        }
+                        if (numberInputContainer) {
+                            numberInputContainer.classList.remove('show');
+                        }
                     }
                 });
-                window.dispatchEvent(arrowGameUpdateEvent);
+            } else {
+                console.warn('Admin dot element not found. Adding it to the page.');
+                // 요소가 없으면 추가
+                const h1Element = document.querySelector('h1');
+                if (h1Element) {
+                    const newAdminDot = document.createElement('div');
+                    newAdminDot.className = 'admin-dot';
+                    h1Element.appendChild(newAdminDot);
+                    
+                    // 이벤트 리스너 등록
+                    newAdminDot.addEventListener('click', function() {
+                        if (adminPopup && popupOverlay) {
+                            // 현재 회차 정보 가져오기
+                            const currentDrawInfo = JSON.parse(localStorage.getItem('currentDrawInfo') || '{"drawNumber": 1168}');
+                            const nextDrawNumber = currentDrawInfo.drawNumber + 1;
+                            
+                            // 다음 회차 번호로 레이블 업데이트
+                            const drawLabel = document.getElementById('drawLabel');
+                            if (drawLabel) {
+                                drawLabel.textContent = `${nextDrawNumber}회차 당첨번호 입력`;
+                            }
+                            
+                            adminPopup.classList.add('show');
+                            popupOverlay.classList.add('show');
+                            if (passwordInput) {
+                                passwordInput.value = '';
+                            }
+                            if (errorMessage) {
+                                errorMessage.style.display = 'none';
+                            }
+                            if (numberInputContainer) {
+                                numberInputContainer.classList.remove('show');
+                            }
+                        }
+                    });
+                }
+            }
 
-                // 다른 열린 창에도 회차 범위 업데이트를 알리기 위한 이벤트
-                localStorage.setItem('lastDrawRangeUpdate', new Date().getTime().toString());
-            });
+            // 오버레이 클릭 시 팝업 닫기 - null 체크 추가
+            if (popupOverlay) {
+                popupOverlay.addEventListener('click', function() {
+                    if (adminPopup) {
+                        adminPopup.classList.remove('show');
+                        popupOverlay.classList.remove('show');
+                    }
+                });
+            }
+
+            // 비밀번호 확인 - null 체크 추가
+            if (passwordSubmit) {
+                passwordSubmit.addEventListener('click', function() {
+                    const ADMIN_PASSWORD = 'knue2000';
+                    if (passwordInput && passwordInput.value === ADMIN_PASSWORD) {
+                        if (numberInputContainer) {
+                            numberInputContainer.classList.add('show');
+                        }
+                        if (errorMessage) {
+                            errorMessage.style.display = 'none';
+                        }
+                        if (passwordInput) {
+                            passwordInput.style.display = 'none';
+                        }
+                        if (passwordSubmit) {
+                            passwordSubmit.style.display = 'none';
+                        }
+                    } else if (errorMessage) {
+                        errorMessage.style.display = 'block';
+                    }
+                });
+            }
+
+            // 당첨번호 저장 - null 체크 추가
+            if (saveWinningNumbers) {
+                saveWinningNumbers.addEventListener('click', function() {
+                    const numbers = Array.from(numberInputs).map(input => parseInt(input.value));
+                    
+                    // 유효성 검사
+                    if (numbers.some(num => isNaN(num) || num < 1 || num > 45)) {
+                        alert('1부터 45 사이의 숫자를 입력해주세요.');
+                        return;
+                    }
+                    
+                    if (new Set(numbers).size !== 6) {
+                        alert('중복되지 않는 6개의 숫자를 입력해주세요.');
+                        return;
+                    }
+
+                    // 당첨번호 정렬
+                    numbers.sort((a, b) => a - b);
+
+                    // 현재 회차 정보 가져오기
+                    const currentDrawInfo = JSON.parse(localStorage.getItem('currentDrawInfo') || '{"drawNumber": 1168}');
+                    const nextDrawNumber = currentDrawInfo.drawNumber + 1;
+
+                    // 당첨번호 저장
+                    const winningNumber = {
+                        drawNumber: nextDrawNumber,
+                        numbers: numbers,
+                        timestamp: new Date().getTime()
+                    };
+
+                    // 당첨번호 저장
+                    localStorage.setItem('latestWinningNumber', JSON.stringify(winningNumber));
+                    
+                    // 현재 회차 정보 업데이트
+                    localStorage.setItem('currentDrawInfo', JSON.stringify({
+                        drawNumber: nextDrawNumber,
+                        timestamp: new Date().getTime()
+                    }));
+
+                    // 이전 예측 결과를 지난주 예측 결과로 이동
+                    const currentPredictions = JSON.parse(localStorage.getItem('currentWeekPredictions') || '[]');
+                    
+                    // 예측 결과에 맞은 개수 계산 추가
+                    const scoredPredictions = currentPredictions.map(prediction => ({
+                        ...prediction,
+                        matchCount: prediction.numbers.filter(num => numbers.includes(num)).length
+                    }));
+
+                    // 지난주 예측 결과 저장
+                    localStorage.setItem('lastWeekPredictions', JSON.stringify(scoredPredictions));
+                    
+                    // 현재 예측 초기화
+                    localStorage.setItem('currentWeekPredictions', '[]');
+
+                    // 페이지 업데이트
+                    updatePageContent(winningNumber);
+
+                    // 팝업 닫기
+                    adminPopup.classList.remove('show');
+                    popupOverlay.classList.remove('show');
+
+                    alert('당첨번호가 저장되었습니다.');
+                    
+                    // 페이지4의 회차 범위 업데이트
+                    localStorage.setItem('drawRange', JSON.stringify({
+                        start: nextDrawNumber - 14,
+                        end: nextDrawNumber,
+                        prediction: nextDrawNumber + 1
+                    }));
+                    
+                    // 화살표 게임 페이지도 회차 범위를 인식할 수 있도록 이벤트 발생
+                    const arrowGameUpdateEvent = new CustomEvent('arrowGameRangeUpdate', {
+                        detail: {
+                            startNumber: nextDrawNumber - 14,
+                            endNumber: nextDrawNumber
+                        }
+                    });
+                    window.dispatchEvent(arrowGameUpdateEvent);
+
+                    // 다른 열린 창에도 회차 범위 업데이트를 알리기 위한 이벤트
+                    localStorage.setItem('lastDrawRangeUpdate', new Date().getTime().toString());
+                });
+            }
 
             // 페이지 컨텐츠 업데이트 함수
             function updatePageContent(winningNumber) {
