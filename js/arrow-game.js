@@ -41,6 +41,40 @@ let gameState = {
     }
 };
 
+// Firebase Realtime Database 참조
+const database = firebase.database();
+
+// 실시간 업데이트 리스너 설정
+function setupRealtimeListeners() {
+    // 1. 화살표 게임 정보 업데이트 감지
+    database.ref('arrowGame').on('value', snapshot => {
+        if (snapshot.exists()) {
+            const arrowGame = snapshot.val();
+            if (arrowGame.currentDraw && arrowGame.numbers) {
+                // 게임 상태 업데이트
+                gameState.currentDraw = arrowGame.currentDraw;
+                gameState.winningNumbers[arrowGame.currentDraw] = arrowGame.numbers;
+                updateGameDisplay(); // 게임 화면 업데이트
+            }
+        }
+    });
+
+    // 2. 시스템 업데이트 감지
+    database.ref('systemUpdate').on('value', snapshot => {
+        if (snapshot.exists()) {
+            const update = snapshot.val();
+            if (update.type === 'drawUpdate') {
+                location.reload(); // 페이지 새로고침
+            }
+        }
+    });
+}
+
+// 페이지 로드 시 실시간 리스너 설정
+window.addEventListener('load', function() {
+    setupRealtimeListeners();
+});
+
 // 그리드 생성 함수
 function createGrid() {
     const gridContainer = document.querySelector('.grid-container');

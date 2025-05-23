@@ -10,7 +10,146 @@
     <link rel="stylesheet" href="../css/style.css">
     <link rel="icon" type="image/png" sizes="192x192" href="../images/icons/icon-192x192.png">
     <link rel="apple-touch-icon" href="../images/icons/icon-192x192.png">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        .hint-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .hint-button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .hint-button:nth-child(1) { background-color: #2ecc71; color: white; }
+        .hint-button:nth-child(2) { background-color: #e74c3c; color: white; }
+        .hint-button:nth-child(3) { background-color: #f1c40f; color: white; }
+        .hint-button:nth-child(4) { background-color: #1abc9c; color: white; }
+        .hint-button:nth-child(5) { background-color: #3498db; color: white; }
+
+        .hint-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        #턴표시 {
+            background-color: white;
+            padding: 8px 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(16, minmax(30px, 1fr));
+            gap: 1px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        .grid-cell {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            position: relative;
+        }
+
+        .number-circle {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #e74c3c;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #e74c3c;
+            background: white;
+            position: relative;
+            z-index: 1;
+        }
+
+        .prediction-cell {
+            border-left: 2px solid #3498db;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .prediction-cell:hover {
+            background-color: #e3f2fd;
+            transform: scale(1.1);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .pulse {
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        @media (max-width: 768px) {
+            .grid-container {
+                grid-template-columns: repeat(16, minmax(25px, 1fr));
+                padding: 10px;
+            }
+
+            .grid-cell {
+                width: 25px;
+                height: 25px;
+                font-size: 10px;
+            }
+
+            .number-circle {
+                width: 20px;
+                height: 20px;
+                font-size: 10px;
+            }
+        }
+
         .container {
             display: flex;
             flex-direction: column;
@@ -199,16 +338,6 @@
             margin: 1rem 0;
         }
 
-        #턴표시 {
-            font-size: 1em;
-            font-weight: bold;
-            color: #2c3e50;
-            padding: 10px 20px;
-            background-color: rgba(255, 255, 255, 0.9);
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
         .user-input {
             display: flex;
             justify-content: center;
@@ -317,19 +446,16 @@
 <body>
     <div class="container">
         <h1>로또 패턴 분석</h1>
-        <div class="controls">
+        <div class="button-container">
             <button class="hint-button" onclick="힌트1()">힌트1</button>
             <button class="hint-button" onclick="힌트2()">힌트2</button>
             <button class="hint-button" onclick="힌트3()">힌트3</button>
             <button class="hint-button" onclick="힌트4()">힌트4</button>
             <button class="hint-button" onclick="힌트5()">힌트5</button>
         </div>
-        <div class="turn-controls">
-            <span id="턴표시">1턴 (1153회-1167회)</span>
-        </div>
-        
+        <div id="턴표시" class="turn-display"></div>
         <div class="grid-container"></div>
     </div>
-    <script defer src="../js/page4.js"></script>
+    <script src="../js/page4.js"></script>
 </body>
 </html> 

@@ -5,11 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>실시간 이슈 채팅방 - Lotto Solutions</title>
     <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-storage-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <style>
         :root {
             --primary-color: #2196F3;
@@ -485,10 +483,10 @@
         </div>
     </div>
     
-    <div class="welcome-overlay" id="welcomeOverlay">
+    <div class="welcome-overlay" id="nicknameModal">
         <div class="welcome-card">
             <h2 class="welcome-title">채팅방에 오신 것을 환영합니다!</h2>
-            <input type="text" class="welcome-input" id="usernameInput" placeholder="사용할 닉네임을 입력하세요" maxlength="20">
+            <input type="text" class="welcome-input" id="nicknameInput" placeholder="사용할 닉네임을 입력하세요" maxlength="20">
             <button class="welcome-button" id="startChatBtn">채팅 시작하기</button>
             <p class="info-text">* 닉네임은 최대 20자까지 입력 가능합니다.</p>
         </div>
@@ -509,435 +507,189 @@
     </div>
 
     <script>
-        // Firebase 설정
+        // Firebase 초기화
         const firebaseConfig = {
             apiKey: "AIzaSyAwh55rLOQkY8ZVCzaC4ZF3iaUVU5Vu0GM",
             authDomain: "ai-lottosolutions.firebaseapp.com",
+            databaseURL: "https://ai-lottosolutions-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "ai-lottosolutions",
-            storageBucket: "ai-lottosolutions.firebasestorage.app",
+            storageBucket: "ai-lottosolutions.appspot.com",
             messagingSenderId: "616782090306",
-            appId: "1:616782090306:web:688c710998dfce8e4d5ddb",
-            measurementId: "G-NEXMN4FFJG"
+            appId: "1:616782090306:web:688c710998dfce8e4d5ddb"
         };
 
         // Firebase 초기화
         firebase.initializeApp(firebaseConfig);
-        const analytics = firebase.analytics();
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-        const storage = firebase.storage();
-
-        // 전역 변수
-        let currentUser = '';
-        let chatMessages = [];
-        let onlineUsers = [];
-        let selectedUser = null;
-        let resetTimerInterval = null;
-        let resetTimeLeft = 4 * 60 * 60; // 4시간(초 단위)
-        let matchingMode = false;
         
+        // Realtime Database 참조
+        const database = firebase.database();
+        const chatRef = database.ref('chats');
+        
+        // 전역 변수
+        let nickname = '';
+        let isInitialized = false;
+
         // DOM 요소
-        const chatArea = document.getElementById('chatArea');
+        const nicknameModal = document.getElementById('nicknameModal');
+        const nicknameInput = document.getElementById('nicknameInput');
+        const startChatBtn = document.getElementById('startChatBtn');
         const messageInput = document.getElementById('messageInput');
         const sendBtn = document.getElementById('sendBtn');
-        const welcomeOverlay = document.getElementById('welcomeOverlay');
-        const usernameInput = document.getElementById('usernameInput');
-        const startChatBtn = document.getElementById('startChatBtn');
-        const onlineUsersList = document.getElementById('onlineUsersList');
-        const resetTimerElement = document.getElementById('resetTimer');
-        const matchingInfoElement = document.getElementById('matchingInfo');
-        const matchingSelectionElement = document.getElementById('matchingSelection');
-        const matchResultModal = document.getElementById('matchResultModal');
-        const matchModalTitle = document.getElementById('matchModalTitle');
-        const matchModalMessage = document.getElementById('matchModalMessage');
-        const goToPrivateChatBtn = document.getElementById('goToPrivateChatBtn');
-        const stayInChatBtn = document.getElementById('stayInChatBtn');
+        const chatArea = document.getElementById('chatArea');
 
-        // 페이지 로드 시 초기화
-        document.addEventListener('DOMContentLoaded', function() {
-            // Firebase 인증 상태 확인
-            auth.onAuthStateChanged(function(user) {
-                if (user) {
-                    currentUser = user.displayName || user.email;
-                    welcomeOverlay.style.display = 'none';
-                    initializeChat();
-                } else {
-                    welcomeOverlay.style.display = 'flex';
-                }
-            });
-
-            // 타이머 초기화
-            initializeResetTimer();
+        // 닉네임 설정
+        function setNickname() {
+            const inputNickname = nicknameInput.value.trim();
             
-            // 엔터 키 이벤트 설정
-            messageInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') sendMessage();
-            });
-            
-            usernameInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') startChat();
-            });
-            
-            // 버튼 클릭 이벤트 설정
-            sendBtn.addEventListener('click', sendMessage);
-            startChatBtn.addEventListener('click', startChat);
-            
-            // 매칭 모달 버튼 이벤트
-            goToPrivateChatBtn.addEventListener('click', handleGoToPrivateChat);
-            stayInChatBtn.addEventListener('click', handleStayInChat);
-        });
-
-        // 채팅 초기화
-        function initializeChat() {
-            // 실시간 메시지 리스너
-            db.collection('chat_messages')
-                .orderBy('timestamp', 'asc')
-                .limit(100)
-                .onSnapshot(function(snapshot) {
-                    snapshot.docChanges().forEach(function(change) {
-                        if (change.type === 'added') {
-                            const message = change.doc.data();
-                            chatMessages.push(message);
-                            renderChatMessages();
-                        }
-                    });
+            if (inputNickname && inputNickname.length <= 20) {
+                nickname = inputNickname;
+                nicknameModal.style.display = 'none';
+                
+                // 입장 메시지
+                chatRef.push({
+                    type: 'system',
+                    message: `${nickname}님이 입장하셨습니다.`,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
                 });
 
-            // 온라인 유저 리스너
-            db.collection('online_users')
-                .onSnapshot(function(snapshot) {
-                    onlineUsers = [];
-                    snapshot.forEach(function(doc) {
-                        const user = doc.data();
-                        if (user.lastActive > Date.now() - 5 * 60 * 1000) { // 5분 이내 활동
-                            onlineUsers.push(user);
-                        }
-                    });
-                    renderOnlineUsers();
+                // 사용자 상태 업데이트
+                const userStatusRef = database.ref('users/' + nickname);
+                userStatusRef.set({
+                    online: true,
+                    lastActive: firebase.database.ServerValue.TIMESTAMP
                 });
 
-            // 현재 사용자 온라인 상태 업데이트
-            updateOnlineStatus();
+                // 연결 해제 시 처리
+                userStatusRef.onDisconnect().update({
+                    online: false,
+                    lastActive: firebase.database.ServerValue.TIMESTAMP
+                });
+
+                isInitialized = true;
+            } else {
+                alert('닉네임을 1-20자 사이로 입력해주세요.');
+            }
         }
 
         // 메시지 전송
         function sendMessage() {
-            const messageText = messageInput.value.trim();
-            
-            if (messageText && currentUser) {
-                const message = {
-                    type: 'user',
-                    username: currentUser,
-                    content: messageText,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                };
-
-                // Firestore에 메시지 저장
-                db.collection('chat_messages').add(message);
-                
-                // 입력 필드 초기화
-                messageInput.value = '';
+            if (!isInitialized) {
+                alert('닉네임을 먼저 설정해주세요.');
+                return;
             }
-        }
 
-        // 온라인 상태 업데이트
-        function updateOnlineStatus() {
-            if (!currentUser) return;
-
-            const userRef = db.collection('online_users').doc(currentUser);
+            const message = messageInput.value.trim();
             
-            // 사용자 정보 업데이트
-            userRef.set({
-                name: currentUser,
-                lastActive: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-
-            // 30초마다 상태 업데이트
-            setInterval(function() {
-                userRef.update({
-                    lastActive: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            }, 30000);
-        }
-
-        // 매칭을 위한 유저 선택
-        function selectUserForMatching(username) {
-            if (!matchingMode || !currentUser) return;
-            
-            // 현재 선택된 유저와 같으면 선택 취소
-            if (selectedUser === username) {
-                selectedUser = null;
-            } else {
-                selectedUser = username;
-            }
-            
-            // Firestore에 매칭 선택 저장
-            db.collection('matching_selections').doc(currentUser).set({
-                selectedUser: selectedUser,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            
-            // 유저 목록 업데이트
-            renderOnlineUsers();
-        }
-
-        // 1:1 채팅방으로 이동
-        function handleGoToPrivateChat() {
-            const matchedUser = sessionStorage.getItem('matchedUser');
-            
-            if (matchedUser) {
-                // Firestore에 1:1 채팅방 생성
-                db.collection('private_chats').add({
-                    users: [currentUser, matchedUser],
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                }).then(function(docRef) {
-                    // 1:1 채팅방 URL로 이동
-                    location.href = `private-chat.html?room=${docRef.id}&partner=${encodeURIComponent(matchedUser)}`;
-                });
-            } else {
-                handleStayInChat();
-            }
-        }
-
-        // 채팅 시작
-        function startChat() {
-            const username = usernameInput.value.trim();
-            
-            if (username) {
-                // 익명 로그인
-                auth.signInAnonymously()
-                    .then(function(result) {
-                        currentUser = username;
-                        welcomeOverlay.style.display = 'none';
-                        initializeChat();
-                        
-                        // 사용자 프로필 업데이트
-                        result.user.updateProfile({
-                            displayName: username
-                        });
-                    })
-                    .catch(function(error) {
-                        console.error('로그인 오류:', error);
-                        alert('로그인 중 오류가 발생했습니다.');
-                    });
-            } else {
-                alert('닉네임을 입력해주세요.');
-                usernameInput.focus();
-            }
-        }
-
-        // 온라인 유저 추가
-        function addOnlineUser(username) {
-            // 이미 있는 유저인지 확인
-            const existingUserIndex = onlineUsers.findIndex(user => user.name === username);
-            
-            if (existingUserIndex >= 0) {
-                // 기존 유저의 마지막 활동 시간 업데이트
-                onlineUsers[existingUserIndex].lastActive = Date.now();
-            } else {
-                // 새 유저 추가
-                onlineUsers.push({
-                    name: username,
-                    lastActive: Date.now()
+            if (message) {
+                chatRef.push({
+                    type: 'message',
+                    nickname: nickname,
+                    message: message,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                }).then(() => {
+                    messageInput.value = '';
+                }).catch((error) => {
+                    console.error('메시지 전송 오류:', error);
+                    alert('메시지 전송에 실패했습니다. 다시 시도해주세요.');
                 });
             }
-            
-            // 로컬스토리지에 저장
-            localStorage.setItem('onlineUsers', JSON.stringify(onlineUsers));
-            
-            // 온라인 유저 목록 렌더링
-            renderOnlineUsers();
         }
 
-        // 온라인 유저 목록 렌더링
-        function renderOnlineUsers() {
-            onlineUsersList.innerHTML = '';
+        // 메시지 표시
+        function displayMessage(data) {
+            const messageDiv = document.createElement('div');
+            const timestamp = new Date(data.timestamp);
+            const timeString = `${timestamp.getHours().toString().padStart(2, '0')}:${timestamp.getMinutes().toString().padStart(2, '0')}`;
             
-            onlineUsers.forEach(user => {
-                if (user.name === currentUser) return; // 자기 자신은 제외
-                
-                const userElement = document.createElement('div');
-                userElement.className = 'online-user';
-                
-                // 매칭 모드에서 선택된 유저 하이라이트
-                if (matchingMode && selectedUser === user.name) {
-                    userElement.classList.add('selected');
-                }
-                
-                const indicator = document.createElement('div');
-                indicator.className = 'online-indicator';
-                
-                const nameSpan = document.createElement('span');
-                nameSpan.textContent = user.name;
-                
-                userElement.appendChild(indicator);
-                userElement.appendChild(nameSpan);
-                
-                // 매칭 모드에서 유저 선택 가능
-                if (matchingMode) {
-                    userElement.addEventListener('click', () => {
-                        selectUserForMatching(user.name);
-                    });
-                }
-                
-                onlineUsersList.appendChild(userElement);
-            });
-            
-            // 매칭 모드에서 선택 정보 표시
-            updateMatchingSelectionDisplay();
-        }
-        
-        // 매칭 선택 정보 저장
-        function saveMatchingSelection() {
-            // 로컬스토리지에서 기존 선택 정보 가져오기
-            let matchingSelections = JSON.parse(localStorage.getItem('matchingSelections') || '[]');
-            
-            // 현재 사용자의 선택 정보 찾기
-            const userIndex = matchingSelections.findIndex(item => item.user === currentUser);
-            
-            if (userIndex >= 0) {
-                // 기존 정보 업데이트
-                matchingSelections[userIndex].selectedUser = selectedUser;
-                matchingSelections[userIndex].timestamp = Date.now();
+            if (data.type === 'system') {
+                messageDiv.className = 'message system';
+                messageDiv.innerHTML = `
+                    <div class="message-content">
+                        <span class="system-message">${data.message}</span>
+                        <span class="timestamp">${timeString}</span>
+                    </div>
+                `;
             } else {
-                // 새 선택 정보 추가
-                matchingSelections.push({
-                    user: currentUser,
-                    selectedUser: selectedUser,
-                    timestamp: Date.now()
-                });
+                const isSelf = data.nickname === nickname;
+                messageDiv.className = `message ${isSelf ? 'self' : 'other'}`;
+                messageDiv.innerHTML = `
+                    <div class="message-header">
+                        <span class="username">${data.nickname}</span>
+                        <span class="timestamp">${timeString}</span>
+                    </div>
+                    <div class="message-content">${data.message}</div>
+                `;
             }
             
-            // 로컬스토리지에 저장
-            localStorage.setItem('matchingSelections', JSON.stringify(matchingSelections));
-        }
-        
-        // 매칭 선택 정보 표시 업데이트
-        function updateMatchingSelectionDisplay() {
-            if (!matchingMode || !matchingSelectionElement) return;
-            
-            if (selectedUser) {
-                matchingSelectionElement.innerHTML = `<div style="margin-top:8px;">선택한 상대: <span class="matching-user">${selectedUser}</span></div>`;
-            } else {
-                matchingSelectionElement.innerHTML = '';
-            }
-        }
-        
-        // 매칭 상태 확인
-        function checkMatchingStatus() {
-            if (!matchingMode || !currentUser) return;
-            
-            // 로컬스토리지에서 매칭 정보 가져오기
-            const matchingSelections = JSON.parse(localStorage.getItem('matchingSelections') || '[]');
-            
-            // 현재 사용자의 선택 확인
-            const mySelection = matchingSelections.find(item => item.user === currentUser);
-            if (!mySelection || !mySelection.selectedUser) return;
-            
-            // 상대방의 선택 확인
-            const partnerSelection = matchingSelections.find(item => 
-                item.user === mySelection.selectedUser && 
-                item.selectedUser === currentUser
-            );
-            
-            // 상호 선택된 경우
-            if (partnerSelection) {
-                // 매칭 성공 메시지 (실제 서버 구현에서는 즉시 처리)
-                addSystemMessage(`🎉 ${mySelection.selectedUser}님과 매칭되었습니다!`);
-            }
-        }
-        
-        // 시스템 메시지 추가
-        function addSystemMessage(text) {
-            const systemMessage = {
-                type: 'system',
-                content: text,
-                timestamp: Date.now()
-            };
-            
-            chatMessages.push(systemMessage);
-            
-            // 최대 100개 메시지만 유지
-            if (chatMessages.length > 100) {
-                chatMessages = chatMessages.slice(-100);
-            }
-            
-            // 로컬스토리지에 저장
-            localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
-            
-            // 채팅창 업데이트
-            renderChatMessages();
-        }
-        
-        // 채팅 메시지 렌더링
-        function renderChatMessages() {
-            chatArea.innerHTML = '';
-            
-            chatMessages.forEach(msg => {
-                const messageElement = document.createElement('div');
-                
-                if (msg.type === 'system') {
-                    // 시스템 메시지
-                    messageElement.className = 'message system';
-                    messageElement.style.alignSelf = 'center';
-                    messageElement.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                    messageElement.style.color = 'var(--text-secondary)';
-                    messageElement.style.fontSize = '0.85rem';
-                    messageElement.style.padding = '6px 12px';
-                    messageElement.style.borderRadius = '12px';
-                    messageElement.textContent = msg.content;
-                } else {
-                    // 사용자 메시지
-                    const isSelf = msg.username === currentUser;
-                    messageElement.className = `message ${isSelf ? 'self' : 'other'}`;
-                    
-                    const header = document.createElement('div');
-                    header.className = 'message-header';
-                    
-                    const username = document.createElement('span');
-                    username.className = 'username';
-                    username.textContent = msg.username;
-                    
-                    const timestamp = document.createElement('span');
-                    timestamp.className = 'timestamp';
-                    timestamp.textContent = formatTime(msg.timestamp);
-                    
-                    const content = document.createElement('div');
-                    content.className = 'message-content';
-                    content.textContent = msg.content;
-                    
-                    header.appendChild(username);
-                    header.appendChild(timestamp);
-                    messageElement.appendChild(header);
-                    messageElement.appendChild(content);
-                }
-                
-                chatArea.appendChild(messageElement);
-            });
-            
-            // 스크롤을 맨 아래로 이동
+            chatArea.appendChild(messageDiv);
             chatArea.scrollTop = chatArea.scrollHeight;
         }
-        
-        // 시간 포맷팅
-        function formatTime(timestamp) {
-            const date = new Date(timestamp);
-            let hours = date.getHours();
-            let minutes = date.getMinutes();
-            
-            // 10보다 작은 경우 앞에 0 추가
-            hours = hours < 10 ? '0' + hours : hours;
-            minutes = minutes < 10 ? '0' + minutes : minutes;
-            
-            return `${hours}:${minutes}`;
+
+        // 실시간 메시지 수신
+        chatRef.on('child_added', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                displayMessage(data);
+            }
+        });
+
+        // 이벤트 리스너
+        document.addEventListener('DOMContentLoaded', () => {
+            // 닉네임 입력 이벤트
+            nicknameInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    setNickname();
+                }
+            });
+
+            startChatBtn.addEventListener('click', setNickname);
+
+            // 메시지 전송 이벤트
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            sendBtn.addEventListener('click', sendMessage);
+
+            // 페이지 언로드 시 처리
+            window.addEventListener('beforeunload', () => {
+                if (nickname) {
+                    chatRef.push({
+                        type: 'system',
+                        message: `${nickname}님이 퇴장하셨습니다.`,
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+            });
+        });
+
+        // 타이머 업데이트
+        function updateTimer() {
+            const timerElement = document.getElementById('resetTimer');
+            let timeLeft = 4 * 60 * 60; // 4시간
+
+            function formatTime(seconds) {
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const secs = seconds % 60;
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            }
+
+            const timer = setInterval(() => {
+                timeLeft--;
+                if (timeLeft >= 0) {
+                    timerElement.textContent = formatTime(timeLeft);
+                } else {
+                    clearInterval(timer);
+                    location.reload();
+                }
+            }, 1000);
         }
-        
-        // 오래된 메시지 정리
-        function cleanupOldMessages() {
-            const oneMonthAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-            chatMessages = chatMessages.filter(msg => msg.timestamp > oneMonthAgo);
-            localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
-        }
+
+        updateTimer();
     </script>
 </body>
 </html> 

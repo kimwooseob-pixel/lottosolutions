@@ -419,6 +419,48 @@
     </div>
     
     <script>
+        // Firebase 초기화
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwh55rLOQkY8ZVCzaC4ZF3iaUVU5Vu0GM",
+            authDomain: "ai-lottosolutions.firebaseapp.com",
+            databaseURL: "https://ai-lottosolutions-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ai-lottosolutions",
+            storageBucket: "ai-lottosolutions.appspot.com",
+            messagingSenderId: "616782090306",
+            appId: "1:616782090306:web:688c710998dfce8e4d5ddb"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // 실시간 업데이트 리스너 설정
+        function setupRealtimeListeners() {
+            // 1. 회차 정보 업데이트 감지
+            database.ref('randomNumbers/currentDraw').on('value', snapshot => {
+                if (snapshot.exists()) {
+                    const currentDraw = snapshot.val();
+                    // 회차 정보 업데이트
+                    document.querySelector('.random-title').textContent = `${currentDraw}회차 4개이상 맞춘 번호 모으기`;
+                    createBoxes(); // 박스 다시 생성
+                }
+            });
+
+            // 2. 시스템 업데이트 감지
+            database.ref('systemUpdate').on('value', snapshot => {
+                if (snapshot.exists()) {
+                    const update = snapshot.val();
+                    if (update.type === 'drawUpdate') {
+                        location.reload(); // 페이지 새로고침
+                    }
+                }
+            });
+        }
+
+        // 페이지 로드 시 실시간 리스너 설정
+        window.addEventListener('load', function() {
+            setupRealtimeListeners();
+        });
+        
         // 페이지 로드 시 초기 박스 생성
         document.addEventListener('DOMContentLoaded', function() {
             createBoxes();

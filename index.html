@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lotto Solutions</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="manifest" href="manifest.json">
     <!-- Firebase SDK 추가 -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         :root {
             --primary-color: #2196F3;
@@ -573,7 +573,7 @@
             <span id="closeLogin">&times;</span>
             <h2 class="modal-title">로그인</h2>
             <div class="input-field">
-                <input type="email" id="loginId" placeholder="이메일">
+                <input type="text" id="loginId" placeholder="아이디">
             </div>
             <div class="input-field">
                 <input type="password" id="loginPw" placeholder="비밀번호">
@@ -641,19 +641,20 @@
         const firebaseConfig = {
             apiKey: "AIzaSyAwh55rLOQkY8ZVCzaC4ZF3iaUVU5Vu0GM",
             authDomain: "ai-lottosolutions.firebaseapp.com",
+            databaseURL: "https://ai-lottosolutions-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "ai-lottosolutions",
             storageBucket: "ai-lottosolutions.appspot.com",
             messagingSenderId: "616782090306",
-            appId: "1:616782090306:web:688c710998dfce8e4d5ddb",
-            measurementId: "G-NEXMN4FFJG"
+            appId: "1:616782090306:web:688c710998dfce8e4d5ddb"
         };
         
         // Firebase 초기화
         firebase.initializeApp(firebaseConfig);
         
-        // Firestore와 Auth 참조 생성
-        const db = firebase.firestore();
-        const auth = firebase.auth();
+        // Firebase 초기화 및 참조
+        const database = firebase.database();
+        const usersRef = database.ref('users');
+        const authRef = database.ref('auth/users');
         
         // 기존 자바스크립트 코드가 여기에 위치해야 합니다
         document.getElementById('adminBtn').addEventListener('click', function() {
@@ -686,17 +687,50 @@
         };
         // 관리자 대시보드 표시 함수
         function showAdminDashboard() {
-            // 회원 전체 목록
-            let users = JSON.parse(localStorage.getItem('users') || '[]');
-            let userTableHtml = '<table style="width:100%; border-collapse:collapse; background:#1e1e1e; color:#fff;">';
-            userTableHtml += '<tr style="background:#263238;"><th style="padding:8px;">아이디</th><th style="padding:8px;">이메일</th><th style="padding:8px;">가입일</th></tr>';
-            users.forEach(u => {
-                userTableHtml += `<tr><td style='padding:8px;'>${u.id}</td><td style='padding:8px;'>${u.email}</td><td style='padding:8px;'>${u.joinDate ? u.joinDate.slice(0,10) : ''}</td></tr>`;
-            });
-            userTableHtml += '</table>';
-            document.getElementById('userListTable').innerHTML = userTableHtml;
+            // Realtime Database에서 회원 목록 가져오기
+            authRef.once('value').then((snapshot) => {
+                let userTableHtml = '<table style="width:100%; border-collapse:collapse; background:#1e1e1e; color:#fff;">';
+                userTableHtml += '<tr style="background:#263238;"><th style="padding:8px;">아이디</th><th style="padding:8px;">이메일</th><th style="padding:8px;">가입일</th><th style="padding:8px;">최근 접속일</th></tr>';
+                
+                snapshot.forEach((userSnapshot) => {
+                    const userData = userSnapshot.val();
+                    const joinDate = userData.joinDate ? new Date(userData.joinDate).toLocaleDateString() : '없음';
+                    const lastLogin = userData.lastLogin ? new Date(userData.lastLogin).toLocaleDateString() : '없음';
+                    
+                    userTableHtml += `<tr>
+                        <td style='padding:8px;'>${userData.id || '없음'}</td>
+                        <td style='padding:8px;'>${userData.email || '없음'}</td>
+                        <td style='padding:8px;'>${joinDate}</td>
+                        <td style='padding:8px;'>${lastLogin}</td>
+                    </tr>`;
+                });
+                
+                userTableHtml += '</table>';
+                document.getElementById('userListTable').innerHTML = userTableHtml;
 
-            // 날짜별 방문자수
+                // 통계 요약 업데이트
+                let statsHtml = '';
+                statsHtml += `<div style='margin-bottom:8px;'><b>총 회원수:</b> <span style='color:#ffb300;'>${snapshot.numChildren()}</span></div>`;
+                
+                // 오늘 방문자 수
+                const today = new Date().toISOString().slice(0,10);
+                let visitorStats = JSON.parse(localStorage.getItem('visitorStats') || '{}');
+                statsHtml += `<div style='margin-bottom:8px;'><b>오늘 방문자수:</b> <span style='color:#4caf50;'>${visitorStats[today] || 0}</span></div>`;
+                
+                // 로또 데이터
+                let lottoData = null;
+                try {
+                    lottoData = JSON.parse(localStorage.getItem('latestWinningNumber'));
+                } catch(e) {}
+                statsHtml += `<div style='margin-bottom:8px;'><b>로또 최신 회차:</b> <span style='color:#2196f3;'>${lottoData && lottoData.drawNumber ? lottoData.drawNumber : '없음'}</span></div>`;
+                
+                document.getElementById('adminStats').innerHTML = statsHtml;
+            }).catch((error) => {
+                console.error("Error getting users: ", error);
+                document.getElementById('userListTable').innerHTML = '<div style="color:#e57373;">회원 목록을 불러오는 중 오류가 발생했습니다.</div>';
+            });
+
+            // 방문자 통계 표시 (기존 코드 유지)
             let visitorStats = JSON.parse(localStorage.getItem('visitorStats') || '{}');
             let visitorTableHtml = '<table style="width:100%; border-collapse:collapse; background:#1e1e1e; color:#fff;">';
             visitorTableHtml += '<tr style="background:#263238;"><th style="padding:8px;">날짜</th><th style="padding:8px;">방문자수</th></tr>';
@@ -706,8 +740,7 @@
             visitorTableHtml += '</table>';
             document.getElementById('visitorStatsTable').innerHTML = visitorTableHtml;
 
-            // 로또번호 업데이트 현황 (page5와 동일 구조)
-            // page5는 localStorage 또는 당첨번호_데이터(혹은 latestWinningNumber) 사용
+            // 로또 업데이트 현황 표시 (기존 코드 유지)
             let lottoData = null;
             try {
                 lottoData = JSON.parse(localStorage.getItem('latestWinningNumber'));
@@ -721,13 +754,6 @@
                 lottoStatusHtml = '<div style="color:#e57373;">로또번호 업데이트 기록이 없습니다.</div>';
             }
             document.getElementById('lottoUpdateStatus').innerHTML = lottoStatusHtml;
-
-            // 통계 요약
-            let statsHtml = '';
-            statsHtml += `<div style='margin-bottom:8px;'><b>총 회원수:</b> <span style='color:#ffb300;'>${users.length}</span></div>`;
-            statsHtml += `<div style='margin-bottom:8px;'><b>오늘 방문자수:</b> <span style='color:#4caf50;'>${visitorStats[new Date().toISOString().slice(0,10)] || 0}</span></div>`;
-            statsHtml += `<div style='margin-bottom:8px;'><b>로또 최신 회차:</b> <span style='color:#2196f3;'>${lottoData && lottoData.drawNumber ? lottoData.drawNumber : '없음'}</span></div>`;
-            document.getElementById('adminStats').innerHTML = statsHtml;
 
             document.getElementById('adminDashboardModal').style.display = 'flex';
         }
@@ -792,12 +818,12 @@
         // 회원가입 처리
         document.getElementById('registerBtn').addEventListener('click', function() {
             const id = document.getElementById('signupId').value;
+            const email = document.getElementById('signupEmail').value;
             const pw = document.getElementById('signupPw').value;
             const pwConfirm = document.getElementById('signupPwConfirm').value;
-            const email = document.getElementById('signupEmail').value;
             
             // 유효성 검사
-            if (!id || !pw || !pwConfirm || !email) {
+            if (!id || !email || !pw || !pwConfirm) {
                 alert('모든 필드를 입력해주세요.');
                 return;
             }
@@ -807,24 +833,34 @@
                 return;
             }
             
-            // 이메일 형식 검사 (간단한 예시)
+            // 이메일 형식 검사
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
                 alert('유효한 이메일 주소를 입력해주세요.');
                 return;
             }
-            
-            // Firebase Authentication으로 사용자 생성
-            auth.createUserWithEmailAndPassword(email, pw)
-                .then((userCredential) => {
-                    // Firebase에 사용자 추가 성공
-                    const user = userCredential.user;
-                    
-                    // Firestore에 사용자 추가 정보 저장
-                    return db.collection('users').doc(user.uid).set({
+
+            // 새 사용자 데이터 생성
+            const userData = {
+                id: id,
+                email: email,
+                password: pw,
+                nickname: id,
+                joinDate: Date.now(),
+                lastLogin: Date.now()
+            };
+
+            // users 경로에 직접 저장
+            database.ref('users').push(userData)
+                .then((snapshot) => {
+                    const userId = snapshot.key;
+                    // 프로필 정보도 저장
+                    return database.ref(`users/${userId}/profile`).set({
                         id: id,
                         email: email,
-                        joinDate: new Date().toISOString()
+                        nickname: id,
+                        joinDate: Date.now(),
+                        lastLogin: Date.now()
                     });
                 })
                 .then(() => {
@@ -834,180 +870,124 @@
                 })
                 .catch((error) => {
                     console.error('회원가입 오류:', error);
-                    if (error.code === 'auth/email-already-in-use') {
-                        alert('이미 사용 중인 이메일입니다.');
-                    } else {
-                        alert('회원가입 중 오류가 발생했습니다: ' + error.message);
-                    }
+                    alert('회원가입 중 오류가 발생했습니다.');
                 });
         });
         
-        // 로그인 기능 업데이트
+        // 로그인 모달 닫기 버튼
+        document.getElementById('closeLogin').addEventListener('click', function() {
+            document.getElementById('loginModal').style.display = 'none';
+        });
+
+        // 로그인 처리
         document.getElementById('loginBtn').addEventListener('click', function() {
-            const email = document.getElementById('loginId').value;
+            const id = document.getElementById('loginId').value;
             const pw = document.getElementById('loginPw').value;
             
-            if (!email || !pw) {
-                alert('이메일과 비밀번호를 모두 입력해주세요.');
+            if (!id || !pw) {
+                alert('아이디와 비밀번호를 모두 입력해주세요.');
                 return;
             }
             
-            // Firebase Authentication으로 로그인
-            auth.signInWithEmailAndPassword(email, pw)
-                .then((userCredential) => {
-                    // 로그인 성공
-                    const user = userCredential.user;
-                    
-                    // 사용자 정보 가져오기
-                    return db.collection('users').doc(user.uid).get();
-                })
-                .then((doc) => {
-                    if (doc.exists) {
-                        const userData = doc.data();
-                        
-                        // UI 업데이트
-                        document.getElementById('loginModal').style.display = 'none';
-                        document.getElementById('userBar').style.display = 'flex';
-                        document.getElementById('userWelcome').textContent = userData.id + '님';
-                        
-                        // 로그인 정보 세션 저장
-                        sessionStorage.setItem('loggedInUser', userData.id);
-                        sessionStorage.setItem('userUid', auth.currentUser.uid);
-                    } else {
-                        console.warn('사용자 문서가 존재하지 않습니다.');
-                        // 기본 정보로 처리
-                        document.getElementById('loginModal').style.display = 'none';
-                        document.getElementById('userBar').style.display = 'flex';
-                        document.getElementById('userWelcome').textContent = email.split('@')[0] + '님';
-                        sessionStorage.setItem('loggedInUser', email.split('@')[0]);
-                        sessionStorage.setItem('userUid', auth.currentUser.uid);
+            // 아이디로 사용자 찾기
+            database.ref('users').orderByChild('id').equalTo(id).once('value')
+                .then((snapshot) => {
+                    if (!snapshot.exists()) {
+                        alert('등록되지 않은 아이디입니다.');
+                        return;
                     }
+
+                    // 첫 번째 일치하는 사용자
+                    const userId = Object.keys(snapshot.val())[0];
+                    const userData = snapshot.val()[userId];
+
+                    if (userData.password !== pw) {
+                        alert('비밀번호가 일치하지 않습니다.');
+                        return;
+                    }
+
+                    // 로그인 성공
+                    sessionStorage.setItem('loggedInUser', userData.id);
+                    sessionStorage.setItem('userUid', userId);
+
+                    // 마지막 로그인 시간 업데이트
+                    return database.ref(`users/${userId}/profile/lastLogin`).set(Date.now());
+                })
+                .then(() => {
+                    document.getElementById('loginModal').style.display = 'none';
+                    document.getElementById('userBar').style.display = 'flex';
+                    const user = sessionStorage.getItem('loggedInUser');
+                    document.getElementById('userWelcome').textContent = user + '님';
                 })
                 .catch((error) => {
                     console.error('로그인 오류:', error);
-                    alert('로그인 실패: 이메일 또는 비밀번호가 올바르지 않습니다.');
+                    alert('로그인 중 오류가 발생했습니다.');
                 });
         });
         
-        // 페이지 로드 시 로그인 상태 확인
-        window.addEventListener('load', function() {
-            auth.onAuthStateChanged(function(user) {
-                if (user) {
-                    // 사용자가 로그인한 상태
-                    db.collection('users').doc(user.uid).get()
-                        .then((doc) => {
-                            if (doc.exists) {
-                                const userData = doc.data();
-                                document.getElementById('userBar').style.display = 'flex';
-                                document.getElementById('userWelcome').textContent = userData.id + '님';
-                                sessionStorage.setItem('loggedInUser', userData.id);
-                                sessionStorage.setItem('userUid', user.uid);
-                            } else {
-                                // 기본 정보로 처리
-                                document.getElementById('userBar').style.display = 'flex';
-                                document.getElementById('userWelcome').textContent = user.email.split('@')[0] + '님';
-                                sessionStorage.setItem('loggedInUser', user.email.split('@')[0]);
-                                sessionStorage.setItem('userUid', user.uid);
-                            }
-                        })
-                        .catch((error) => {
-                            console.error('사용자 정보 가져오기 오류:', error);
-                        });
-                }
-            });
-        });
-        
+        // 로그아웃 처리
         document.getElementById('logoutBtn').addEventListener('click', function() {
-            auth.signOut().then(() => {
-                // 로그아웃 성공
-                document.getElementById('userBar').style.display = 'none';
-                // 로그인 세션 정보 제거
-                sessionStorage.removeItem('loggedInUser');
-                sessionStorage.removeItem('userUid');
-            }).catch((error) => {
-                console.error('로그아웃 오류:', error);
-            });
+            sessionStorage.removeItem('loggedInUser');
+            sessionStorage.removeItem('userUid');
+            document.getElementById('userBar').style.display = 'none';
+            location.reload();
         });
 
         // 실시간 뉴스 키워드 업데이트 함수
         async function updateNewsKeywords() {
             try {
-                // CORS 문제 해결을 위한 프록시 서버
-                const corsProxy = 'https://cors-anywhere.herokuapp.com/';
+                // 로또 관련 키워드 목록
+                const lottoKeywords = [
+                    '로또 당첨 예측',
+                    '이번주 로또 분석',
+                    '로또 필승 전략',
+                    '로또 명당 정보',
+                    '로또 당첨 패턴',
+                    '로또 분석 AI',
+                    '로또 통계 분석',
+                    '로또 번호 생성',
+                    '로또 당첨 후기',
+                    '로또 예상번호'
+                ];
+
+                // 일반 뉴스 키워드 목록
+                const newsKeywords = [
+                    '오늘의 경제',
+                    '주식 시장 동향',
+                    '부동산 소식',
+                    '투자 정보',
+                    '재테크 소식',
+                    '금융 뉴스',
+                    '시장 분석',
+                    '경제 전망',
+                    '주요 뉴스',
+                    '핫이슈'
+                ];
+
+                // 랜덤으로 2-3개 키워드 선택
+                const selectedKeywords = [];
                 
-                // 네이버 뉴스 RSS 피드 URL (속보)
-                const rssFeedUrl = 'https://news.naver.com/rss/main/055.xml';
-                
-                // RSS 피드 가져오기
-                const response = await fetch(corsProxy + rssFeedUrl);
-                const xmlText = await response.text();
-                
-                // XML 파싱
-                const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-                
-                // 뉴스 제목 추출 (최대 10개)
-                const newsTitles = [];
-                const items = xmlDoc.getElementsByTagName('item');
-                
-                for (let i = 0; i < Math.min(items.length, 10); i++) {
-                    const title = items[i].getElementsByTagName('title')[0].textContent;
-                    newsTitles.push(title);
-                }
-                
-                // 랜덤으로 2-3개 제목 선택
-                const randomTitles = [];
-                const titleCount = Math.floor(Math.random() * 2) + 2; // 2~3개
-                
-                for (let i = 0; i < titleCount && newsTitles.length > 0; i++) {
-                    const randomIndex = Math.floor(Math.random() * newsTitles.length);
-                    randomTitles.push(newsTitles[randomIndex]);
-                    newsTitles.splice(randomIndex, 1); // 선택된 제목 제거
-                }
-                
-                // 키워드 추출 (각 제목에서 처음 2-3단어만 사용)
-                const keywords = randomTitles.map(title => {
-                    // 괄호와 내용 제거 (예: '제목 (내용)' -> '제목')
-                    const cleanTitle = title.replace(/\([^)]*\)/g, '').trim();
-                    
-                    // 제목에서 앞부분 단어 2-3개만 사용
-                    const words = cleanTitle.split(' ');
-                    const keywordLength = Math.min(words.length, Math.floor(Math.random() * 2) + 2);
-                    return words.slice(0, keywordLength).join(' ');
-                });
-                
-                // 버튼 설명 업데이트
-                const keywordsText = keywords.join(' • ');
+                // 로또 키워드에서 1개 선택
+                const lottoIndex = Math.floor(Math.random() * lottoKeywords.length);
+                selectedKeywords.push(lottoKeywords[lottoIndex]);
+
+                // 일반 뉴스에서 1-2개 선택
+                const newsCount = Math.floor(Math.random() * 2) + 1; // 1 또는 2
+                const shuffledNews = [...newsKeywords].sort(() => Math.random() - 0.5);
+                selectedKeywords.push(...shuffledNews.slice(0, newsCount));
+
+                // 키워드 조합 및 표시
+                const keywordsText = selectedKeywords.join(' • ');
                 document.getElementById('live-news-keywords').textContent = keywordsText;
-                
+
                 // 업데이트 시간 및 키워드 저장
                 localStorage.setItem('lastNewsUpdate', Date.now().toString());
                 localStorage.setItem('newsKeywords', keywordsText);
                 console.log('뉴스 키워드 업데이트: ' + keywordsText);
-                
+
             } catch (error) {
                 console.error('뉴스 키워드 업데이트 실패:', error);
-                
-                // API 호출 실패 시 백업 키워드 목록 사용
-                const backupKeywords = [
-                    '경제 이슈', '정치 소식', '사회 뉴스',
-                    '스포츠 소식', '속보 뉴스', '로또 정보'
-                ];
-                
-                // 랜덤으로 2-3개 선택
-                const randomKeywords = [];
-                const keywordCount = Math.floor(Math.random() * 2) + 2; // 2~3개
-                
-                for (let i = 0; i < keywordCount; i++) {
-                    const randomIndex = Math.floor(Math.random() * backupKeywords.length);
-                    if (!randomKeywords.includes(backupKeywords[randomIndex])) {
-                        randomKeywords.push(backupKeywords[randomIndex]);
-                    }
-                }
-                
-                // 버튼 설명 업데이트
-                const keywordsText = randomKeywords.join(' • ');
-                document.getElementById('live-news-keywords').textContent = keywordsText;
+                document.getElementById('live-news-keywords').textContent = '로또 정보 • 실시간 뉴스';
             }
         }
         

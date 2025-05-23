@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로또 벽돌깨기 게임</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 950px;
+            width: 100%;
+            background: #2c3e50;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #ecf0f1;
+        }
+
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+            color: #f39c12;
+        }
+
+        .winning-info {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .draw-round {
+            font-size: 18px;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .winning-numbers {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .winning-ball {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .game-area {
+            position: relative;
+            background: #34495e;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+
+        .game-grid {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+
+        .grid-headers {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .number-header {
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            height: 20px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            font-size: 8px;
+            color: #bdc3c7;
+            font-weight: bold;
+        }
+
+        .round-header {
+            position: absolute;
+            top: 40px;
+            bottom: 90px;
+            left: 0;
+            width: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            align-items: center;
+            font-size: 8px;
+            color: #bdc3c7;
+            font-weight: bold;
+        }
+
+        #game-canvas {
+            display: block;
+            background: #1a1a1a;
+            border-radius: 5px;
+            margin: 35px 0 0 30px;
+            border: 2px solid #7f8c8d;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: #34495e;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            color: #ecf0f1;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #bdc3c7;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #f39c12;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(45deg, #2980b9, #3498db);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(45deg, #7f8c8d, #95a5a6);
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .prediction-section {
+            background: #34495e;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .prediction-title {
+            color: #f39c12;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .predicted-numbers {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .lotto-ball {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .popup-content {
+            background: #2c3e50;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            color: #ecf0f1;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .popup-title {
+            font-size: 24px;
+            color: #f39c12;
+            margin-bottom: 20px;
+        }
+
+        .popup-score {
+            font-size: 32px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 20px 0;
+        }
+
+        .popup-numbers {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .close-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+
+        .close-btn:hover {
+            background: #c0392b;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .winning-info {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .stat-item {
+                display: flex;
+                justify-content: space-between;
+                width: 100%;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 로또 벽돌깨기</h1>
+            <p>벽돌을 깨뜨려 당신만의 행운번호를 찾아보세요!</p>
+        </div>
+
+        <div class="winning-info">
+            <div class="draw-round" id="draw-round">제1170회</div>
+            <div class="winning-numbers" id="winning-numbers"></div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-label">점수</div>
+                <div class="stat-value" id="score">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">남은 공</div>
+                <div class="stat-value" id="lives">3</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">단계</div>
+                <div class="stat-value" id="level">1</div>
+            </div>
+        </div>
+
+        <div class="game-area">
+            <div class="game-grid">
+                <div class="grid-headers">
+                    <div class="number-header">
+                        <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+                        <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+                        <span>11</span><span>12</span><span>13</span><span>14</span><span>15</span>
+                        <span>16</span><span>17</span><span>18</span><span>19</span><span>20</span>
+                        <span>21</span><span>22</span><span>23</span><span>24</span><span>25</span>
+                        <span>26</span><span>27</span><span>28</span><span>29</span><span>30</span>
+                        <span>31</span><span>32</span><span>33</span><span>34</span><span>35</span>
+                        <span>36</span><span>37</span><span>38</span><span>39</span><span>40</span>
+                        <span>41</span><span>42</span><span>43</span><span>44</span><span>45</span>
+                    </div>
+                    <div class="round-header">
+                        <span>1155</span><span>1156</span><span>1157</span><span>1158</span>
+                        <span>1159</span><span>1160</span><span>1161</span><span>1162</span>
+                        <span>1163</span><span>1164</span><span>1165</span><span>1166</span>
+                        <span>1167</span><span>1168</span><span>1169</span><span>1170</span>
+                    </div>
+                </div>
+                <canvas id="game-canvas"></canvas>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" id="start-btn">시작하기</button>
+            <button class="btn btn-secondary" id="pause-btn">일시 정지</button>
+            <button class="btn btn-secondary" id="restart-btn">다시 시작</button>
+        </div>
+
+        <div class="prediction-section">
+            <div class="prediction-title">🎱 예상 로또 번호</div>
+            <div class="predicted-numbers" id="predicted-numbers"></div>
+        </div>
+    </div>
+
+    <!-- 결과 팝업 -->
+    <div class="popup" id="result-popup">
+        <div class="popup-content">
+            <div class="popup-title">🎉 게임 종료!</div>
+            <div class="popup-score" id="final-score">0</div>
+            <p>당신의 행운번호</p>
+            <div class="popup-numbers" id="popup-numbers"></div>
+            <button class="close-btn" id="close-popup">확인</button>
+        </div>
+    </div>
+
+    <script src="../js/brick-game.js"></script>
+</body>
+</html> 

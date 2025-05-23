@@ -35,44 +35,59 @@ const 기본당첨번호 = {
 // 동물 이미지 배열
 const 동물이미지들 = ['fa1.png', 'fa2.png', 'fa3.png'];
 
-function get턴정보() {
-    // localStorage에서 회차 범위 정보 가져오기
-    const drawRange = JSON.parse(localStorage.getItem('drawRange'));
-    
-    if (drawRange) {
-        return {
-            시작회차: drawRange.start,
-            종료회차: drawRange.end,
-            예측회차: drawRange.prediction
-        };
+// Firebase 초기화
+const firebaseConfig = {
+    apiKey: "AIzaSyAwh55rLOQkY8ZVCzaC4ZF3iaUVU5Vu0GM",
+    authDomain: "ai-lottosolutions.firebaseapp.com",
+    databaseURL: "https://ai-lottosolutions-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "ai-lottosolutions",
+    storageBucket: "ai-lottosolutions.appspot.com",
+    messagingSenderId: "616782090306",
+    appId: "1:616782090306:web:688c710998dfce8e4d5ddb"
+};
+
+// Firebase 앱이 이미 초기화되었는지 확인
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+
+// Firebase Database 참조 생성
+const database = firebase.database();
+
+// 회차 정보 가져오기
+async function get턴정보() {
+    try {
+        const snapshot = await database.ref('drawRange').once('value');
+        if (snapshot.exists()) {
+            return snapshot.val();
+        }
+    } catch (error) {
+        console.error('턴 정보 가져오기 실패:', error);
     }
-    
-    // 기본값 반환
     return {
-        시작회차: 1153,
-        종료회차: 1167,
-        예측회차: 1168
+        start: "1154",
+        end: "1168",
+        prediction: "1169"
     };
 }
 
-function get실제당첨번호() {
-    // localStorage에서 최신 당첨번호 가져오기
-    const latestWinningNumber = JSON.parse(localStorage.getItem('latestWinningNumber'));
-    
-    // 기본 당첨번호 데이터 복사
-    const 실제당첨번호 = {...기본당첨번호};
-    
-    // 최신 당첨번호가 있으면 추가
-    if (latestWinningNumber) {
-        실제당첨번호[latestWinningNumber.drawNumber] = latestWinningNumber.numbers;
+// 당첨번호 가져오기
+async function get실제당첨번호() {
+    try {
+        const snapshot = await database.ref('winningNumbers').once('value');
+        if (snapshot.exists()) {
+            return snapshot.val();
+        }
+    } catch (error) {
+        console.error('당첨번호 가져오기 실패:', error);
     }
-    
-    return 실제당첨번호;
+    return {};
 }
 
-function 업데이트턴표시() {
-    const 턴정보 = get턴정보();
-    턴표시엘리먼트.textContent = `1턴 (${턴정보.시작회차}회-${턴정보.종료회차}회)`;
+async function 업데이트턴표시() {
+    const 턴정보 = await get턴정보();
+    console.log('현재 턴 정보:', 턴정보); // 디버깅용 로그 추가
+    턴표시엘리먼트.textContent = `1턴 (${턴정보.start}회-${턴정보.end}회)`;
 }
 
 function 셀클릭(cell) {
@@ -106,128 +121,170 @@ function 셀클릭(cell) {
     console.log('현재 선택된 번호들:', 선택된번호들);
 }
 
-function 초기화() {
+// 실시간 업데이트 리스너 설정
+let listenersInitialized = false;
+function setupRealtimeListeners() {
+    if (listenersInitialized) return;
+    
+    // 회차 범위 업데이트 감지
+    database.ref('drawRange').on('value', snapshot => {
+        if (snapshot.exists()) {
+            const drawRange = snapshot.val();
+            console.log('회차 범위 업데이트:', drawRange);
+            초기화(); // 그리드 다시 그리기
+        }
+    });
+
+    // 당첨번호 업데이트 감지
+    database.ref('winningNumbers').on('value', snapshot => {
+        if (snapshot.exists()) {
+            console.log('당첨번호 업데이트 감지');
+            초기화(); // 그리드 다시 그리기
+        }
+    });
+
+    listenersInitialized = true;
+}
+
+// 초기화 함수
+async function 초기화() {
+    console.log('초기화 함수 시작');
+    
     // DOM 요소 캐시
     격자컨테이너 = document.querySelector('.grid-container');
     힌트버튼들 = document.querySelectorAll('.hint-button');
     턴표시엘리먼트 = document.getElementById('턴표시');
     
-    if (!격자컨테이너) return;
+    if (!격자컨테이너) {
+        console.error('격자 컨테이너를 찾을 수 없습니다.');
+        return;
+    }
+    
+    console.log('격자 컨테이너 찾음:', 격자컨테이너);
     
     격자컨테이너.innerHTML = '';
     선택된번호들 = [];
     
-    const 턴정보 = get턴정보();
-    const 실제당첨번호 = get실제당첨번호();
-    const fragment = document.createDocumentFragment();
+    try {
+        const 턴정보 = await get턴정보();
+        console.log('턴 정보:', 턴정보);
+        
+        const 실제당첨번호 = await get실제당첨번호();
+        console.log('당첨번호 데이터:', 실제당첨번호);
 
-    // 헤더 행 추가
-    for (let i = 0; i < 16; i++) {
-        const header = document.createElement('div');
-        header.className = 'grid-cell header';
-        if (i < 15) {
-            const 회차번호 = 턴정보.시작회차 + i;
-            header.textContent = 회차번호;
-            header.style.cssText = `
-                height: 40px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transform: rotate(-45deg);
-                font-size: 8px;
-                font-weight: bold;
-                white-space: nowrap;
-                padding-bottom: 15px;
-                color: #333;
-            `;
-        } else {
-            header.textContent = '예상';
-            header.style.cssText = `
-                border-left: 2px solid #3498db;
-                background-color: #f8f9fa;
-                font-weight: bold;
-                color: #3498db;
-                text-align: center;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                height: 30px;
-                width: 30px;
-                padding: 0;
-                margin: 0;
-                white-space: nowrap;
-                overflow: visible;
-                position: relative;
-                z-index: 2;
-            `;
-        }
-        fragment.appendChild(header);
-    }
+        // 턴 표시 업데이트
+        턴표시엘리먼트.textContent = `1턴 (${턴정보.start}회-${턴정보.end}회)`;
 
-    // 번호 그리드 생성
-    for (let num = 1; num <= 45; num++) {
-        for (let col = 0; col < 16; col++) {
-            const cell = document.createElement('div');
-            cell.className = 'grid-cell';
-            cell.setAttribute('data-number', num);
-            cell.setAttribute('data-row', num);
-            cell.setAttribute('data-col', col);
-            
-            if (col === 15) {
-                cell.textContent = num;
-                cell.classList.add('prediction-cell');
-                cell.style.cssText = `
-                    border-left: 2px solid #3498db;
-                    background-color: #f8f9fa;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                    height: 30px;
-                    width: 30px;
-                    line-height: 30px;
+        const fragment = document.createDocumentFragment();
+        
+        // 헤더 행 추가
+        for (let i = 0; i < 16; i++) {
+            const header = document.createElement('div');
+            header.className = 'grid-cell header';
+            if (i < 15) {
+                const 회차번호 = parseInt(턴정보.start) + i;
+                header.textContent = 회차번호;
+                header.style.cssText = `
+                    height: 40px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
+                    transform: rotate(-45deg);
+                    font-size: 8px;
                     font-weight: bold;
-                    position: relative;
-                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-                    border-radius: 4px;
-                    margin: 0;
-                    padding: 0;
-                    z-index: 3;
+                    white-space: nowrap;
+                    padding-bottom: 15px;
+                    color: #333;
                 `;
-                cell.addEventListener('click', () => 셀클릭(cell));
             } else {
-                const 현재회차 = 턴정보.시작회차 + col;
-                const 해당회차번호들 = 실제당첨번호[현재회차];
+                header.textContent = '예상';
+                header.style.cssText = `
+                    border-left: 2px solid #3498db;
+                    background-color: #f8f9fa;
+                    font-weight: bold;
+                    color: #3498db;
+                    text-align: center;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    height: 30px;
+                    width: 30px;
+                    padding: 0;
+                    margin: 0;
+                    white-space: nowrap;
+                    overflow: visible;
+                    position: relative;
+                    z-index: 2;
+                `;
+            }
+            fragment.appendChild(header);
+        }
+
+        // 번호 그리드 생성
+        for (let num = 1; num <= 45; num++) {
+            for (let col = 0; col < 16; col++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                cell.setAttribute('data-number', num);
                 
-                if (해당회차번호들 && 해당회차번호들.includes(num)) {
-                    cell.classList.add('marked');
-                    const circle = document.createElement('div');
-                    circle.className = 'number-circle';
-                    circle.textContent = num;
-                    circle.style.cssText = `
-                        width: 24px;
-                        height: 24px;
-                        border: 2px solid #e74c3c;
-                        border-radius: 50%;
+                if (col === 15) {
+                    cell.textContent = num;
+                    cell.classList.add('prediction-cell');
+                    cell.style.cssText = `
+                        border-left: 2px solid #3498db;
+                        background-color: #f8f9fa;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        height: 30px;
+                        width: 30px;
+                        line-height: 30px;
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        font-size: 12px;
-                        color: #e74c3c;
-                        background: white;
+                        font-weight: bold;
                         position: relative;
-                        z-index: 1;
+                        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                        border-radius: 4px;
+                        margin: 0;
+                        padding: 0;
+                        z-index: 3;
                     `;
-                    cell.appendChild(circle);
+                    cell.addEventListener('click', () => 셀클릭(cell));
+                } else {
+                    const 회차번호 = (parseInt(턴정보.start) + col).toString();
+                    const 해당회차번호들 = 실제당첨번호[회차번호];
+                    
+                    if (해당회차번호들 && 해당회차번호들.includes(num)) {
+                        cell.classList.add('marked');
+                        const circle = document.createElement('div');
+                        circle.className = 'number-circle';
+                        circle.textContent = num;
+                        circle.style.cssText = `
+                            width: 24px;
+                            height: 24px;
+                            border: 2px solid #e74c3c;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 12px;
+                            color: #e74c3c;
+                            background: white;
+                            position: relative;
+                            z-index: 1;
+                        `;
+                        cell.appendChild(circle);
+                    }
                 }
+                fragment.appendChild(cell);
             }
-            
-            fragment.appendChild(cell);
         }
-    }
 
-    격자컨테이너.appendChild(fragment);
+        격자컨테이너.appendChild(fragment);
+        
+    } catch (error) {
+        console.error('격자 생성 중 오류 발생:', error);
+    }
 }
 
 function 완료() {
@@ -694,17 +751,18 @@ function saveUserName(name) {
     }
 }
 
-// 페이지 로드 시 초기화
-document.addEventListener('DOMContentLoaded', () => {
-    초기화();
-    업데이트턴표시();
-    
-    // 저장된 사용자 이름이 있으면 입력 필드에 표시
-    const savedUserName = localStorage.getItem('userName');
-    if (savedUserName) {
-        document.getElementById('userName').value = savedUserName;
+// 페이지 로드 시 한 번만 실행
+let initialized = false;
+document.addEventListener('DOMContentLoaded', async function() {
+    if (initialized) return;
+    try {
+        await 초기화();
+        setupRealtimeListeners();
+        initialized = true;
+    } catch (error) {
+        console.error('초기화 중 오류 발생:', error);
     }
-}); 
+});
 
 // 연결선, 각도선, 그라데이션 원 등 힌트 요소 제거 함수
 function clearConnections() {
