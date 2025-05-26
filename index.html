@@ -840,30 +840,28 @@
                 return;
             }
 
-            // 새 사용자 데이터 생성
-            const userData = {
-                id: id,
-                email: email,
-                password: pw,
-                nickname: id,
-                joinDate: Date.now(),
-                lastLogin: Date.now()
-            };
-
-            // users 경로와 auth/users 경로 모두에 저장
-            const updates = {};
-            database.ref('users').push(userData)
+            // ID 중복 검사 먼저 수행
+            database.ref('auth/users').orderByChild('id').equalTo(id).once('value')
                 .then((snapshot) => {
-                    const userId = snapshot.key;
-                    // users 경로에 프로필 정보 저장
-                    updates[`users/${userId}/profile`] = {
+                    if (snapshot.exists()) {
+                        throw new Error('이미 사용 중인 아이디입니다.');
+                    }
+                    
+                    // 새 사용자 데이터 생성
+                    const newUserRef = database.ref('users').push();
+                    const userId = newUserRef.key;
+                    
+                    const userData = {
                         id: id,
                         email: email,
-                        nickname: id,
+                        password: pw,
                         joinDate: Date.now(),
                         lastLogin: Date.now()
                     };
-                    // auth/users 경로에도 동일한 정보 저장
+
+                    // 트랜잭션으로 데이터 저장
+                    const updates = {};
+                    updates[`users/${userId}`] = userData;
                     updates[`auth/users/${userId}`] = {
                         id: id,
                         email: email,
@@ -871,17 +869,26 @@
                         lastLogin: Date.now()
                     };
                     
-                    // 여러 경로에 동시에 업데이트
                     return database.ref().update(updates);
                 })
                 .then(() => {
                     alert('회원가입이 완료되었습니다. 로그인해주세요.');
                     document.getElementById('signupModal').style.display = 'none';
                     document.getElementById('loginModal').style.display = 'flex';
+                    
+                    // 입력 필드 초기화
+                    document.getElementById('signupId').value = '';
+                    document.getElementById('signupEmail').value = '';
+                    document.getElementById('signupPw').value = '';
+                    document.getElementById('signupPwConfirm').value = '';
                 })
                 .catch((error) => {
-                    console.error('회원가입 오류:', error);
-                    alert('회원가입 중 오류가 발생했습니다.');
+                    if (error.message === '이미 사용 중인 아이디입니다.') {
+                        alert(error.message);
+                    } else {
+                        console.error('회원가입 오류:', error);
+                        alert('회원가입 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+                    }
                 });
         });
         

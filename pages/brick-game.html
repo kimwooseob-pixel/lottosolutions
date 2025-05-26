@@ -37,7 +37,7 @@
 
         .game-container {
             width: 720px;
-            height: 320px;
+            height: 520px;
             background: #1a1a1a;
             position: relative;
             border-radius: 10px;
@@ -48,62 +48,69 @@
             margin-left: 40px;
         }
 
-        .number-header {
-            position: absolute;
-            top: 0;
-            left: 1%;
-            right: 1%;
-            height: 16px;
-            display: flex;
-            background: #1a1a1a;
-            z-index: 2;
-            padding: 0;
+        .round-display {
+            display: none;
         }
 
-        .number-header span {
-            flex: 1;
-            height: 16px;
-            font-size: 7px;
-            color: #bdc3c7;
-            text-align: center;
-            line-height: 16px;
+        .number-header {
+            display: none;
         }
 
         .round-header {
             position: absolute;
             left: -40px;
-            top: 36px;
-            height: calc(100% - 56px);
+            top: 21px;
+            height: calc(100% - 41px);
             width: 35px;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: flex-start;
             padding: 0;
             z-index: 2;
+            gap: 1px;
         }
 
         .round-number {
-            height: 16px;
-            font-size: 10px;
+            height: 20px;
+            font-size: 12px;
             color: white;
             text-align: right;
-            padding-right: 8px;
-            line-height: 16px;
-            font-weight: bold;
+            padding-right: 5px;
+            line-height: 20px;
+        }
+
+        .game-area {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #1a1a1a;
+        }
+
+        .play-area {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 200px;
+            background: #1a1a1a;
+            border-top: none;
         }
 
         #brickContainer {
             position: relative;
             width: 100%;
-            height: calc(100% - 20px);
-            margin-top: 20px;
+            height: 320px;
             padding: 0;
             box-sizing: border-box;
             display: grid;
             grid-template-columns: repeat(45, 1fr);
-            grid-template-rows: repeat(16, 1fr);
-            gap: 0;
+            grid-template-rows: repeat(15, 1fr);
+            gap: 1px;
             background: #1a1a1a;
+            margin-top: 0;
+            border-bottom: none;
         }
 
         .brick {
@@ -133,8 +140,8 @@
         }
 
         #ball {
-            width: 4px;
-            height: 4px;
+            width: 8px;
+            height: 8px;
             background-color: white;
             border-radius: 50%;
             position: absolute;
@@ -145,33 +152,15 @@
         }
 
         #paddle {
-            width: 35px;
-            height: 5px;
+            width: 80px;
+            height: 10px;
             background-color: #4CAF50;
             position: absolute;
             left: 50%;
             bottom: 15px;
             transform: translateX(-50%);
-            border-radius: 3px;
+            border-radius: 5px;
             z-index: 10;
-        }
-
-        .game-area {
-            position: absolute;
-            top: 16px;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: #1a1a1a;
-        }
-
-        .play-area {
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            height: 60px;
-            background: #1a1a1a;
         }
 
         .controls {
@@ -419,6 +408,7 @@
         </div>
         
         <div class="game-container">
+            <div class="round-display">1회차</div>
             <div class="number-header">
                 <span>번호</span>
             </div>
@@ -428,8 +418,10 @@
             <div id="brickContainer">
                 <!-- 벽돌들은 JavaScript로 생성됩니다 -->
             </div>
-            <div id="ball"></div>
-            <div id="paddle"></div>
+            <div class="play-area">
+                <div id="ball"></div>
+                <div id="paddle"></div>
+            </div>
         </div>
         
         <div class="controls">
