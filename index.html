@@ -850,18 +850,29 @@
                 lastLogin: Date.now()
             };
 
-            // users 경로에 직접 저장
+            // users 경로와 auth/users 경로 모두에 저장
+            const updates = {};
             database.ref('users').push(userData)
                 .then((snapshot) => {
                     const userId = snapshot.key;
-                    // 프로필 정보도 저장
-                    return database.ref(`users/${userId}/profile`).set({
+                    // users 경로에 프로필 정보 저장
+                    updates[`users/${userId}/profile`] = {
                         id: id,
                         email: email,
                         nickname: id,
                         joinDate: Date.now(),
                         lastLogin: Date.now()
-                    });
+                    };
+                    // auth/users 경로에도 동일한 정보 저장
+                    updates[`auth/users/${userId}`] = {
+                        id: id,
+                        email: email,
+                        joinDate: Date.now(),
+                        lastLogin: Date.now()
+                    };
+                    
+                    // 여러 경로에 동시에 업데이트
+                    return database.ref().update(updates);
                 })
                 .then(() => {
                     alert('회원가입이 완료되었습니다. 로그인해주세요.');

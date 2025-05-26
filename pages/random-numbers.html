@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>저번주/이번주 당첨번호 2개 랜덤뽑기</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
         :root {
             --primary-color: #2196F3;
@@ -396,7 +399,7 @@
             </div>
         </div>
         <div class="title-container">
-            <button class="title" id="titleBtn">1170회차 4개이상 맞춘 번호 모으기</button>
+            <button class="title" id="titleBtn">1168회차 4개이상 맞춘 번호 모으기</button>
         </div>
     </div>
     
@@ -430,7 +433,10 @@
             appId: "1:616782090306:web:688c710998dfce8e4d5ddb"
         };
 
-        firebase.initializeApp(firebaseConfig);
+        // Firebase 앱이 이미 초기화되었는지 확인
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         const database = firebase.database();
 
         // 실시간 업데이트 리스너 설정
@@ -594,22 +600,22 @@
                 matchLabel.textContent = '0개 일치';
                 box.appendChild(matchLabel);
                 
-                // 첫 번째 행 (1170회차)
+                // 첫 번째 행 (1168회차)
                 const row1 = document.createElement('div');
                 row1.className = 'row';
                 
                 const drawNumber1 = document.createElement('div');
                 drawNumber1.className = 'draw-number';
-                drawNumber1.textContent = '1170';
+                drawNumber1.textContent = '1168';
                 
                 const numbers1 = document.createElement('div');
                 numbers1.className = 'numbers';
                 
-                // 6개의 원 생성 (1170회차)
+                // 6개의 원 생성 (1168회차)
                 for (let j = 0; j < 6; j++) {
                     const circle = document.createElement('div');
                     circle.className = 'circle';
-                    circle.dataset.row = 1170;
+                    circle.dataset.row = 1168;
                     circle.dataset.position = j;
                     numbers1.appendChild(circle);
                 }
@@ -617,22 +623,22 @@
                 row1.appendChild(drawNumber1);
                 row1.appendChild(numbers1);
                 
-                // 두 번째 행 (1171회차)
+                // 두 번째 행 (1169회차)
                 const row2 = document.createElement('div');
                 row2.className = 'row';
                 
                 const drawNumber2 = document.createElement('div');
                 drawNumber2.className = 'draw-number';
-                drawNumber2.textContent = '1171';
+                drawNumber2.textContent = '1169';
                 
                 const numbers2 = document.createElement('div');
                 numbers2.className = 'numbers';
                 
-                // 6개의 원 생성 (1171회차)
+                // 6개의 원 생성 (1169회차)
                 for (let j = 0; j < 6; j++) {
                     const circle = document.createElement('div');
                     circle.className = 'circle';
-                    circle.dataset.row = 1171;
+                    circle.dataset.row = 1169;
                     circle.dataset.position = j;
                     numbers2.appendChild(circle);
                 }
@@ -660,15 +666,14 @@
                 }
             }
             
-            // 1170회 당첨번호 (저장된 데이터가 없으면 예시 데이터 사용)
-            // 관리자 모드에서 저장된 당첨번호 데이터가 있다면 그것을 사용
-            const winningNumbers1170 = latestWinningNumber && latestWinningNumber.drawNumber === '1170' 
+            // 1168회 당첨번호 (저장된 데이터가 없으면 예시 데이터 사용)
+            const winningNumbers1168 = latestWinningNumber && latestWinningNumber.drawNumber === '1168' 
                 ? latestWinningNumber.numbers 
-                : [3, 10, 19, 24, 32, 42]; // 예시 데이터
+                : [9, 21, 24, 30, 33, 37]; // 실제 1168회 당첨번호
                 
-            console.log('1170회 당첨번호:', winningNumbers1170);
+            console.log('1168회 당첨번호:', winningNumbers1168);
             
-            return winningNumbers1170;
+            return winningNumbers1168;
         }
         
         // 중복 없는 랜덤 번호 생성 함수
@@ -697,7 +702,7 @@
         // 랜덤 번호 생성 및 적용 함수
         function generateRandomNumbers() {
             // 실제 당첨번호 가져오기
-            const winningNumbers1170 = getWinningNumbers();
+            const winningNumbers1168 = getWinningNumbers();
             
             // 모든 박스 요소
             const boxes = document.querySelectorAll('.box');
@@ -709,22 +714,22 @@
                 // 매칭 클래스 제거
                 box.classList.remove('matching');
                 
-                // 1170회차 원 요소들
-                const circles1170 = box.querySelectorAll('.circle[data-row="1170"]');
+                // 1168회차 원 요소들
+                const circles1168 = box.querySelectorAll('.circle[data-row="1168"]');
                 
                 // 1-45 사이의 중복 없는 랜덤 숫자 6개 생성
-                const numbers1170 = generateUniqueRandomNumbers(6, 1, 45);
+                const numbers1168 = generateUniqueRandomNumbers(6, 1, 45);
                 
                 // 각 원에 생성된 랜덤 번호 부여
-                circles1170.forEach((circle, index) => {
-                    const randomNum = numbers1170[index];
+                circles1168.forEach((circle, index) => {
+                    const randomNum = numbers1168[index];
                     
                     // 기본 스타일 설정 (배경색을 흰색으로)
                     circle.style.backgroundColor = '#ffffff';
                     circle.style.color = '#000000';
                     
-                    // 1170회차 번호가 실제 당첨번호와 일치하는지 확인
-                    if (winningNumbers1170.includes(randomNum)) {
+                    // 1168회차 번호가 실제 당첨번호와 일치하는지 확인
+                    if (winningNumbers1168.includes(randomNum)) {
                         circle.style.backgroundColor = '#dc3545'; // 빨간색
                         circle.style.color = '#ffffff'; // 글자색 흰색
                         matchCount++;
@@ -733,12 +738,12 @@
                     circle.textContent = randomNum;
                 });
                 
-                // 1171회차 원 요소들도 중복 없는 랜덤 번호 부여
-                const circles1171 = box.querySelectorAll('.circle[data-row="1171"]');
-                const numbers1171 = generateUniqueRandomNumbers(6, 1, 45);
+                // 1169회차 원 요소들도 중복 없는 랜덤 번호 부여
+                const circles1169 = box.querySelectorAll('.circle[data-row="1169"]');
+                const numbers1169 = generateUniqueRandomNumbers(6, 1, 45);
                 
-                circles1171.forEach((circle, index) => {
-                    const randomNum = numbers1171[index];
+                circles1169.forEach((circle, index) => {
+                    const randomNum = numbers1169[index];
                     circle.style.backgroundColor = '#ffffff';
                     circle.style.color = '#000000';
                     circle.textContent = randomNum;
@@ -762,7 +767,7 @@
                 // 6개 모두 일치하면 랭킹 목록에 추가
                 if (matchCount === 6) {
                     // 숫자 정렬
-                    const sortedNumbers = [...numbers1170].sort((a, b) => a - b);
+                    const sortedNumbers = [...numbers1168].sort((a, b) => a - b);
                     savePerfectMatch(sortedNumbers);
                 }
                 

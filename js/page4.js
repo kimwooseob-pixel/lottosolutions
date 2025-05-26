@@ -124,14 +124,18 @@ function 셀클릭(cell) {
 // 실시간 업데이트 리스너 설정
 let listenersInitialized = false;
 function setupRealtimeListeners() {
-    if (listenersInitialized) return;
+    if (listenersInitialized) {
+        // 기존 리스너 제거
+        database.ref('drawRange').off();
+        database.ref('winningNumbers').off();
+    }
     
     // 회차 범위 업데이트 감지
     database.ref('drawRange').on('value', snapshot => {
         if (snapshot.exists()) {
             const drawRange = snapshot.val();
             console.log('회차 범위 업데이트:', drawRange);
-            초기화(); // 그리드 다시 그리기
+            업데이트턴표시(); // 턴 표시만 업데이트
         }
     });
 
