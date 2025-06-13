@@ -41,11 +41,11 @@
             background: #1a1a1a;
             position: relative;
             border-radius: 10px;
-            overflow: hidden;
+            overflow: visible;
             margin-bottom: 20px;
             padding: 0;
             box-sizing: border-box;
-            margin-left: 40px;
+            margin-left: 50px;
         }
 
         .round-display {
@@ -58,16 +58,17 @@
 
         .round-header {
             position: absolute;
-            left: -40px;
-            top: 21px;
-            height: calc(100% - 41px);
-            width: 35px;
+            left: -50px;
+            top: 20px;  /* 상단 여백 조정 */
+            height: 300px;
+            width: 45px;
             display: flex;
             flex-direction: column;
-            justify-content: flex-start;
+            justify-content: space-between;
             padding: 0;
-            z-index: 2;
-            gap: 1px;
+            z-index: 100;
+            gap: 0;
+            pointer-events: none;
         }
 
         .round-number {
@@ -77,6 +78,10 @@
             text-align: right;
             padding-right: 5px;
             line-height: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+            margin: 1px 0;
+            font-weight: bold;
         }
 
         .game-area {
@@ -421,6 +426,7 @@
             <div class="play-area">
                 <div id="ball"></div>
                 <div id="paddle"></div>
+                <div id="bottomWall" style="display: none; position: absolute; bottom: 0; left: 0; width: 100%; height: 20px; background-color: #3498db;"></div>
             </div>
         </div>
         
@@ -428,9 +434,11 @@
             <button id="startButton">시작</button>
             <button id="pauseButton" disabled>일시정지</button>
             <button id="resetButton">다시시작</button>
+            <button id="godModeButton">무적모드</button>
+            <div id="gameStatus" style="color: white; margin-top: 10px; height: 20px;"></div>
         </div>
     </div>
     
     <script src="../js/brick-game.js"></script>
 </body>
-</html> 
+</html>

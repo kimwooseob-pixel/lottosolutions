@@ -83,6 +83,7 @@
             margin-bottom: 16px;
             background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
             letter-spacing: -0.03em;
         }
@@ -468,6 +469,201 @@
                 grid-gap: 10px;
             }
         }
+        
+        .coming-soon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #fff;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+    </style>
+
+    <style id="brick-game-styles">
+        /* Styles for Brick Breaker Game - Scoped for index.html */
+        .game-wrapper {
+            background: #2c3e50;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            margin: 30px auto; /* Center game wrapper and add margin */
+            width: fit-content; 
+        }
+
+        .game-wrapper .header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            color: white;
+            font-size: 18px;
+        }
+
+        .game-wrapper .game-container {
+            width: 720px; 
+            height: 520px; 
+            background: #1a1a1a;
+            position: relative;
+            border-radius: 10px;
+            overflow: visible; 
+            margin-bottom: 20px;
+            padding: 0;
+            box-sizing: border-box;
+            margin-left: 50px; 
+        }
+
+        .game-wrapper .round-display { display: none; }
+        .game-wrapper .number-header { display: none; }
+
+        .game-wrapper .round-header {
+            position: absolute;
+            left: -50px; 
+            top: 0px; /* Align with top of brick container */
+            height: 320px; /* 16 rows * 20px/row */
+            width: 45px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding: 0;
+            z-index: 100;
+            gap: 0; 
+            pointer-events: none;
+        }
+
+        .game-wrapper .round-number {
+            height: 20px; 
+            font-size: 12px;
+            color: white;
+            text-align: right;
+            padding-right: 5px;
+            line-height: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+            /* margin: 1px 0; Removed for tighter fit if gap is 0 */
+            font-weight: bold;
+        }
+
+        .game-wrapper .game-area {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: #1a1a1a;
+        }
+
+        .game-wrapper .play-area {
+            position: absolute; left: 0; right: 0; bottom: 0;
+            height: 200px; 
+            background: #1a1a1a;
+            border-top: none;
+        }
+
+        .game-wrapper #brickContainer {
+            position: relative; 
+            width: 100%; 
+            height: 320px; /* 16 rows * 20px/row */
+            padding:0; 
+            box-sizing: border-box; 
+            display: grid;
+            grid-template-columns: repeat(45, 1fr);
+            grid-template-rows: repeat(16, 1fr); /* Match brickRowCount = 16 */
+            gap: 1px;
+            background: #1a1a1a; 
+            margin-top:0; 
+            border-bottom: none; 
+        }
+
+        .game-wrapper .brick {
+            width: 100%; height: 100%;
+            position: relative; border: none; box-sizing: border-box;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 8px; color: white;
+            background-color: #666666; 
+            transition: background-color 0.3s;
+            cursor: default; user-select: none;
+            margin:0; padding:0; 
+            outline: 1px solid #333; 
+        }
+        .game-wrapper .header-brick {
+             background-color: #3498db !important; 
+             color: white; font-weight: bold;
+        }
+
+        .game-wrapper #ball {
+            width: 8px; height: 8px;
+            background-color: white; border-radius: 50%;
+            position: absolute; z-index: 10;
+        }
+
+        .game-wrapper #paddle {
+            width: 80px; height: 10px;
+            background-color: #4CAF50; 
+            position: absolute; border-radius: 5px; z-index: 10;
+        }
+        
+        .game-wrapper #bottomWall {
+            display: none; position: absolute; bottom: 0; left: 0; 
+            width: 100%; height: 10px; background-color: #4CAF50;
+        }
+
+        .game-wrapper .controls {
+            display: flex; justify-content: center;
+            gap: 10px; margin-top: 10px;
+        }
+
+        .game-wrapper .controls button {
+            padding: 10px 20px; font-size: 16px;
+            border: none; border-radius: 5px; cursor: pointer;
+            background: #3498db; color: white;
+            transition: background 0.3s;
+        }
+
+        .game-wrapper .controls button:hover:not(:disabled) { background: #2980b9; }
+        .game-wrapper .controls button:disabled { background: #95a5a6; cursor: not-allowed; }
+        
+        .game-wrapper #gameStatus {
+            color: white; text-align: center; margin-top: 10px; min-height: 1.2em;
+        }
+        .game-wrapper #debugInfo {
+            color: white; font-size: 10px; margin-top: 5px; white-space: pre-wrap;
+            background-color: rgba(0,0,0,0.2); padding: 5px; border-radius: 3px;
+            max-height: 100px; overflow-y: auto;
+        }
+        .game-stats-panel {
+            background: #2c3e50; /* 게임 래퍼와 유사한 배경 */
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            margin: 20px auto; /* 게임 영역 아래, 중앙 정렬 */
+            width: 720px; /* 게임 컨테이너 너비와 일치시켜 정렬 */
+            max-width: 90%; /* 반응형 고려 */
+            text-align: left;
+        }
+        .game-stats-panel .stats-title {
+            font-size: 1.2em;
+            margin-top: 0; /* 제목 상단 여백 제거 */
+            margin-bottom: 10px;
+            text-align: center;
+            border-bottom: 1px solid #4a5a6a;
+            padding-bottom: 8px;
+        }
+        .game-stats-panel .stats-content {
+            font-size: 0.9em;
+            line-height: 1.6;
+            max-height: 200px; /* 내용이 많을 경우 스크롤 */
+            overflow-y: auto;
+        }
+        .game-stats-panel .stats-content ul {
+            list-style-type: none;
+            padding-left: 0;
+            margin-top: 0; /* 리스트 상단 여백 제거 */
+        }
+        .game-stats-panel .stats-content li {
+            padding: 3px 0;
+        }
     </style>
 </head>
 <body>
@@ -485,37 +681,46 @@
             <div class="subtitle">AI 기반 로또 번호 예측 시스템</div>
         </div>
         
-        <div class="section-title">실시간 이슈 채팅방</div>
-        <div class="button-grid" style="display: flex; justify-content: space-between; gap: 16px;">
-            <button class="nav-button" style="background: linear-gradient(135deg, #20303d, #3a4a5a); border-left: 4px solid var(--primary-color); aspect-ratio: 1/1; flex: 1; height: auto; display: flex; flex-direction: column; justify-content: center; text-align: center;" onclick="location.href='pages/chat-room.html'">
-                <div class="button-icon" style="font-size: 2rem; margin: 0 auto 10px auto;">💬</div>
-                <span class="button-title" style="font-size: 1rem; text-align: center; margin: 0 auto;">실시간 채팅방</span>
-                <span class="button-description" id="live-news-keywords" style="text-align: center; margin: 0 auto;">로또 이슈와 정보 공유</span>
-            </button>
-            
-            <button class="nav-button" style="background: linear-gradient(135deg, #2c273a, #433d5f); border-left: 4px solid var(--secondary-color); aspect-ratio: 1/1; flex: 1; height: auto; display: flex; flex-direction: column; justify-content: center; text-align: center;" onclick="location.href='pages/hot-predictions.html'">
-                <div class="button-icon" style="font-size: 2rem; margin: 0 auto 10px auto;">🔥</div>
-                <span class="button-title" style="font-size: 1rem; text-align: center; margin: 0 auto;">인기 예측</span>
-                <span class="button-description" style="text-align: center; margin: 0 auto;">회원들의 HOT 번호</span>
-            </button>
+<div class="game-wrapper">
+    <div class="header">
+        <div class="score">점수: <span id="score">0</span></div>
+        <div class="lives">남은 공: <span id="lives">3</span></div>
+        <div class="level">단계: <span id="level">1</span></div>
+    </div>
+    <div class="game-container">
+        <div class="round-header">
+            <!-- 회차 번호가 동적으로 여기에 추가됩니다 -->
         </div>
-        
-        <div class="section-title">커뮤니티 게시판</div>
-        <div class="button-grid board-section">
-            <!-- 게시판 버튼들 -->
-            <button class="nav-button led-button" onclick="location.href='pages/led-board.html'">
-                <div class="button-icon">💡</div>
-                <span class="button-title">LED 영상게시판</span>
-                <span class="button-description">LED 디스플레이 영상</span>
-            </button>
+        <div id="brickContainer">
+            <!-- 벽돌이 여기에 동적으로 추가됩니다 -->
+        </div>
+        <div class="play-area">
+            <div id="ball"></div>
+            <div id="paddle"></div>
+            <div id="bottomWall"></div>
+        </div>
+    </div>
+    <div class="controls">
+        <button id="godModeButton">무적모드</button>
+        <button id="restartButton" disabled>다시시작</button>
+    </div>
+    <div id="gameStatus"></div>
+    <div id="debugInfo"></div>
+</div>
 
-            <button class="nav-button brush-button" onclick="location.href='pages/brush-board.html'">
-                <div class="button-icon">🖌️</div>
-                <span class="button-title">붓그리기 게시판</span>
-                <span class="button-description">붓으로 그린 영상</span>
-            </button>
-        </div>
-        
+<div id="brickStatsPanel" class="game-stats-panel">
+    <h3 class="stats-title">첫 줄 벽돌 충돌 통계</h3>
+    <div id="statsContent" class="stats-content">
+        게임 종료 후 통계가 여기에 표시됩니다.
+    </div>
+</div>
+
+<!-- 랜덤 번호 뽑기 게임 섹션 -->
+<div id="randomNumbersSection" class="game-stats-panel">
+    <h3 class="stats-title">랜덤 번호 뽑기 게임</h3>
+    <iframe src="pages/random-numbers.html" width="100%" height="500" style="border:none;"></iframe>
+</div>
+
         <div class="section-title">번호 예측 도구</div>
         <div class="button-grid prediction-tools">
             <!-- 기존 로또 관련 버튼들 -->
@@ -538,27 +743,54 @@
             </button>
         </div>
         
+        <div class="section-title">커뮤니티 게시판</div>
+        <div class="button-grid board-section">
+            <!-- 게시판 버튼들 -->
+            <button class="nav-button led-button" onclick="location.href='pages/led-board.html'">
+                <div class="button-icon">💡</div>
+                <span class="button-title">LED 영상게시판</span>
+                <span class="button-description">LED 디스플레이 영상</span>
+            </button>
+
+            <button class="nav-button brush-button" onclick="location.href='pages/brush-board.html'">
+                <div class="button-icon">🖌️</div>
+                <span class="button-title">붓그리기 게시판</span>
+                <span class="button-description">붓으로 그린 영상</span>
+            </button>
+        </div>
+        
         <div class="section-title">게임 번호예측</div>
-        <div class="button-grid game-section">
+        <div class="button-grid game-section" style="display:flex; justify-content:center; gap:16px; flex-wrap:nowrap;">
             <!-- 랜덤뽑기 버튼 -->
-            <button class="nav-button random-button game-button-small" onclick="location.href='pages/random-numbers.html'">
+            <button class="nav-button random-button game-button-small" onclick="showComingSoon(event)">
                 <div class="button-icon">🎲</div>
                 <span class="button-title">랜덤뽑기</span>
                 <span class="button-description">랜덤추출</span>
+                <span class="coming-soon">준비중</span>
             </button>
 
             <!-- 화살표 게임 버튼 -->
-            <button class="nav-button game-button game-button-small" onclick="location.href='pages/arrow-game.html'">
+            <button class="nav-button game-button game-button-small" onclick="showComingSoon(event)">
                 <div class="button-icon">🏹</div>
                 <span class="button-title">화살표</span>
                 <span class="button-description">화살예측</span>
+                <span class="coming-soon">준비중</span>
             </button>
 
             <!-- 벽돌깨기 게임 버튼 -->
-            <button class="nav-button game-button game-button-small" onclick="location.href='pages/brick-game.html'">
+            <button class="nav-button game-button game-button-small" onclick="showComingSoon(event)">
                 <div class="button-icon">🧱</div>
                 <span class="button-title">벽돌깨기</span>
                 <span class="button-description">벽돌예측</span>
+                <span class="coming-soon">준비중</span>
+            </button>
+
+            <!-- 실시간 채팅방 버튼 -->
+            <button class="nav-button game-button game-button-small" onclick="showComingSoon(event)">
+                <div class="button-icon">💬</div>
+                <span class="button-title">채팅방</span>
+                <span class="button-description">실시간 이슈</span>
+                <span class="coming-soon">준비중</span>
             </button>
         </div>
     </div>
@@ -831,31 +1063,13 @@
         // 버튼들에 대한 이벤트 리스너 유지
         if(document.getElementById('btn-predict')) {
             document.getElementById('btn-predict').addEventListener('click', function() {
-                // 로그인 상태 확인
-                const loggedInUser = sessionStorage.getItem('loggedInUser');
-                if (loggedInUser) {
-                    // 로그인된 경우 페이지로 이동
-                    location.href = 'pages/page4.html'; // 이번주 번호 예측 페이지
-                } else {
-                    // 회원 전용 기능 알림 메시지 표시
-                    alert('회원 전용 기능입니다. 회원가입 후 이용해주세요.');
-                    document.getElementById('loginModal').style.display = 'flex';
-                }
+                location.href = 'pages/page4.html'; // 이번주 번호 예측 페이지
             });
         }
         
         if(document.getElementById('btn-ranking')) {
             document.getElementById('btn-ranking').addEventListener('click', function() {
-                // 로그인 상태 확인
-                const loggedInUser = sessionStorage.getItem('loggedInUser');
-                if (loggedInUser) {
-                    // 로그인된 경우 페이지로 이동
-                    location.href = 'pages/page5.html'; // 랭킹표 페이지
-                } else {
-                    // 회원 전용 기능 알림 메시지 표시
-                    alert('회원 전용 기능입니다. 회원가입 후 이용해주세요.');
-                    document.getElementById('loginModal').style.display = 'flex';
-                }
+                location.href = 'pages/page5.html'; // 랭킹표 페이지
             });
         }
         
@@ -1095,5 +1309,12 @@
             setInterval(updateNewsKeywords, updateInterval);
         });
     </script>
+    <script>
+        function showComingSoon(e){
+          e.preventDefault();
+          alert('준비중입니다.');
+        }
+    </script>
+    <script src="js/brick-game.js" defer></script>
 </body>
-</html> 
+</html>

@@ -302,10 +302,7 @@
         const loggedInUser = sessionStorage.getItem('loggedInUser');
         const userUid = sessionStorage.getItem('userUid');
 
-        if (!loggedInUser || !userUid) {
-            alert('로그인이 필요한 서비스입니다.');
-            window.location.href = '../index.html';
-        }
+        // 로그인하지 않아도 페이지 열람 가능, 단 저장 기능은 로그인 필요
 
         // 최신 당첨번호 표시
         function displayWinningNumbers(numbers) {
@@ -543,4 +540,4 @@
         });
     </script>
 </body>
-</html> 
+</html>
