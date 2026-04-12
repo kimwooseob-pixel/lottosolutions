@@ -124,6 +124,10 @@
         .button-grid.board-section {
             grid-template-columns: repeat(2, 1fr);
         }
+
+        .button-grid.community-section {
+            grid-template-columns: 1fr;
+        }
         
         .button-grid.main-section {
             grid-template-columns: repeat(3, 1fr);
@@ -136,8 +140,19 @@
         }
         
         .button-grid.prediction-tools {
-            grid-template-columns: 2fr 0.5fr 0.5fr;
+            grid-template-columns: repeat(3, 1fr);
             align-items: stretch;
+        }
+
+        .button-grid.coming-soon-section {
+            grid-template-columns: repeat(3, 1fr);
+            align-items: stretch;
+        }
+
+        .nav-button--disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
         }
 
         .button-grid.prediction-tools > .nav-button {
@@ -276,14 +291,6 @@
         .game-button::before {
             background: linear-gradient(90deg, #ff00aa, #aa00ff);
             box-shadow: 0 0 14px rgba(255, 0, 170, 0.35);
-        }
-        
-        .led-button::before {
-            background: linear-gradient(90deg, #00ffc8, #00e5ff);
-        }
-        
-        .brush-button::before {
-            background: linear-gradient(90deg, #b388ff, #00e5ff);
         }
         
         .random-button::before {
@@ -462,7 +469,6 @@
                 font-size: 1rem;
             }
             
-            .button-grid.board-section,
             .button-grid.main-section {
                 grid-template-columns: 1fr 1fr;
             }
@@ -472,7 +478,8 @@
                 max-width: 100%;
             }
             
-            .button-grid.prediction-tools {
+            .button-grid.prediction-tools,
+            .button-grid.coming-soon-section {
                 grid-template-columns: 1fr;
                 grid-template-rows: auto auto auto;
             }
@@ -495,7 +502,6 @@
         }
         
         @media (max-width: 480px) {
-            .button-grid.board-section,
             .button-grid.main-section {
                 grid-template-columns: 1fr;
             }
@@ -505,7 +511,8 @@
                 max-width: 100%;
             }
             
-            .button-grid.prediction-tools {
+            .button-grid.prediction-tools,
+            .button-grid.coming-soon-section {
                 grid-template-columns: 1fr;
                 grid-gap: 10px;
             }
@@ -563,18 +570,11 @@
         </div>
         
         <div class="section-title">커뮤니티 게시판</div>
-        <div class="button-grid board-section">
-            <!-- 게시판 버튼들 -->
-            <a class="nav-button led-button" href="pages/led-board.html">
-                <div class="button-icon">💡</div>
-                <span class="button-title">LED 영상게시판</span>
-                <span class="button-description">LED에 올라가는 영상 모아보기</span>
-            </a>
-
-            <a class="nav-button brush-button" href="pages/brush-board.html">
-                <div class="button-icon">🖌️</div>
-                <span class="button-title">붓그리기 게시판</span>
-                <span class="button-description">붓 스트로크로 그린 작품 공유</span>
+        <div class="button-grid community-section">
+            <a class="nav-button" href="pages/chat-room.html">
+                <div class="button-icon">💬</div>
+                <span class="button-title">실시간 채팅방</span>
+                <span class="button-description">이슈·정보 실시간 나눔</span>
             </a>
         </div>
         
@@ -591,20 +591,28 @@
                 <span class="button-title">랜덤 번호 뽑기</span>
                 <span class="button-description">원클릭으로 6개 번호 무작위 추첨</span>
             </a>
+        </div>
 
-            <button type="button" class="nav-button game-button game-button-small" onclick="showComingSoon(event)">
+        <div class="section-title">준비 중</div>
+        <div class="button-grid coming-soon-section">
+            <div class="nav-button nav-button--disabled game-button game-button-small" aria-disabled="true">
                 <div class="button-icon">🏹</div>
                 <span class="button-title">화살표 게임</span>
-                <span class="button-description">방향·각도 힌트형 미니 게임 (준비 중)</span>
+                <span class="button-description">방향·각도 힌트형 미니 게임</span>
                 <span class="coming-soon">준비중</span>
-            </button>
-
-            <button type="button" class="nav-button game-button game-button-small" onclick="showComingSoon(event)">
-                <div class="button-icon">💬</div>
-                <span class="button-title">실시간 채팅방</span>
-                <span class="button-description">이슈·정보 나눔 (준비 중)</span>
+            </div>
+            <div class="nav-button nav-button--disabled game-button game-button-small" aria-disabled="true">
+                <div class="button-icon">💡</div>
+                <span class="button-title">LED 영상게시판</span>
+                <span class="button-description">LED에 올라가는 영상 모아보기</span>
                 <span class="coming-soon">준비중</span>
-            </button>
+            </div>
+            <div class="nav-button nav-button--disabled game-button game-button-small" aria-disabled="true">
+                <div class="button-icon">🖌️</div>
+                <span class="button-title">붓그리기 게시판</span>
+                <span class="button-description">붓 스트로크로 그린 작품 공유</span>
+                <span class="coming-soon">준비중</span>
+            </div>
         </div>
     </div>
 
@@ -1166,12 +1174,6 @@
             // 4시간마다 업데이트하는 타이머 설정
             setInterval(updateNewsKeywords, updateInterval);
         });
-    </script>
-    <script>
-        function showComingSoon(e){
-          e.preventDefault();
-          alert('준비중입니다.');
-        }
     </script>
 </body>
 </html>
