@@ -192,15 +192,35 @@
             </div>
         </div>
         <div class="button-container">
-            <button onclick="location.href='page4.html'" class="button restart-button">이번주번호 예상해보기</button>
+            <button type="button" onclick="goToPredictFromPage3()" class="button restart-button">이번주번호 예상해보기</button>
             <button onclick="startFromTurn(1)" class="button continue-button">1턴부터 다시</button>
             <button onclick="startFromTurn(11)" class="button continue-button">11턴부터 다시</button>
             <button onclick="startFromTurn(21)" class="button continue-button">21턴부터 다시</button>
-            <button onclick="location.href='page5.html'" class="button ranking-button">랭킹 확인</button>
+            <button type="button" onclick="goToRankingFromPage3()" class="button ranking-button">랭킹 확인</button>
         </div>
     </div>
 
     <script>
+        var POST_LOGIN_REDIRECT_KEY = 'postLoginRedirect';
+
+        function goToPredictFromPage3() {
+            if (sessionStorage.getItem('loggedInUser')) {
+                window.location.href = 'page4.html';
+                return;
+            }
+            sessionStorage.setItem(POST_LOGIN_REDIRECT_KEY, 'pages/page4.html');
+            window.location.href = '../index.html?openLogin=1';
+        }
+
+        function goToRankingFromPage3() {
+            if (sessionStorage.getItem('loggedInUser')) {
+                window.location.href = 'page5.html';
+                return;
+            }
+            sessionStorage.setItem(POST_LOGIN_REDIRECT_KEY, 'pages/page5.html');
+            window.location.href = '../index.html?openLogin=1';
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             // 현재 체크포인트 계산 (1-3)
             const lastTurn = parseInt(localStorage.getItem('next_turn_start')) - 1 || 10;

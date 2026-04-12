@@ -853,17 +853,51 @@
         }
         updateVisitorCount();
 
+        const POST_LOGIN_REDIRECT_KEY = 'postLoginRedirect';
+
+        function goPredictOrLogin() {
+            if (sessionStorage.getItem('loggedInUser')) {
+                location.href = 'pages/page4.html';
+                return;
+            }
+            sessionStorage.setItem(POST_LOGIN_REDIRECT_KEY, 'pages/page4.html');
+            document.getElementById('loginModal').style.display = 'flex';
+        }
+
+        function goRankingOrLogin() {
+            if (sessionStorage.getItem('loggedInUser')) {
+                location.href = 'pages/page5.html';
+                return;
+            }
+            sessionStorage.setItem(POST_LOGIN_REDIRECT_KEY, 'pages/page5.html');
+            document.getElementById('loginModal').style.display = 'flex';
+        }
+
+        function applyPostLoginRedirectIfNeeded() {
+            const dest = sessionStorage.getItem(POST_LOGIN_REDIRECT_KEY);
+            if (!dest || !sessionStorage.getItem('loggedInUser')) return false;
+            sessionStorage.removeItem(POST_LOGIN_REDIRECT_KEY);
+            location.href = dest;
+            return true;
+        }
+
+        try {
+            const openLoginParam = new URLSearchParams(window.location.search).get('openLogin');
+            if (openLoginParam === '1' && !sessionStorage.getItem('loggedInUser')) {
+                document.getElementById('loginModal').style.display = 'flex';
+                if (window.history.replaceState) {
+                    window.history.replaceState(null, '', window.location.pathname + window.location.hash);
+                }
+            }
+        } catch (e) { /* ignore */ }
+
         // 버튼들에 대한 이벤트 리스너 유지
         if(document.getElementById('btn-predict')) {
-            document.getElementById('btn-predict').addEventListener('click', function() {
-                location.href = 'pages/page4.html'; // 이번주 번호 예측 페이지
-            });
+            document.getElementById('btn-predict').addEventListener('click', goPredictOrLogin);
         }
         
         if(document.getElementById('btn-ranking')) {
-            document.getElementById('btn-ranking').addEventListener('click', function() {
-                location.href = 'pages/page5.html'; // 랭킹표 페이지
-            });
+            document.getElementById('btn-ranking').addEventListener('click', goRankingOrLogin);
         }
         
         // 회원가입 버튼 클릭 이벤트
@@ -961,6 +995,7 @@
         // 로그인 모달 닫기 버튼
         document.getElementById('closeLogin').addEventListener('click', function() {
             document.getElementById('loginModal').style.display = 'none';
+            sessionStorage.removeItem(POST_LOGIN_REDIRECT_KEY);
         });
 
         // 로그인 처리
@@ -1007,6 +1042,7 @@
                     document.getElementById('userBar').style.display = 'flex';
                     const user = sessionStorage.getItem('loggedInUser');
                     document.getElementById('userWelcome').textContent = user + '님';
+                    if (applyPostLoginRedirectIfNeeded()) return;
                 })
                 .catch((error) => {
                     console.error('로그인 오류:', error);
@@ -1018,6 +1054,7 @@
         document.getElementById('logoutBtn').addEventListener('click', function() {
             sessionStorage.removeItem('loggedInUser');
             sessionStorage.removeItem('userUid');
+            sessionStorage.removeItem(POST_LOGIN_REDIRECT_KEY);
             document.getElementById('userBar').style.display = 'none';
             location.reload();
         });
