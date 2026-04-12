@@ -959,10 +959,12 @@
                         id: id,
                         email: email,
                         password: pw,  // 실제 프로덕션에서는 암호화되어야 함
+                        nickname: id,
                         joinDate: currentTime,
                         lastLogin: currentTime,
                         profile: {
                             email: email,
+                            nickname: id,
                             joinDate: currentTime,
                             lastLogin: currentTime
                         }
