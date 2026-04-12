@@ -54,11 +54,14 @@ if (!firebase.apps.length) {
 // Firebase Database 참조 생성
 const database = firebase.database();
 
-/** RTDB winningNumbers/{회차}: { numbers, timestamp } 또는 구형 배열 */
-function 당첨엔트리를번호배열로(entry) {
-    if (entry == null) return null;
-    const numbers = entry.numbers ? entry.numbers : entry;
-    return Array.isArray(numbers) ? numbers : null;
+/** LOTTO_DATA / RTDB: 배열 또는 { numbers, timestamp } → 항상 배열 */
+function 회차Raw를번호배열로(rawData) {
+    const nums = Array.isArray(rawData)
+        ? rawData
+        : rawData && rawData.numbers
+          ? rawData.numbers
+          : [];
+    return Array.isArray(nums) ? nums : [];
 }
 
 function 로컬당첨번호맵() {
@@ -76,8 +79,8 @@ function 당첨번호맵정규화(raw) {
     const out = {};
     if (!raw || typeof raw !== 'object') return out;
     for (const key of Object.keys(raw)) {
-        const nums = 당첨엔트리를번호배열로(raw[key]);
-        if (nums && nums.length) out[String(key)] = nums;
+        const nums = 회차Raw를번호배열로(raw[key]);
+        if (nums.length) out[String(key)] = nums;
     }
     return out;
 }
@@ -294,9 +297,10 @@ async function 초기화() {
                     cell.addEventListener('click', () => 셀클릭(cell));
                 } else {
                     const 회차번호 = (parseInt(턴정보.start) + col).toString();
-                    const 해당회차번호들 = 실제당첨번호[회차번호] || 기본당첨번호[회차번호];
-                    
-                    if (해당회차번호들 && 해당회차번호들.includes(num)) {
+                    const rawDraw = 실제당첨번호[회차번호] || 기본당첨번호[회차번호];
+                    const 해당회차번호들 = 회차Raw를번호배열로(rawDraw);
+
+                    if (해당회차번호들.includes(num)) {
                         cell.classList.add('marked');
                         const circle = document.createElement('div');
                         circle.className = 'number-circle';
