@@ -11,21 +11,24 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         :root {
-            --primary-color: #2196F3;
-            --primary-dark: #1976D2;
-            --secondary-color: #FF4081;
-            --secondary-dark: #E91E63;
-            --green-color: #4CAF50;
-            --green-dark: #388E3C;
-            --purple-color: #9C27B0;
-            --purple-dark: #7B1FA2;
-            --orange-color: #FF9800;
-            --orange-dark: #F57C00;
-            --text-color: #ffffff;
-            --text-secondary: #b0bec5;
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --card-hover: #2c2c2c;
+            --neon-cyan: #00e5ff;
+            --neon-cyan-glow: rgba(0, 229, 255, 0.45);
+            --neon-teal: #00ffc8;
+            --primary-color: #00e5ff;
+            --primary-dark: #00b8d4;
+            --secondary-color: #00ffc8;
+            --secondary-dark: #00bfa5;
+            --green-color: #00e676;
+            --green-dark: #00c853;
+            --purple-color: #b388ff;
+            --purple-dark: #7c4dff;
+            --orange-color: #ff9100;
+            --orange-dark: #ff6d00;
+            --text-color: #e8f4f8;
+            --text-secondary: #8daab8;
+            --bg-color: #050508;
+            --card-bg: #0e1118;
+            --card-hover: #151a24;
         }
         
         * {
@@ -37,6 +40,9 @@
         body {
             font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
             background-color: var(--bg-color);
+            background-image:
+                radial-gradient(ellipse 120% 80% at 50% -20%, rgba(0, 229, 255, 0.08), transparent 55%),
+                linear-gradient(180deg, #050508 0%, #0a0d12 100%);
             color: var(--text-color);
             min-height: 100vh;
             display: flex;
@@ -81,11 +87,12 @@
             font-size: 3rem;
             font-weight: 800;
             margin-bottom: 16px;
-            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            background: linear-gradient(120deg, #00fff0, #00b4d8, #00ffc8);
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
             letter-spacing: -0.03em;
+            filter: drop-shadow(0 0 24px var(--neon-cyan-glow));
         }
         
         .subtitle {
@@ -98,11 +105,12 @@
             width: 100%;
             text-align: left;
             margin: 15px 0 10px 0;
-            color: var(--text-secondary);
+            color: var(--neon-cyan);
             font-size: 1.1rem;
             font-weight: 600;
-            padding-left: 10px;
-            border-left: 3px solid var(--primary-color);
+            padding-left: 12px;
+            border-left: 3px solid var(--neon-cyan);
+            text-shadow: 0 0 12px var(--neon-cyan-glow);
         }
         
         .button-grid {
@@ -122,8 +130,8 @@
         }
         
         .button-grid.game-section {
-            grid-template-columns: repeat(3, 1fr);
-            max-width: 50%;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            max-width: 100%;
             margin: 0 auto 20px auto;
         }
         
@@ -134,20 +142,25 @@
         .nav-button {
             padding: 18px;
             font-size: 0.9rem;
-            border: none;
-            border-radius: 10px;
+            border: 1px solid rgba(0, 229, 255, 0.22);
+            border-radius: 12px;
             cursor: pointer;
             transition: all 0.3s ease;
             text-align: left;
+            text-decoration: none;
             display: flex;
             flex-direction: column;
             gap: 6px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(0, 229, 255, 0.06) inset;
             background-color: var(--card-bg);
             color: var(--text-color);
             position: relative;
             overflow: hidden;
             height: 100%;
+        }
+
+        a.nav-button {
+            color: inherit;
         }
         
         .btn-large {
@@ -215,14 +228,16 @@
             left: 0;
             width: 100%;
             height: 4px;
-            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-teal));
             transition: height 0.3s ease;
+            box-shadow: 0 0 12px var(--neon-cyan-glow);
         }
         
         .nav-button:hover {
             transform: translateY(-3px);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), 0 0 24px rgba(0, 229, 255, 0.12);
             background-color: var(--card-hover);
+            border-color: rgba(0, 229, 255, 0.45);
         }
         
         .nav-button:hover::before {
@@ -248,19 +263,24 @@
         
         /* 버튼 색상 변형 */
         .game-button::before {
-            background: linear-gradient(90deg, #FF4081, #F06292);
+            background: linear-gradient(90deg, #ff00aa, #aa00ff);
+            box-shadow: 0 0 14px rgba(255, 0, 170, 0.35);
         }
         
         .led-button::before {
-            background: linear-gradient(90deg, #4CAF50, #66BB6A);
+            background: linear-gradient(90deg, #00ffc8, #00e5ff);
         }
         
         .brush-button::before {
-            background: linear-gradient(90deg, #9C27B0, #BA68C8);
+            background: linear-gradient(90deg, #b388ff, #00e5ff);
         }
         
         .random-button::before {
-            background: linear-gradient(90deg, #FF9900, #FFBB33);
+            background: linear-gradient(90deg, #ffea00, #00e5ff);
+        }
+
+        .brick-link::before {
+            background: linear-gradient(90deg, #ff6b35, #00e5ff);
         }
         
         /* 로그인 모달 스타일 */
@@ -483,188 +503,6 @@
             border-radius: 8px;
         }
     </style>
-
-    <style id="brick-game-styles">
-        /* Styles for Brick Breaker Game - Scoped for index.html */
-        .game-wrapper {
-            background: #2c3e50;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            position: relative;
-            margin: 30px auto; /* Center game wrapper and add margin */
-            width: fit-content; 
-        }
-
-        .game-wrapper .header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            color: white;
-            font-size: 18px;
-        }
-
-        .game-wrapper .game-container {
-            width: 720px; 
-            height: 520px; 
-            background: #1a1a1a;
-            position: relative;
-            border-radius: 10px;
-            overflow: visible; 
-            margin-bottom: 20px;
-            padding: 0;
-            box-sizing: border-box;
-            margin-left: 50px; 
-        }
-
-        .game-wrapper .round-display { display: none; }
-        .game-wrapper .number-header { display: none; }
-
-        .game-wrapper .round-header {
-            position: absolute;
-            left: -50px; 
-            top: 0px; /* Align with top of brick container */
-            height: 320px; /* 16 rows * 20px/row */
-            width: 45px;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            padding: 0;
-            z-index: 100;
-            gap: 0; 
-            pointer-events: none;
-        }
-
-        .game-wrapper .round-number {
-            height: 20px; 
-            font-size: 12px;
-            color: white;
-            text-align: right;
-            padding-right: 5px;
-            line-height: 20px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 3px;
-            /* margin: 1px 0; Removed for tighter fit if gap is 0 */
-            font-weight: bold;
-        }
-
-        .game-wrapper .game-area {
-            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background: #1a1a1a;
-        }
-
-        .game-wrapper .play-area {
-            position: absolute; left: 0; right: 0; bottom: 0;
-            height: 200px; 
-            background: #1a1a1a;
-            border-top: none;
-        }
-
-        .game-wrapper #brickContainer {
-            position: relative; 
-            width: 100%; 
-            height: 320px; /* 16 rows * 20px/row */
-            padding:0; 
-            box-sizing: border-box; 
-            display: grid;
-            grid-template-columns: repeat(45, 1fr);
-            grid-template-rows: repeat(16, 1fr); /* Match brickRowCount = 16 */
-            gap: 1px;
-            background: #1a1a1a; 
-            margin-top:0; 
-            border-bottom: none; 
-        }
-
-        .game-wrapper .brick {
-            width: 100%; height: 100%;
-            position: relative; border: none; box-sizing: border-box;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 8px; color: white;
-            background-color: #666666; 
-            transition: background-color 0.3s;
-            cursor: default; user-select: none;
-            margin:0; padding:0; 
-            outline: 1px solid #333; 
-        }
-        .game-wrapper .header-brick {
-             background-color: #3498db !important; 
-             color: white; font-weight: bold;
-        }
-
-        .game-wrapper #ball {
-            width: 8px; height: 8px;
-            background-color: white; border-radius: 50%;
-            position: absolute; z-index: 10;
-        }
-
-        .game-wrapper #paddle {
-            width: 80px; height: 10px;
-            background-color: #4CAF50; 
-            position: absolute; border-radius: 5px; z-index: 10;
-        }
-        
-        .game-wrapper #bottomWall {
-            display: none; position: absolute; bottom: 0; left: 0; 
-            width: 100%; height: 10px; background-color: #4CAF50;
-        }
-
-        .game-wrapper .controls {
-            display: flex; justify-content: center;
-            gap: 10px; margin-top: 10px;
-        }
-
-        .game-wrapper .controls button {
-            padding: 10px 20px; font-size: 16px;
-            border: none; border-radius: 5px; cursor: pointer;
-            background: #3498db; color: white;
-            transition: background 0.3s;
-        }
-
-        .game-wrapper .controls button:hover:not(:disabled) { background: #2980b9; }
-        .game-wrapper .controls button:disabled { background: #95a5a6; cursor: not-allowed; }
-        
-        .game-wrapper #gameStatus {
-            color: white; text-align: center; margin-top: 10px; min-height: 1.2em;
-        }
-        .game-wrapper #debugInfo {
-            color: white; font-size: 10px; margin-top: 5px; white-space: pre-wrap;
-            background-color: rgba(0,0,0,0.2); padding: 5px; border-radius: 3px;
-            max-height: 100px; overflow-y: auto;
-        }
-        .game-stats-panel {
-            background: #2c3e50; /* 게임 래퍼와 유사한 배경 */
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            margin: 20px auto; /* 게임 영역 아래, 중앙 정렬 */
-            width: 720px; /* 게임 컨테이너 너비와 일치시켜 정렬 */
-            max-width: 90%; /* 반응형 고려 */
-            text-align: left;
-        }
-        .game-stats-panel .stats-title {
-            font-size: 1.2em;
-            margin-top: 0; /* 제목 상단 여백 제거 */
-            margin-bottom: 10px;
-            text-align: center;
-            border-bottom: 1px solid #4a5a6a;
-            padding-bottom: 8px;
-        }
-        .game-stats-panel .stats-content {
-            font-size: 0.9em;
-            line-height: 1.6;
-            max-height: 200px; /* 내용이 많을 경우 스크롤 */
-            overflow-y: auto;
-        }
-        .game-stats-panel .stats-content ul {
-            list-style-type: none;
-            padding-left: 0;
-            margin-top: 0; /* 리스트 상단 여백 제거 */
-        }
-        .game-stats-panel .stats-content li {
-            padding: 3px 0;
-        }
-    </style>
 </head>
 <body>
     <!-- 관리자 모드 버튼 -->
@@ -679,117 +517,72 @@
         <div class="header">
             <h1>Lotto Solutions</h1>
             <div class="subtitle">AI 기반 로또 번호 예측 시스템</div>
+            <div id="live-news-keywords" class="subtitle" style="font-size:0.95rem; margin-top:6px; color: var(--text-secondary); min-height:1.3em;"></div>
         </div>
-        
-<div class="game-wrapper">
-    <div class="header">
-        <div class="score">점수: <span id="score">0</span></div>
-        <div class="lives">남은 공: <span id="lives">3</span></div>
-        <div class="level">단계: <span id="level">1</span></div>
-    </div>
-    <div class="game-container">
-        <div class="round-header">
-            <!-- 회차 번호가 동적으로 여기에 추가됩니다 -->
-        </div>
-        <div id="brickContainer">
-            <!-- 벽돌이 여기에 동적으로 추가됩니다 -->
-        </div>
-        <div class="play-area">
-            <div id="ball"></div>
-            <div id="paddle"></div>
-            <div id="bottomWall"></div>
-        </div>
-    </div>
-    <div class="controls">
-        <button id="godModeButton">무적모드</button>
-        <button id="restartButton" disabled>다시시작</button>
-    </div>
-    <div id="gameStatus"></div>
-    <div id="debugInfo"></div>
-</div>
-
-<div id="brickStatsPanel" class="game-stats-panel">
-    <h3 class="stats-title">첫 줄 벽돌 충돌 통계</h3>
-    <div id="statsContent" class="stats-content">
-        게임 종료 후 통계가 여기에 표시됩니다.
-    </div>
-</div>
-
-<!-- 랜덤 번호 뽑기 게임 섹션 -->
-<div id="randomNumbersSection" class="game-stats-panel">
-    <h3 class="stats-title">랜덤 번호 뽑기 게임</h3>
-    <iframe src="pages/random-numbers.html" width="100%" height="500" style="border:none;"></iframe>
-</div>
 
         <div class="section-title">번호 예측 도구</div>
         <div class="button-grid prediction-tools">
             <!-- 기존 로또 관련 버튼들 -->
-            <button class="nav-button btn-large" onclick="location.href='pages/page2.html'">
+            <a class="nav-button btn-large" href="pages/page2.html">
                 <div class="button-icon">📊</div>
                 <span class="button-title">(당첨) 연습하기</span>
-                <span class="button-description">이전 회차 당첨번호로 연습</span>
-            </button>
+                <span class="button-description">지난 회차 패턴으로 감 잡기</span>
+            </a>
 
-            <button class="nav-button btn-small" id="btn-predict">
+            <button type="button" class="nav-button btn-small" id="btn-predict">
                 <div class="button-icon">🔮</div>
                 <span class="button-title">이번주 번호</span>
-                <span class="button-description">AI 힌트</span>
+                <span class="button-description">패턴 분석 그리드에서 6개 선택</span>
             </button>
 
-            <button class="nav-button btn-small" id="btn-ranking">
+            <button type="button" class="nav-button btn-small" id="btn-ranking">
                 <div class="button-icon">🏆</div>
                 <span class="button-title">랭킹표</span>
-                <span class="button-description">상위랭커</span>
+                <span class="button-description">예측 순위·당첨 번호 한눈에</span>
             </button>
         </div>
         
         <div class="section-title">커뮤니티 게시판</div>
         <div class="button-grid board-section">
             <!-- 게시판 버튼들 -->
-            <button class="nav-button led-button" onclick="location.href='pages/led-board.html'">
+            <a class="nav-button led-button" href="pages/led-board.html">
                 <div class="button-icon">💡</div>
                 <span class="button-title">LED 영상게시판</span>
-                <span class="button-description">LED 디스플레이 영상</span>
-            </button>
+                <span class="button-description">LED에 올라가는 영상 모아보기</span>
+            </a>
 
-            <button class="nav-button brush-button" onclick="location.href='pages/brush-board.html'">
+            <a class="nav-button brush-button" href="pages/brush-board.html">
                 <div class="button-icon">🖌️</div>
                 <span class="button-title">붓그리기 게시판</span>
-                <span class="button-description">붓으로 그린 영상</span>
-            </button>
+                <span class="button-description">붓 스트로크로 그린 작품 공유</span>
+            </a>
         </div>
         
-        <div class="section-title">게임 번호예측</div>
-        <div class="button-grid game-section" style="display:flex; justify-content:center; gap:16px; flex-wrap:nowrap;">
-            <!-- 랜덤뽑기 버튼 -->
-            <button class="nav-button random-button game-button-small" onclick="showComingSoon(event)">
-                <div class="button-icon">🎲</div>
-                <span class="button-title">랜덤뽑기</span>
-                <span class="button-description">랜덤추출</span>
-                <span class="coming-soon">준비중</span>
-            </button>
-
-            <!-- 화살표 게임 버튼 -->
-            <button class="nav-button game-button game-button-small" onclick="showComingSoon(event)">
-                <div class="button-icon">🏹</div>
-                <span class="button-title">화살표</span>
-                <span class="button-description">화살예측</span>
-                <span class="coming-soon">준비중</span>
-            </button>
-
-            <!-- 벽돌깨기 게임 버튼 -->
-            <button class="nav-button game-button game-button-small" onclick="showComingSoon(event)">
+        <div class="section-title">게임 · 도구</div>
+        <div class="button-grid game-section">
+            <a class="nav-button game-button game-button-small brick-link" href="pages/brick-game.html">
                 <div class="button-icon">🧱</div>
-                <span class="button-title">벽돌깨기</span>
-                <span class="button-description">벽돌예측</span>
+                <span class="button-title">벽돌 깨기 게임</span>
+                <span class="button-description">회차별 벽돌을 깨며 번호 감각 익히기</span>
+            </a>
+
+            <a class="nav-button random-button game-button-small" href="pages/random-numbers.html">
+                <div class="button-icon">🎲</div>
+                <span class="button-title">랜덤 번호 뽑기</span>
+                <span class="button-description">원클릭으로 6개 번호 무작위 추첨</span>
+            </a>
+
+            <button type="button" class="nav-button game-button game-button-small" onclick="showComingSoon(event)">
+                <div class="button-icon">🏹</div>
+                <span class="button-title">화살표 게임</span>
+                <span class="button-description">방향·각도 힌트형 미니 게임 (준비 중)</span>
                 <span class="coming-soon">준비중</span>
             </button>
 
-            <!-- 실시간 채팅방 버튼 -->
-            <button class="nav-button game-button game-button-small" onclick="showComingSoon(event)">
+            <button type="button" class="nav-button game-button game-button-small" onclick="showComingSoon(event)">
                 <div class="button-icon">💬</div>
-                <span class="button-title">채팅방</span>
-                <span class="button-description">실시간 이슈</span>
+                <span class="button-title">실시간 채팅방</span>
+                <span class="button-description">이슈·정보 나눔 (준비 중)</span>
                 <span class="coming-soon">준비중</span>
             </button>
         </div>
@@ -1315,6 +1108,5 @@
           alert('준비중입니다.');
         }
     </script>
-    <script src="js/brick-game.js" defer></script>
 </body>
 </html>
