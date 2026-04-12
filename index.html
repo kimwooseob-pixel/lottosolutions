@@ -137,6 +137,17 @@
         
         .button-grid.prediction-tools {
             grid-template-columns: 2fr 0.5fr 0.5fr;
+            align-items: stretch;
+        }
+
+        .button-grid.prediction-tools > .nav-button {
+            height: 100%;
+            min-height: 100%;
+            align-self: stretch;
+        }
+
+        .button-grid.prediction-tools .btn-small {
+            min-height: 0;
         }
         
         .nav-button {
@@ -426,6 +437,16 @@
             color: var(--text-secondary);
             font-size: 0.9rem;
         }
+
+        .site-disclaimer {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-align: center;
+            line-height: 1.55;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px 12px;
+        }
         
         /* 반응형 디자인 */
         @media (max-width: 768px) {
@@ -517,7 +538,6 @@
         <div class="header">
             <h1>Lotto Solutions</h1>
             <div class="subtitle">AI 기반 로또 번호 예측 시스템</div>
-            <div id="live-news-keywords" class="subtitle" style="font-size:0.95rem; margin-top:6px; color: var(--text-secondary); min-height:1.3em;"></div>
         </div>
 
         <div class="section-title">번호 예측 도구</div>
@@ -587,6 +607,8 @@
             </button>
         </div>
     </div>
+
+    <p class="site-disclaimer">※ 로또는 독립시행으로 과거 패턴이 당첨을 보장하지 않습니다.<br>본 서비스의 번호 예측은 참고용이며 결과는 언제나 다를 수 있습니다.</p>
 
     <footer>
         &copy; 2023 Lotto Solutions. All rights reserved.
@@ -1063,6 +1085,8 @@
 
         // 실시간 뉴스 키워드 업데이트 함수
         async function updateNewsKeywords() {
+            const kwEl = document.getElementById('live-news-keywords');
+            if (!kwEl) return;
             try {
                 // 로또 관련 키워드 목록
                 const lottoKeywords = [
@@ -1106,7 +1130,7 @@
 
                 // 키워드 조합 및 표시
                 const keywordsText = selectedKeywords.join(' • ');
-                document.getElementById('live-news-keywords').textContent = keywordsText;
+                kwEl.textContent = keywordsText;
 
                 // 업데이트 시간 및 키워드 저장
                 localStorage.setItem('lastNewsUpdate', Date.now().toString());
@@ -1115,12 +1139,14 @@
 
             } catch (error) {
                 console.error('뉴스 키워드 업데이트 실패:', error);
-                document.getElementById('live-news-keywords').textContent = '로또 정보 • 실시간 뉴스';
+                kwEl.textContent = '로또 정보 • 실시간 뉴스';
             }
         }
         
         // 페이지 로드 시 뉴스 키워드 초기화
         window.addEventListener('load', function() {
+            const kwEl = document.getElementById('live-news-keywords');
+            if (!kwEl) return;
             // 마지막 업데이트 시간 확인
             const lastUpdate = localStorage.getItem('lastNewsUpdate');
             const currentTime = Date.now();
@@ -1133,7 +1159,7 @@
                 // 저장된 키워드가 있으면 복원
                 const savedKeywords = localStorage.getItem('newsKeywords');
                 if (savedKeywords) {
-                    document.getElementById('live-news-keywords').textContent = savedKeywords;
+                    kwEl.textContent = savedKeywords;
                 }
             }
             
