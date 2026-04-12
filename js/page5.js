@@ -12,10 +12,13 @@ function readDrawNumberField(val) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    if (!document.getElementById('modalOverlay')) return;
+
     console.log('페이지5 로드됨');
     
     // 현재 로그인한 유저 가져오기
     let currentUser = '';
+    const auth = firebase.auth();
     auth.onAuthStateChanged(function(user) {
         if (user) {
             currentUser = user.displayName || user.email || localStorage.getItem('userId') || '익명';
@@ -710,10 +713,11 @@ function showAdminForm() {
     }
 }
 
-// Firebase 설정
+// Firebase 설정 (Firestore 레거시 페이지용; page5.html은 인라인에서 이미 초기화)
 const firebaseConfig = {
     apiKey: "AIzaSyAwh55rLOQkY8ZVCzaC4ZF3iaUVU5Vu0GM",
     authDomain: "ai-lottosolutions.firebaseapp.com",
+    databaseURL: "https://ai-lottosolutions-default-rtdb.asia-southeast1.firebasedatabase.app",
     projectId: "ai-lottosolutions",
     storageBucket: "ai-lottosolutions.firebasestorage.app",
     messagingSenderId: "616782090306",
@@ -721,13 +725,23 @@ const firebaseConfig = {
     measurementId: "G-NEXMN4FFJG"
 };
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+if (typeof firebase !== 'undefined') {
+    try {
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+    } catch (e) { /* 이미 초기화됨 */ }
+}
+const db = (typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null;
 
 // Firestore에서 최신 회차 불러오기 및 drawLabel 표시
 async function updateDrawLabel() {
     const drawLabel = document.getElementById('drawLabel');
     let nextDrawNumber = 1171;
+    if (!db) {
+        if (drawLabel) drawLabel.textContent = `${nextDrawNumber}회차 당첨번호 입력`;
+        return nextDrawNumber;
+    }
     try {
         const snapshot = await db.collection('lotto_numbers').orderBy('drawNumber', 'desc').limit(1).get();
         if (!snapshot.empty) {
@@ -741,4 +755,302 @@ async function updateDrawLabel() {
     return nextDrawNumber;
 }
 
-// ... existing code ... 
+// --- page5.html RTDB 랭킹 대시보드 (읽기 전용) ---
+(function () {
+    const 기본당첨번호 = {
+        '1153': [2, 8, 19, 22, 32, 42],
+        '1154': [6, 10, 12, 14, 20, 42],
+        '1155': [17, 25, 33, 35, 38, 45],
+        '1156': [1, 4, 29, 39, 43, 45],
+        '1157': [7, 15, 30, 37, 39, 44],
+        '1158': [8, 13, 18, 24, 27, 29],
+        '1159': [8, 11, 15, 16, 17, 37],
+        '1160': [8, 11, 16, 19, 21, 25],
+        '1161': [9, 11, 30, 31, 41, 44],
+        '1162': [15, 23, 29, 34, 40, 44],
+        '1163': [9, 12, 15, 25, 34, 36],
+        '1164': [1, 9, 12, 26, 35, 38],
+        '1165': [5, 11, 18, 20, 35, 45],
+        '1166': [21, 22, 26, 34, 36, 41],
+        '1167': [3, 11, 14, 18, 26, 27]
+    };
+
+    function 당첨엔트리를번호배열로(entry) {
+        if (entry == null) return null;
+        const numbers = entry.numbers ? entry.numbers : entry;
+        return Array.isArray(numbers) ? numbers : null;
+    }
+
+    function 당첨번호맵정규화(raw) {
+        const out = {};
+        if (!raw || typeof raw !== 'object') return out;
+        for (const key of Object.keys(raw)) {
+            const nums = 당첨엔트리를번호배열로(raw[key]);
+            if (nums && nums.length) out[String(key)] = nums;
+        }
+        return out;
+    }
+
+    async function get턴정보(rtdb) {
+        const defaults = { start: '1154', end: '1168', next: '1169' };
+        try {
+            const snapshot = await rtdb.ref('drawRange').once('value');
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                if (!data || typeof data !== 'object') return defaults;
+                let nextRaw = data.next;
+                if (nextRaw == null && data.prediction != null) nextRaw = data.prediction;
+                const s = parseInt(data.start, 10);
+                const e = parseInt(data.end, 10);
+                const n = parseInt(nextRaw, 10);
+                return {
+                    start: Number.isFinite(s) ? String(s) : String(data.start),
+                    end: Number.isFinite(e) ? String(e) : String(data.end),
+                    next: Number.isFinite(n) ? String(n) : (nextRaw != null ? String(nextRaw) : defaults.next)
+                };
+            }
+        } catch (e) {
+            console.error('턴 정보 가져오기 실패:', e);
+        }
+        return defaults;
+    }
+
+    function normalizeNumbers(arr) {
+        if (!arr || !Array.isArray(arr)) return [];
+        return arr.map(n => parseInt(n, 10)).filter(n => !isNaN(n) && n >= 1 && n <= 45);
+    }
+
+    function countMatches(predNums, winNums) {
+        const w = new Set(normalizeNumbers(winNums));
+        return normalizeNumbers(predNums).filter(n => w.has(n)).length;
+    }
+
+    function appendRankBalls(parent, numbers, kind) {
+        if (!parent) return;
+        parent.innerHTML = '';
+        const nums = normalizeNumbers(numbers).slice(0, 6);
+        nums.forEach((n, i) => {
+            const span = document.createElement('span');
+            if (kind === 'win') {
+                span.className = 'rank-ball rank-ball--win';
+            } else {
+                span.className = 'rank-ball rank-ball--' + (i % 2 === 0 ? 'pred' : 'pred-alt');
+            }
+            span.textContent = String(n);
+            parent.appendChild(span);
+        });
+    }
+
+    let rankingListenersOn = false;
+
+    async function renderRankingPanels(rtdb) {
+        const winningBalls = document.getElementById('winning-balls');
+        if (!winningBalls || !rtdb) return;
+
+        try {
+            const [턴정보, winSnap, cdSnap, predSnap] = await Promise.all([
+                get턴정보(rtdb),
+                rtdb.ref('winningNumbers').once('value'),
+                rtdb.ref('currentDraw').once('value'),
+                rtdb.ref('predictions').once('value')
+            ]);
+
+            const winningMap = 당첨번호맵정규화(winSnap.val() || {});
+
+            let displayDraw = 턴정보.end;
+            if (cdSnap.exists()) {
+                const cd = cdSnap.val();
+                const d = cd != null && typeof cd === 'object' && cd.drawNumber != null ? cd.drawNumber : cd;
+                if (d != null && d !== '') displayDraw = String(d);
+            }
+
+            const titleEl = document.getElementById('winning-section-title');
+            if (titleEl) titleEl.textContent = `${displayDraw}회차 당첨번호`;
+
+            const winNums = winningMap[displayDraw] || 기본당첨번호[displayDraw] || [];
+            if (normalizeNumbers(winNums).length === 0) {
+                winningBalls.innerHTML = '<p class="empty-hint">등록된 당첨번호가 없습니다.</p>';
+            } else {
+                appendRankBalls(winningBalls, winNums, 'win');
+            }
+
+            const preds = [];
+            if (predSnap.exists()) {
+                predSnap.forEach(child => {
+                    preds.push({ id: child.key, ...child.val() });
+                });
+            }
+
+            const myList = document.getElementById('my-history-list');
+            if (myList) {
+                myList.innerHTML = '';
+                const myUid = sessionStorage.getItem('userUid');
+                if (!myUid) {
+                    const p = document.createElement('p');
+                    p.className = 'empty-hint';
+                    p.textContent = '로그인 후 나의 예측 내역이 표시됩니다.';
+                    myList.appendChild(p);
+                } else {
+                    const mine = preds.filter(p => p.userId === myUid);
+                    mine.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                    if (mine.length === 0) {
+                        const p = document.createElement('p');
+                        p.className = 'empty-hint';
+                        p.textContent = '저장된 예측이 없습니다.';
+                        myList.appendChild(p);
+                    } else {
+                        mine.forEach(p => {
+                            const row = document.createElement('div');
+                            row.className = 'history-row';
+                            const drawLabel = document.createElement('span');
+                            drawLabel.className = 'history-draw';
+                            const dno = p.drawNo != null ? String(p.drawNo) : '—';
+                            drawLabel.textContent = `${dno}회`;
+                            const balls = document.createElement('div');
+                            balls.className = 'ball-row';
+                            appendRankBalls(balls, p.numbers, 'pred');
+                            const status = document.createElement('span');
+                            status.className = 'history-status';
+                            const wk = p.drawNo != null ? String(p.drawNo) : '';
+                            const wnums = winningMap[wk];
+                            if (!wk || !wnums || wnums.length === 0) {
+                                status.classList.add('history-status--wait');
+                                status.textContent = '대기중';
+                            } else {
+                                const m = countMatches(p.numbers, wnums);
+                                status.classList.add('history-status--hit');
+                                status.textContent = `${m}개 일치`;
+                            }
+                            row.appendChild(drawLabel);
+                            row.appendChild(balls);
+                            row.appendChild(status);
+                            myList.appendChild(row);
+                        });
+                    }
+                }
+            }
+
+            const nextDraw = String(턴정보.next || '');
+            const sub = document.getElementById('top6-subhint');
+            if (sub) sub.textContent = nextDraw ? `${nextDraw}회차 예측에서 집계` : '회차 정보 없음';
+
+            const top6Grid = document.getElementById('top6-grid');
+            if (top6Grid) {
+                top6Grid.innerHTML = '';
+                const forNext = preds.filter(p => p.drawNo != null && String(p.drawNo) === nextDraw);
+                const freq = {};
+                for (let i = 1; i <= 45; i++) freq[i] = 0;
+                forNext.forEach(p => {
+                    normalizeNumbers(p.numbers).forEach(n => {
+                        if (freq[n] != null) freq[n]++;
+                    });
+                });
+                const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 6);
+                if (sorted.length === 0 || sorted.every(([, c]) => c === 0)) {
+                    const ph = document.createElement('p');
+                    ph.className = 'empty-hint';
+                    ph.textContent = '해당 회차 예측 데이터가 없습니다.';
+                    top6Grid.appendChild(ph);
+                } else {
+                    sorted.forEach(([num, cnt]) => {
+                        const item = document.createElement('div');
+                        item.className = 'top6-item';
+                        const b = document.createElement('span');
+                        b.className = 'rank-ball rank-ball--top';
+                        b.textContent = num;
+                        const c = document.createElement('span');
+                        c.className = 'top6-count';
+                        c.textContent = `${cnt}명`;
+                        item.appendChild(b);
+                        item.appendChild(c);
+                        top6Grid.appendChild(item);
+                    });
+                }
+            }
+
+            const userBest = {};
+            preds.forEach(p => {
+                const wk = p.drawNo != null ? String(p.drawNo) : '';
+                const wnums = winningMap[wk];
+                if (!wk || !wnums || !p.numbers) return;
+                const m = countMatches(p.numbers, wnums);
+                const uid = p.userId || `nick:${p.nickname || p.userName || 'anon'}`;
+                const name = p.nickname || p.userName || '익명';
+                if (!userBest[uid] || m > userBest[uid].maxMatch) {
+                    userBest[uid] = { nickname: name, maxMatch: m, numbers: p.numbers, drawNo: wk };
+                }
+            });
+            const topUsers = Object.values(userBest)
+                .filter(u => u.maxMatch > 0)
+                .sort((a, b) => b.maxMatch - a.maxMatch)
+                .slice(0, 3);
+
+            const topUsersList = document.getElementById('top-users-list');
+            if (topUsersList) {
+                topUsersList.innerHTML = '';
+                if (topUsers.length === 0) {
+                    const ph = document.createElement('p');
+                    ph.className = 'empty-hint';
+                    ph.textContent = '당첨이 확정된 회차의 예측 비교 결과가 없습니다.';
+                    topUsersList.appendChild(ph);
+                } else {
+                    const medals = ['🥇', '🥈', '🥉'];
+                    topUsers.forEach((u, i) => {
+                        const block = document.createElement('div');
+                        block.className = 'top-user-block';
+                        const head = document.createElement('div');
+                        head.className = 'top-user-head';
+                        const med = document.createElement('span');
+                        med.className = 'medal';
+                        med.textContent = medals[i];
+                        const nm = document.createElement('span');
+                        nm.className = 'top-user-name';
+                        nm.textContent = u.nickname;
+                        const mt = document.createElement('span');
+                        mt.className = 'top-user-matches';
+                        mt.textContent = `${u.maxMatch}개 맞춤`;
+                        head.appendChild(med);
+                        head.appendChild(nm);
+                        head.appendChild(mt);
+                        const subRow = document.createElement('div');
+                        subRow.className = 'ball-row';
+                        appendRankBalls(subRow, u.numbers, 'pred');
+                        const cap = document.createElement('div');
+                        cap.className = 'empty-hint';
+                        cap.style.marginTop = '6px';
+                        cap.textContent = `${u.drawNo}회 예측 번호`;
+                        block.appendChild(head);
+                        block.appendChild(subRow);
+                        block.appendChild(cap);
+                        topUsersList.appendChild(block);
+                    });
+                }
+            }
+        } catch (e) {
+            console.error('renderRankingPanels 오류:', e);
+        }
+    }
+
+    function setupRankingRealtime(rtdb) {
+        if (rankingListenersOn) {
+            rtdb.ref('drawRange').off();
+            rtdb.ref('winningNumbers').off();
+            rtdb.ref('currentDraw').off();
+            rtdb.ref('predictions').off();
+        }
+        const refresh = () => renderRankingPanels(rtdb);
+        rtdb.ref('drawRange').on('value', refresh);
+        rtdb.ref('winningNumbers').on('value', refresh);
+        rtdb.ref('currentDraw').on('value', refresh);
+        rtdb.ref('predictions').on('value', refresh);
+        rankingListenersOn = true;
+        refresh();
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        if (!document.getElementById('winning-balls')) return;
+        if (typeof firebase === 'undefined' || !firebase.database) return;
+        const rtdb = firebase.database();
+        setupRankingRealtime(rtdb);
+    });
+})();

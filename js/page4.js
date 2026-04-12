@@ -110,220 +110,6 @@ async function get실제당첨번호() {
     return {};
 }
 
-function normalizeNumbers(arr) {
-    if (!arr || !Array.isArray(arr)) return [];
-    return arr.map(n => parseInt(n, 10)).filter(n => !isNaN(n) && n >= 1 && n <= 45);
-}
-
-function countMatches(predNums, winNums) {
-    const w = new Set(normalizeNumbers(winNums));
-    return normalizeNumbers(predNums).filter(n => w.has(n)).length;
-}
-
-function appendRankBalls(parent, numbers, kind) {
-    if (!parent) return;
-    parent.innerHTML = '';
-    const nums = normalizeNumbers(numbers).slice(0, 6);
-    nums.forEach((n, i) => {
-        const span = document.createElement('span');
-        if (kind === 'win') {
-            span.className = 'rank-ball rank-ball--win';
-        } else {
-            span.className = 'rank-ball rank-ball--' + (i % 2 === 0 ? 'pred' : 'pred-alt');
-        }
-        span.textContent = String(n);
-        parent.appendChild(span);
-    });
-}
-
-async function renderRankingPanels() {
-    const winningBalls = document.getElementById('winning-balls');
-    if (!winningBalls) return;
-
-    try {
-        const [턴정보, winSnap, cdSnap, predSnap] = await Promise.all([
-            get턴정보(),
-            database.ref('winningNumbers').once('value'),
-            database.ref('currentDraw').once('value'),
-            database.ref('predictions').once('value')
-        ]);
-
-        const winningMap = 당첨번호맵정규화(winSnap.val() || {});
-
-        let displayDraw = 턴정보.end;
-        if (cdSnap.exists()) {
-            const cd = cdSnap.val();
-            const d = cd != null && typeof cd === 'object' && cd.drawNumber != null ? cd.drawNumber : cd;
-            if (d != null && d !== '') displayDraw = String(d);
-        }
-
-        const titleEl = document.getElementById('winning-section-title');
-        if (titleEl) titleEl.textContent = `${displayDraw}회차 당첨번호`;
-
-        const winNums = winningMap[displayDraw] || 기본당첨번호[displayDraw] || [];
-        if (normalizeNumbers(winNums).length === 0) {
-            winningBalls.innerHTML = '<p class="empty-hint">등록된 당첨번호가 없습니다.</p>';
-        } else {
-            appendRankBalls(winningBalls, winNums, 'win');
-        }
-
-        const preds = [];
-        if (predSnap.exists()) {
-            predSnap.forEach(child => {
-                preds.push({ id: child.key, ...child.val() });
-            });
-        }
-
-        const myList = document.getElementById('my-history-list');
-        if (myList) {
-            myList.innerHTML = '';
-            const myUid = sessionStorage.getItem('userUid');
-            if (!myUid) {
-                const p = document.createElement('p');
-                p.className = 'empty-hint';
-                p.textContent = '로그인 후 나의 예측 내역이 표시됩니다.';
-                myList.appendChild(p);
-            } else {
-                const mine = preds.filter(p => p.userId === myUid);
-                mine.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                if (mine.length === 0) {
-                    const p = document.createElement('p');
-                    p.className = 'empty-hint';
-                    p.textContent = '저장된 예측이 없습니다.';
-                    myList.appendChild(p);
-                } else {
-                    mine.forEach(p => {
-                        const row = document.createElement('div');
-                        row.className = 'history-row';
-                        const drawLabel = document.createElement('span');
-                        drawLabel.className = 'history-draw';
-                        const dno = p.drawNo != null ? String(p.drawNo) : '—';
-                        drawLabel.textContent = `${dno}회`;
-                        const balls = document.createElement('div');
-                        balls.className = 'ball-row';
-                        appendRankBalls(balls, p.numbers, 'pred');
-                        const status = document.createElement('span');
-                        status.className = 'history-status';
-                        const wk = p.drawNo != null ? String(p.drawNo) : '';
-                        const wnums = winningMap[wk];
-                        if (!wk || !wnums || wnums.length === 0) {
-                            status.classList.add('history-status--wait');
-                            status.textContent = '대기중';
-                        } else {
-                            const m = countMatches(p.numbers, wnums);
-                            status.classList.add('history-status--hit');
-                            status.textContent = `${m}개 일치`;
-                        }
-                        row.appendChild(drawLabel);
-                        row.appendChild(balls);
-                        row.appendChild(status);
-                        myList.appendChild(row);
-                    });
-                }
-            }
-        }
-
-        const nextDraw = String(턴정보.next || '');
-        const sub = document.getElementById('top6-subhint');
-        if (sub) sub.textContent = nextDraw ? `${nextDraw}회차 예측에서 집계` : '회차 정보 없음';
-
-        const top6Grid = document.getElementById('top6-grid');
-        if (top6Grid) {
-            top6Grid.innerHTML = '';
-            const forNext = preds.filter(p => p.drawNo != null && String(p.drawNo) === nextDraw);
-            const freq = {};
-            for (let i = 1; i <= 45; i++) freq[i] = 0;
-            forNext.forEach(p => {
-                normalizeNumbers(p.numbers).forEach(n => {
-                    if (freq[n] != null) freq[n]++;
-                });
-            });
-            const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 6);
-            if (sorted.length === 0 || sorted.every(([, c]) => c === 0)) {
-                const ph = document.createElement('p');
-                ph.className = 'empty-hint';
-                ph.textContent = '해당 회차 예측 데이터가 없습니다.';
-                top6Grid.appendChild(ph);
-            } else {
-                sorted.forEach(([num, cnt]) => {
-                    const item = document.createElement('div');
-                    item.className = 'top6-item';
-                    const b = document.createElement('span');
-                    b.className = 'rank-ball rank-ball--top';
-                    b.textContent = num;
-                    const c = document.createElement('span');
-                    c.className = 'top6-count';
-                    c.textContent = `${cnt}명`;
-                    item.appendChild(b);
-                    item.appendChild(c);
-                    top6Grid.appendChild(item);
-                });
-            }
-        }
-
-        const userBest = {};
-        preds.forEach(p => {
-            const wk = p.drawNo != null ? String(p.drawNo) : '';
-            const wnums = winningMap[wk];
-            if (!wk || !wnums || !p.numbers) return;
-            const m = countMatches(p.numbers, wnums);
-            const uid = p.userId || `nick:${p.nickname || p.userName || 'anon'}`;
-            const name = p.nickname || p.userName || '익명';
-            if (!userBest[uid] || m > userBest[uid].maxMatch) {
-                userBest[uid] = { nickname: name, maxMatch: m, numbers: p.numbers, drawNo: wk };
-            }
-        });
-        const topUsers = Object.values(userBest)
-            .filter(u => u.maxMatch > 0)
-            .sort((a, b) => b.maxMatch - a.maxMatch)
-            .slice(0, 3);
-
-        const topUsersList = document.getElementById('top-users-list');
-        if (topUsersList) {
-            topUsersList.innerHTML = '';
-            if (topUsers.length === 0) {
-                const ph = document.createElement('p');
-                ph.className = 'empty-hint';
-                ph.textContent = '당첨이 확정된 회차의 예측 비교 결과가 없습니다.';
-                topUsersList.appendChild(ph);
-            } else {
-                const medals = ['🥇', '🥈', '🥉'];
-                topUsers.forEach((u, i) => {
-                    const block = document.createElement('div');
-                    block.className = 'top-user-block';
-                    const head = document.createElement('div');
-                    head.className = 'top-user-head';
-                    const med = document.createElement('span');
-                    med.className = 'medal';
-                    med.textContent = medals[i];
-                    const nm = document.createElement('span');
-                    nm.className = 'top-user-name';
-                    nm.textContent = u.nickname;
-                    const mt = document.createElement('span');
-                    mt.className = 'top-user-matches';
-                    mt.textContent = `${u.maxMatch}개 맞춤`;
-                    head.appendChild(med);
-                    head.appendChild(nm);
-                    head.appendChild(mt);
-                    const subRow = document.createElement('div');
-                    subRow.className = 'ball-row';
-                    appendRankBalls(subRow, u.numbers, 'pred');
-                    const cap = document.createElement('div');
-                    cap.className = 'empty-hint';
-                    cap.style.marginTop = '6px';
-                    cap.textContent = `${u.drawNo}회 예측 번호`;
-                    block.appendChild(head);
-                    block.appendChild(subRow);
-                    block.appendChild(cap);
-                    topUsersList.appendChild(block);
-                });
-            }
-        }
-    } catch (e) {
-        console.error('renderRankingPanels 오류:', e);
-    }
-}
-
 async function 업데이트턴표시() {
     const 턴정보 = await get턴정보();
     console.log('현재 턴 정보:', 턴정보); // 디버깅용 로그 추가
@@ -367,15 +153,12 @@ function setupRealtimeListeners() {
     if (listenersInitialized) {
         database.ref('drawRange').off();
         database.ref('winningNumbers').off();
-        database.ref('currentDraw').off();
-        database.ref('predictions').off();
     }
 
     database.ref('drawRange').on('value', snapshot => {
         if (snapshot.exists()) {
             console.log('회차 범위 업데이트:', snapshot.val());
             업데이트턴표시();
-            renderRankingPanels();
         }
     });
 
@@ -383,20 +166,10 @@ function setupRealtimeListeners() {
         if (snapshot.exists()) {
             console.log('당첨번호 업데이트 감지');
             초기화();
-            renderRankingPanels();
         }
     });
 
-    database.ref('currentDraw').on('value', () => {
-        renderRankingPanels();
-    });
-
-    database.ref('predictions').on('value', () => {
-        renderRankingPanels();
-    });
-
     listenersInitialized = true;
-    renderRankingPanels();
 }
 
 // 초기화 함수

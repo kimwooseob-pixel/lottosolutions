@@ -215,9 +215,188 @@
             text-align: center;
             display: none;
         }
+
+        /* 랭킹 대시보드 (page4와 동일) */
+        .ranking-dashboard {
+            max-width: 560px;
+            margin: 0 auto 20px;
+        }
+
+        .rank-card {
+            background: #1e2d4a;
+            border-radius: 14px;
+            padding: 18px 16px;
+            margin-bottom: 14px;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(0, 188, 212, 0.12);
+        }
+
+        .rank-section-title {
+            margin: 0 0 14px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #00bcd4;
+            letter-spacing: -0.02em;
+        }
+
+        .ranking-dashboard .ball-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .rank-ball {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: #fff;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+        }
+
+        .rank-ball--win {
+            background: linear-gradient(145deg, #ef5350, #c62828);
+        }
+
+        .rank-ball--pred {
+            background: linear-gradient(145deg, #26c6da, #00838f);
+        }
+
+        .rank-ball--pred-alt {
+            background: linear-gradient(145deg, #4fc3f7, #0277bd);
+        }
+
+        .rank-ball--top {
+            background: linear-gradient(145deg, #ffb74d, #f9a825);
+            color: #1a2035;
+        }
+
+        .top6-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            gap: 12px 8px;
+        }
+
+        .top6-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            min-width: 52px;
+        }
+
+        .top6-count {
+            font-size: 0.78rem;
+            color: #90a4ae;
+        }
+
+        .history-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .history-row:last-child {
+            border-bottom: none;
+        }
+
+        .history-draw {
+            min-width: 52px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #b0bec5;
+        }
+
+        .history-status {
+            margin-left: auto;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #80deea;
+        }
+
+        .history-status--wait {
+            color: #78909c;
+        }
+
+        .history-status--hit {
+            color: #ffab40;
+        }
+
+        .top-user-block {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .top-user-block:last-child {
+            border-bottom: none;
+        }
+
+        .top-user-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .ranking-dashboard .medal {
+            font-size: 1.45rem;
+            line-height: 1;
+        }
+
+        .top-user-name {
+            font-weight: 700;
+            color: #eceff1;
+            flex: 1;
+        }
+
+        .top-user-matches {
+            font-size: 0.88rem;
+            color: #00bcd4;
+            font-weight: 700;
+        }
+
+        .ranking-dashboard .empty-hint {
+            font-size: 0.88rem;
+            color: #78909c;
+            margin: 0;
+            line-height: 1.5;
+        }
     </style>
 </head>
 <body>
+    <div class="ranking-dashboard">
+        <section class="rank-card" id="section-winning">
+            <h2 class="rank-section-title" id="winning-section-title">당첨번호</h2>
+            <div class="ball-row" id="winning-balls"></div>
+        </section>
+
+        <section class="rank-card" id="section-my-history">
+            <h2 class="rank-section-title">나의 예측 히스토리</h2>
+            <div id="my-history-list"></div>
+        </section>
+
+        <section class="rank-card" id="section-top6">
+            <h2 class="rank-section-title">많이 예측된 번호 TOP 6</h2>
+            <p class="empty-hint" id="top6-subhint" style="margin-bottom:10px;"></p>
+            <div class="top6-grid" id="top6-grid"></div>
+        </section>
+
+        <section class="rank-card" id="section-top-users">
+            <h2 class="rank-section-title">많이 맞춘 유저 TOP 3</h2>
+            <div id="top-users-list"></div>
+        </section>
+    </div>
+
     <h1>로또 예상번호 순위표<div class="admin-dot"></div></h1>
 
     <!-- 관리자 모달 -->
@@ -554,5 +733,6 @@
             loadPredictions();
         });
     </script>
+    <script src="../js/page5.js"></script>
 </body>
 </html>
