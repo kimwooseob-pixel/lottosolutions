@@ -2918,19 +2918,45 @@ function saveBaseState() {
 // 기본 상태 불러오기 함수
 function loadBaseState() {
     const savedState = localStorage.getItem('gameBaseState');
+    const isPage2 = typeof window !== 'undefined' && window.location.href.indexOf('page2.html') !== -1;
     if (savedState) {
         const state = JSON.parse(savedState);
         현재턴 = state.현재턴 || 1;
-        힌트1활성화 = state.힌트1활성화 || false;
-        힌트2활성화 = state.힌트2활성화 || false;
-        힌트3활성화 = state.힌트3활성화 || false;
+        if (isPage2) {
+            // page2: 저장된 힌트 상태는 복원하지 않고 항상 전부 끔으로 시작
+            힌트1활성화 = false;
+            힌트2활성화 = false;
+            힌트3활성화 = false;
+            힌트4활성화 = false;
+            힌트5활성화 = false;
+            힌트6활성화 = false;
+        } else {
+            힌트1활성화 = state.힌트1활성화 || false;
+            힌트2활성화 = state.힌트2활성화 || false;
+            힌트3활성화 = state.힌트3활성화 || false;
+        }
         currentConnectionType = state.currentConnectionType || null;
+    } else if (isPage2) {
+        힌트1활성화 = false;
+        힌트2활성화 = false;
+        힌트3활성화 = false;
+        힌트4활성화 = false;
+        힌트5활성화 = false;
+        힌트6활성화 = false;
     }
 }
 
 // 초기화 시 상태 불러오기
 document.addEventListener('DOMContentLoaded', function() {
     loadBaseState();
+    if (typeof window !== 'undefined' && window.location.href.indexOf('page2.html') !== -1) {
+        if (typeof clearConnections === 'function') clearConnections();
+        if (typeof clearScoreDisplay === 'function') clearScoreDisplay();
+        if (typeof clearMovingDots === 'function') clearMovingDots();
+        document.querySelectorAll('.angle-connection, .gradient-circle').forEach(function (n) {
+            n.remove();
+        });
+    }
     격자초기화();
 });
 

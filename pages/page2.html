@@ -1952,25 +1952,6 @@
                 gallery.addEventListener('mouseenter', stopSlideShow);
                 gallery.addEventListener('mouseleave', startSlideShow);
             }
-            
-            // 페이지 로드 시 힌트5 버튼 자동 활성화
-            setTimeout(function() {
-                // 힌트5 버튼 찾아서 클릭
-                const 힌트5버튼 = document.querySelectorAll('.hint-button')[4]; // 5번째 버튼(0부터 시작하므로 인덱스 4)
-                if (힌트5버튼) {
-                    // 버튼에 활성화 스타일 추가
-                    document.querySelectorAll('.hint-button').forEach(btn => {
-                        btn.classList.remove('active-hint');
-                    });
-                    힌트5버튼.classList.add('active-hint');
-                    
-                    // 힌트5 함수 호출
-                    힌트5();
-                    
-                    // 설명 팝업 표시
-                    setTimeout(showHint5Explanation, 500);
-                }
-            }, 800);
         });
     </script>
     
@@ -2034,6 +2015,7 @@
             closeButton.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
             
             closeButton.addEventListener('click', function() {
+                overlay.remove();
                 popup.remove();
             });
             
@@ -2065,6 +2047,9 @@
             document.body.appendChild(overlay);
             document.body.appendChild(popup);
         }
+
+        /* 수동으로 힌트5 설명 팝업만 열 때 사용 (예: 콘솔에서 showHint5Explanation()) */
+        window.showHint5Explanation = showHint5Explanation;
         
         // 힌트 버튼에 활성화 스타일 추가
         document.addEventListener('DOMContentLoaded', function() {
