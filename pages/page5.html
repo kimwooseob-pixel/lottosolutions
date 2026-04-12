@@ -389,58 +389,11 @@
         }
 
         const database = firebase.database();
-        
-        // 현재 로그인한 사용자 정보 가져오기
-        const loggedInUser = sessionStorage.getItem('loggedInUser');
-        const userUid = sessionStorage.getItem('userUid');
-
-        // 로그인하지 않아도 페이지 열람 가능, 단 저장 기능은 로그인 필요
 
         /** 관리자가 입력 중인 당첨 회차 (drawRange.end + 1, Firebase에서 계산) */
         let adminDrawToSave = null;
 
-        // 예측번호 저장
-        document.getElementById('savePrediction').addEventListener('click', function() {
-            if (!userUid) {
-                alert('로그인이 필요합니다.');
-                return;
-            }
-
-            database.ref('drawRange').once('value').then(function(rangeSnap) {
-                const r = rangeSnap.val() || {};
-                const drawNo = r.next != null ? String(r.next) : '';
-
-                const predictionRef = database.ref('predictions').push();
-                const prediction = {
-                    userId: userUid,
-                    numbers: generateRandomNumbers(), // 실제로는 페이지4에서 가져온 번호 사용
-                    timestamp: Date.now(),
-                    nickname: loggedInUser,
-                    drawNo: drawNo
-                };
-
-                return predictionRef.set(prediction);
-            })
-                .then(() => {
-                    alert('예측번호가 저장되었습니다.');
-                })
-                .catch(error => {
-                    console.error('예측번호 저장 실패:', error);
-                    alert('예측번호 저장에 실패했습니다.');
-                });
-        });
-
-        // 임시로 랜덤 번호 생성 (실제로는 페이지4의 예측 번호 사용)
-        function generateRandomNumbers() {
-            const numbers = [];
-            while (numbers.length < 6) {
-                const num = Math.floor(Math.random() * 45) + 1;
-                if (!numbers.includes(num)) {
-                    numbers.push(num);
-                }
-            }
-            return numbers.sort((a, b) => a - b);
-        }
+        // 예측번호 저장: ../js/page5.js 의 setupSavePredictionButton(rtdb)에서 처리
 
         // 관리자 모달 관련 코드
         document.querySelector('.admin-dot').addEventListener('click', function() {

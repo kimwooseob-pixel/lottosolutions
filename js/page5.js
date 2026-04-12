@@ -1025,10 +1025,100 @@ async function updateDrawLabel() {
         refresh();
     }
 
+    function findLatestPredictionStorageKey() {
+        let bestKey = null;
+        let bestTs = -1;
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (!k || !k.startsWith('prediction_')) continue;
+            const ts = parseInt(k.slice('prediction_'.length), 10);
+            if (!Number.isFinite(ts) || ts <= bestTs) continue;
+            bestTs = ts;
+            bestKey = k;
+        }
+        return bestKey;
+    }
+
+    function readValidNumbersFromPredictionKey(key) {
+        if (!key) return null;
+        try {
+            const raw = localStorage.getItem(key);
+            if (!raw) return null;
+            const data = JSON.parse(raw);
+            const nums = data.numbers;
+            if (!Array.isArray(nums) || nums.length !== 6) return null;
+            const parsed = nums.map(n => parseInt(n, 10)).filter(n => !isNaN(n) && n >= 1 && n <= 45);
+            if (parsed.length !== 6) return null;
+            if (new Set(parsed).size !== 6) return null;
+            return parsed.slice().sort((a, b) => a - b);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function generateRandomNumbersForPrediction() {
+        const numbers = [];
+        while (numbers.length < 6) {
+            const num = Math.floor(Math.random() * 45) + 1;
+            if (!numbers.includes(num)) numbers.push(num);
+        }
+        return numbers.sort((a, b) => a - b);
+    }
+
+    function setupSavePredictionButton(rtdb) {
+        const btn = document.getElementById('savePrediction');
+        if (!btn) return;
+        btn.addEventListener('click', function () {
+            const userUid = sessionStorage.getItem('userUid');
+            if (!userUid) {
+                alert('로그인이 필요합니다.');
+                return;
+            }
+            const loggedInUser = sessionStorage.getItem('loggedInUser');
+
+            const page4Key = findLatestPredictionStorageKey();
+            const fromPage4 = readValidNumbersFromPredictionKey(page4Key);
+            const numbers = fromPage4 ? fromPage4.slice() : generateRandomNumbersForPrediction();
+            const usedPage4 = !!fromPage4;
+
+            const listStr = '[' + numbers.join(', ') + ']';
+            if (!confirm('선택하신 번호 ' + listStr + '를 저장하시겠습니까?')) {
+                return;
+            }
+
+            rtdb
+                .ref('drawRange')
+                .once('value')
+                .then(function (rangeSnap) {
+                    const r = rangeSnap.val() || {};
+                    const drawNo = r.next != null ? String(r.next) : '';
+                    const predictionRef = rtdb.ref('predictions').push();
+                    const prediction = {
+                        userId: userUid,
+                        numbers: numbers,
+                        timestamp: Date.now(),
+                        nickname: loggedInUser,
+                        drawNo: drawNo
+                    };
+                    return predictionRef.set(prediction).then(function () {
+                        if (usedPage4 && page4Key) {
+                            localStorage.removeItem(page4Key);
+                        }
+                        alert('저장되었습니다!');
+                    });
+                })
+                .catch(function (error) {
+                    console.error('예측번호 저장 실패:', error);
+                    alert('예측번호 저장에 실패했습니다.');
+                });
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         if (!document.getElementById('winning-balls')) return;
         if (typeof firebase === 'undefined' || !firebase.database) return;
         const rtdb = firebase.database();
         setupRankingRealtime(rtdb);
+        setupSavePredictionButton(rtdb);
     });
 })();
