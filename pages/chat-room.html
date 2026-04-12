@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>실시간 이슈 채팅방 - Lotto Solutions</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --primary-dark: #1976D2;
+            --secondary-color: #FF4081;
+            --secondary-dark: #E91E63;
+            --green-color: #4CAF50;
+            --green-dark: #388E3C;
+            --purple-color: #9C27B0;
+            --purple-dark: #7B1FA2;
+            --orange-color: #FF9800;
+            --orange-dark: #F57C00;
+            --text-color: #ffffff;
+            --text-secondary: #b0bec5;
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --card-hover: #2c2c2c;
+            --chat-bg: #262626;
+            --chat-self: #0d47a1;
+            --chat-other: #303f9f;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background-color: var(--card-bg);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .back-btn {
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #546e7a, #37474f);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .back-btn:hover {
+            background: linear-gradient(135deg, #455a64, #263238);
+            transform: translateY(-2px);
+        }
+        
+        .page-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            text-align: center;
+            flex-grow: 1;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 16px;
+        }
+        
+        .chat-area {
+            flex: 1;
+            background-color: var(--chat-bg);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            overflow-y: auto;
+            max-height: calc(100vh - 200px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .message {
+            margin-bottom: 12px;
+            padding: 10px 14px;
+            border-radius: 18px;
+            max-width: 75%;
+            word-break: break-word;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message.self {
+            background-color: var(--chat-self);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message.other {
+            background-color: var(--chat-other);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        
+        .username {
+            font-weight: 700;
+            margin-right: 8px;
+            font-size: 0.9rem;
+            color: #ffeb3b;
+        }
+        
+        .timestamp {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+        
+        .message-content {
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+        
+        .chat-input-area {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 24px;
+            border: none;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        
+        .chat-input:focus {
+            box-shadow: 0 0 0 2px var(--primary-dark);
+        }
+        
+        .send-btn {
+            padding: 8px 20px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 24px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .send-btn:hover {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+            transform: translateY(-2px);
+        }
+        
+        .welcome-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        
+        .welcome-card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .welcome-title {
+            font-size: 1.4rem;
+            margin-bottom: 16px;
+            text-align: center;
+            font-weight: 700;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .welcome-input {
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            border: none;
+            background-color: var(--chat-bg);
+            color: var(--text-color);
+            font-size: 1rem;
+            outline: none;
+        }
+        
+        .welcome-input:focus {
+            box-shadow: 0 0 0 2px var(--primary-dark);
+        }
+        
+        .welcome-button {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .welcome-button:hover {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+            transform: translateY(-2px);
+        }
+        
+        .info-text {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            text-align: center;
+            margin-top: 8px;
+        }
+        
+        .online-users-box {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .online-users-title {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .online-users-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .online-user {
+            background-color: var(--chat-bg);
+            border-radius: 16px;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .online-user:hover {
+            background-color: var(--card-hover);
+            transform: translateY(-2px);
+        }
+        
+        .online-user.selected {
+            background-color: var(--secondary-color);
+        }
+        
+        .online-indicator {
+            width: 8px;
+            height: 8px;
+            background-color: var(--green-color);
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        
+        .timer-container {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .timer-label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        
+        .timer-value {
+            background: linear-gradient(45deg, var(--secondary-color), var(--secondary-dark));
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .matching-info {
+            background-color: rgba(255, 152, 0, 0.15);
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 14px;
+            font-size: 0.9rem;
+            display: none;
+        }
+        
+        .matching-info.active {
+            display: block;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { background-color: rgba(255, 152, 0, 0.15); }
+            50% { background-color: rgba(255, 152, 0, 0.3); }
+            100% { background-color: rgba(255, 152, 0, 0.15); }
+        }
+        
+        .matching-status {
+            color: var(--orange-color);
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        
+        .matching-user {
+            color: #ffeb3b;
+            font-weight: 600;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(3px);
+        }
+        
+        .modal-content {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+        }
+        
+        .modal-title {
+            font-size: 1.4rem;
+            margin-bottom: 16px;
+            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+        
+        .modal-message {
+            color: var(--text-color);
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        
+        .modal-button {
+            padding: 10px 24px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-button-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+        }
+        
+        .modal-button-secondary {
+            background: transparent;
+            color: var(--text-color);
+            border: 1px solid var(--text-secondary);
+        }
+        
+        @media (max-width: 768px) {
+            .message {
+                max-width: 85%;
+            }
+            
+            .chat-area {
+                max-height: calc(100vh - 180px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html" class="back-btn">← 뒤로가기</a>
+        <h1 class="page-title">실시간 이슈 채팅방</h1>
+    </div>
+    
+    <div class="chat-container">
+        <div class="timer-container">
+            <div class="timer-label">다음 채팅방 이동까지:</div>
+            <div class="timer-value" id="resetTimer">03:59:59</div>
+        </div>
+        
+        <div class="matching-info" id="matchingInfo">
+            <div class="matching-status">1:1 매칭 모드 활성화</div>
+            <div>대화하고 싶은 상대방을 선택하세요. 서로 선택하면 1:1 채팅방으로 이동합니다.</div>
+            <div id="matchingSelection"></div>
+        </div>
+        
+        <div class="online-users-box">
+            <div class="online-users-title">접속자 현황 (클릭하여 1:1 대화 상대 선택)</div>
+            <div class="online-users-list" id="onlineUsersList">
+                <!-- 온라인 유저 목록 동적 생성 -->
+            </div>
+        </div>
+        
+        <div class="chat-area" id="chatArea">
+            <!-- 채팅 메시지 동적 생성 -->
+        </div>
+        
+        <div class="chat-input-area">
+            <input type="text" class="chat-input" id="messageInput" placeholder="메시지를 입력하세요..." autocomplete="off">
+            <button class="send-btn" id="sendBtn">전송</button>
+        </div>
+    </div>
+    
+    <div class="welcome-overlay" id="nicknameModal">
+        <div class="welcome-card">
+            <h2 class="welcome-title">채팅방에 오신 것을 환영합니다!</h2>
+            <input type="text" class="welcome-input" id="nicknameInput" placeholder="사용할 닉네임을 입력하세요" maxlength="20">
+            <button class="welcome-button" id="startChatBtn">채팅 시작하기</button>
+            <p class="info-text">* 닉네임은 최대 20자까지 입력 가능합니다.</p>
+        </div>
+    </div>
+    
+    <!-- 매칭 결과 모달 -->
+    <div class="modal-overlay" id="matchResultModal">
+        <div class="modal-content">
+            <h2 class="modal-title" id="matchModalTitle">매칭 성공!</h2>
+            <p class="modal-message" id="matchModalMessage">
+                상대방과 매칭되었습니다. 1:1 채팅방으로 이동하시겠습니까?
+            </p>
+            <div class="modal-buttons">
+                <button class="modal-button modal-button-primary" id="goToPrivateChatBtn">이동하기</button>
+                <button class="modal-button modal-button-secondary" id="stayInChatBtn">여기 남기</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase 초기화
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwh55rLOQkY8ZVCzaC4ZF3iaUVU5Vu0GM",
+            authDomain: "ai-lottosolutions.firebaseapp.com",
+            databaseURL: "https://ai-lottosolutions-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ai-lottosolutions",
+            storageBucket: "ai-lottosolutions.appspot.com",
+            messagingSenderId: "616782090306",
+            appId: "1:616782090306:web:688c710998dfce8e4d5ddb"
+        };
+
+        // Firebase 초기화
+        firebase.initializeApp(firebaseConfig);
+        
+        // Realtime Database 참조
+        const database = firebase.database();
+        const chatRef = database.ref('chats');
+        
+        // 전역 변수
+        let nickname = '';
+        let isInitialized = false;
+
+        // DOM 요소
+        const nicknameModal = document.getElementById('nicknameModal');
+        const nicknameInput = document.getElementById('nicknameInput');
+        const startChatBtn = document.getElementById('startChatBtn');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const chatArea = document.getElementById('chatArea');
+
+        // 닉네임 설정
+        function setNickname() {
+            const inputNickname = nicknameInput.value.trim();
+            
+            if (inputNickname && inputNickname.length <= 20) {
+                nickname = inputNickname;
+                nicknameModal.style.display = 'none';
+                
+                // 입장 메시지
+                chatRef.push({
+                    type: 'system',
+                    message: `${nickname}님이 입장하셨습니다.`,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+
+                // 사용자 상태 업데이트
+                const userStatusRef = database.ref('users/' + nickname);
+                userStatusRef.set({
+                    online: true,
+                    lastActive: firebase.database.ServerValue.TIMESTAMP
+                });
+
+                // 연결 해제 시 처리
+                userStatusRef.onDisconnect().update({
+                    online: false,
+                    lastActive: firebase.database.ServerValue.TIMESTAMP
+                });
+
+                isInitialized = true;
+            } else {
+                alert('닉네임을 1-20자 사이로 입력해주세요.');
+            }
+        }
+
+        // 메시지 전송
+        function sendMessage() {
+            if (!isInitialized) {
+                alert('닉네임을 먼저 설정해주세요.');
+                return;
+            }
+
+            const message = messageInput.value.trim();
+            
+            if (message) {
+                chatRef.push({
+                    type: 'message',
+                    nickname: nickname,
+                    message: message,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                }).then(() => {
+                    messageInput.value = '';
+                }).catch((error) => {
+                    console.error('메시지 전송 오류:', error);
+                    alert('메시지 전송에 실패했습니다. 다시 시도해주세요.');
+                });
+            }
+        }
+
+        // 메시지 표시
+        function displayMessage(data) {
+            const messageDiv = document.createElement('div');
+            const timestamp = new Date(data.timestamp);
+            const timeString = `${timestamp.getHours().toString().padStart(2, '0')}:${timestamp.getMinutes().toString().padStart(2, '0')}`;
+            
+            if (data.type === 'system') {
+                messageDiv.className = 'message system';
+                messageDiv.innerHTML = `
+                    <div class="message-content">
+                        <span class="system-message">${data.message}</span>
+                        <span class="timestamp">${timeString}</span>
+                    </div>
+                `;
+            } else {
+                const isSelf = data.nickname === nickname;
+                messageDiv.className = `message ${isSelf ? 'self' : 'other'}`;
+                messageDiv.innerHTML = `
+                    <div class="message-header">
+                        <span class="username">${data.nickname}</span>
+                        <span class="timestamp">${timeString}</span>
+                    </div>
+                    <div class="message-content">${data.message}</div>
+                `;
+            }
+            
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        // 실시간 메시지 수신
+        chatRef.on('child_added', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                displayMessage(data);
+            }
+        });
+
+        // 이벤트 리스너
+        document.addEventListener('DOMContentLoaded', () => {
+            // 닉네임 입력 이벤트
+            nicknameInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    setNickname();
+                }
+            });
+
+            startChatBtn.addEventListener('click', setNickname);
+
+            // 메시지 전송 이벤트
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            sendBtn.addEventListener('click', sendMessage);
+
+            // 페이지 언로드 시 처리
+            window.addEventListener('beforeunload', () => {
+                if (nickname) {
+                    chatRef.push({
+                        type: 'system',
+                        message: `${nickname}님이 퇴장하셨습니다.`,
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+            });
+        });
+
+        // 타이머 업데이트
+        function updateTimer() {
+            const timerElement = document.getElementById('resetTimer');
+            let timeLeft = 4 * 60 * 60; // 4시간
+
+            function formatTime(seconds) {
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const secs = seconds % 60;
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            }
+
+            const timer = setInterval(() => {
+                timeLeft--;
+                if (timeLeft >= 0) {
+                    timerElement.textContent = formatTime(timeLeft);
+                } else {
+                    clearInterval(timer);
+                    location.reload();
+                }
+            }, 1000);
+        }
+
+        updateTimer();
+    </script>
+</body>
+</html> 

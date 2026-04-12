@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로또 벽돌깨기 게임</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .game-wrapper {
+            background: #2c3e50;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            color: white;
+            font-size: 18px;
+        }
+
+        .game-container {
+            width: 720px;
+            height: 520px;
+            background: #1a1a1a;
+            position: relative;
+            border-radius: 10px;
+            overflow: visible;
+            margin-bottom: 20px;
+            padding: 0;
+            box-sizing: border-box;
+            margin-left: 50px;
+        }
+
+        .round-display {
+            display: none;
+        }
+
+        .number-header {
+            display: none;
+        }
+
+        .round-header {
+            position: absolute;
+            left: -50px;
+            top: 20px;  /* 상단 여백 조정 */
+            height: 300px;
+            width: 45px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 0;
+            z-index: 100;
+            gap: 0;
+            pointer-events: none;
+        }
+
+        .round-number {
+            height: 20px;
+            font-size: 12px;
+            color: white;
+            text-align: right;
+            padding-right: 5px;
+            line-height: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+            margin: 1px 0;
+            font-weight: bold;
+        }
+
+        .game-area {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #1a1a1a;
+        }
+
+        .play-area {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 200px;
+            background: #1a1a1a;
+            border-top: none;
+        }
+
+        #brickContainer {
+            position: relative;
+            width: 100%;
+            height: 320px;
+            padding: 0;
+            box-sizing: border-box;
+            display: grid;
+            grid-template-columns: repeat(45, 1fr);
+            grid-template-rows: repeat(15, 1fr);
+            gap: 1px;
+            background: #1a1a1a;
+            margin-top: 0;
+            border-bottom: none;
+        }
+
+        .brick {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            border: none;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            color: white;
+            background-color: #666666;
+            transition: background-color 0.3s;
+            cursor: default;
+            user-select: none;
+            margin: 0;
+            padding: 0;
+            outline: 1px solid #333;
+        }
+
+        .header-brick {
+            background-color: #3498db !important;
+            color: white;
+            font-weight: bold;
+        }
+
+        #ball {
+            width: 8px;
+            height: 8px;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            left: 50%;
+            bottom: 30px;
+            transform: translate(-50%, 0);
+            z-index: 10;
+        }
+
+        #paddle {
+            width: 80px;
+            height: 10px;
+            background-color: #4CAF50;
+            position: absolute;
+            left: 50%;
+            bottom: 15px;
+            transform: translateX(-50%);
+            border-radius: 5px;
+            z-index: 10;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #3498db;
+            color: white;
+            transition: background 0.3s;
+        }
+
+        button:hover:not(:disabled) {
+            background: #2980b9;
+        }
+
+        button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        .number-grid {
+            display: grid;
+            grid-template-columns: repeat(45, 1fr);
+            gap: 1px;
+            margin-bottom: 10px;
+            padding: 5px;
+            background: #34495e;
+            border-radius: 5px;
+        }
+
+        .number-cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            color: white;
+            background: #2c3e50;
+        }
+
+        .winning-info {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .draw-round {
+            font-size: 18px;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .winning-numbers {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .winning-ball {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: #34495e;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            color: #ecf0f1;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #bdc3c7;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #f39c12;
+        }
+
+        .prediction-section {
+            background: #34495e;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .prediction-title {
+            color: #f39c12;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .predicted-numbers {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .lotto-ball {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .popup-content {
+            background: #2c3e50;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            color: #ecf0f1;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .popup-title {
+            font-size: 24px;
+            color: #f39c12;
+            margin-bottom: 20px;
+        }
+
+        .popup-score {
+            font-size: 32px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 20px 0;
+        }
+
+        .popup-numbers {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .close-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+
+        .close-btn:hover {
+            background: #c0392b;
+        }
+
+        @media (max-width: 768px) {
+            .game-wrapper {
+                margin: 10px;
+                padding: 15px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .stat-item {
+                display: flex;
+                justify-content: space-between;
+                width: 100%;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            button {
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-wrapper">
+        <div class="header">
+            <div class="score">점수: <span id="score">0</span></div>
+            <div class="lives">남은 공: <span id="lives">3</span></div>
+            <div class="level">단계: <span id="level">1</span></div>
+        </div>
+        
+        <div id="numberGrid" class="number-grid">
+            <!-- 번호 그리드는 JavaScript로 생성됩니다 -->
+        </div>
+        
+        <div class="game-container">
+            <div class="round-display">1회차</div>
+            <div class="number-header">
+                <span>번호</span>
+            </div>
+            <div class="round-header">
+                <span>회차</span>
+            </div>
+            <div id="brickContainer">
+                <!-- 벽돌들은 JavaScript로 생성됩니다 -->
+            </div>
+            <div class="play-area">
+                <div id="ball"></div>
+                <div id="paddle"></div>
+                <div id="bottomWall" style="display: none; position: absolute; bottom: 0; left: 0; width: 100%; height: 20px; background-color: #3498db;"></div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="startButton">시작</button>
+            <button id="pauseButton" disabled>일시정지</button>
+            <button id="resetButton">다시시작</button>
+            <button id="godModeButton">무적모드</button>
+            <div id="gameStatus" style="color: white; margin-top: 10px; height: 20px;"></div>
+        </div>
+    </div>
+    
+    <script src="../js/brick-game.js"></script>
+</body>
+</html>

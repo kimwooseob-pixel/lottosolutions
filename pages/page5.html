@@ -4,20 +4,106 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>로또 예상번호 순위표</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
     <style>
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'Pretendard', sans-serif;
+            background-color: #1a1f2e;
+            color: #ffffff;
             margin: 0;
             padding: 20px;
-            background-color: #1a1f2e;
-            color: white;
         }
 
         h1 {
-            text-align: left;
-            color: white;
+            color: #ffffff;
+            text-align: center;
             margin-bottom: 30px;
-            position: relative;
+        }
+
+        .lotto-section {
+            background-color: #252b3d;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .lotto-title {
+            color: #4a9eff;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .number-display {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .lotto-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #e74c3c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .prediction-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-top: 10px;
+        }
+
+        .prediction-button:hover {
+            background-color: #2980b9;
+        }
+
+        .trophy-section {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        .trophy {
+            width: 100px;
+            height: auto;
+        }
+
+        .history-section {
+            background-color: #252b3d;
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .history-title {
+            color: #4a9eff;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .history-content {
+            color: #b0bec5;
+        }
+
+        .no-history {
+            text-align: center;
+            color: #b0bec5;
+            padding: 20px;
         }
 
         .admin-dot {
@@ -31,184 +117,19 @@
             cursor: pointer;
         }
 
-        .user-id-input {
-            padding: 8px 15px;
-            border: 2px solid #e74c3c;
-            border-radius: 5px;
-            background-color: #1a1f2e;
-            color: white;
-            font-size: 16px;
-            width: 150px;
-            margin-right: 10px;
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 999;
         }
 
-        .confirm-button {
-            padding: 8px 15px;
-            background-color: #e74c3c;
-            border: none;
-            border-radius: 5px;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-            margin-right: 20px;
-        }
-
-        .confirm-button:hover {
-            background-color: #c0392b;
-        }
-
-        .user-id-input:focus {
-            outline: none;
-            border-color: #c0392b;
-            box-shadow: 0 0 5px rgba(231, 76, 60, 0.5);
-        }
-
-        .prediction-container {
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .prediction-numbers {
-            display: flex;
-            gap: 10px;
-            margin-left: 20px;
-        }
-
-        .number-ball {
-            width: 40px;
-            height: 40px;
-            background-color: #e74c3c;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: white;
-            font-size: 18px;
-        }
-
-        .timestamp {
-            color: #7f8c8d;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-
-        .comparison-title {
-            color: #3498db;
-            font-size: 20px;
-            margin-top: 30px;
-            margin-bottom: 15px;
-        }
-
-        .previous-predictions {
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-
-        .prediction-item {
-            display: flex;
-            align-items: center;
-            padding: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .prediction-info {
-            flex: 1;
-        }
-
-        .user-name {
-            font-weight: bold;
-            color: #3498db;
-            margin-bottom: 5px;
-        }
-
-        .match-count {
-            color: #2ecc71;
-            font-weight: bold;
-            margin-left: 10px;
-        }
-
-        .winning-number {
-            background-color: #2ecc71 !important;
-        }
-
-        .last-week-numbers {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-            padding: 15px;
-            background-color: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-        }
-
-        .section-title {
-            color: #3498db;
-            font-size: 18px;
-            margin-bottom: 10px;
-        }
-
-        .prediction-section {
-            margin-bottom: 30px;
-        }
-
-        .section-header {
-            color: #3498db;
-            font-size: 18px;
-            margin-bottom: 15px;
-        }
-
-        .prediction-row {
-            display: flex;
-            align-items: center;
-            padding: 15px;
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            margin-bottom: 10px;
-        }
-
-        .user-name {
-            color: #3498db;
-            font-weight: bold;
-            margin-right: 20px;
-            min-width: 100px;
-        }
-
-        @media (max-width: 768px) {
-            .prediction-container {
-                padding: 15px;
-            }
-
-            .user-info {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-
-            .prediction-numbers {
-                margin-left: 0;
-                margin-top: 10px;
-            }
-
-            .number-ball {
-                width: 35px;
-                height: 35px;
-                font-size: 16px;
-            }
-
-            .prediction-item {
-                flex-direction: column;
-                align-items: flex-start;
-            }
+        .popup-overlay.show {
+            display: block;
         }
 
         .admin-popup {
@@ -229,21 +150,6 @@
             display: block;
         }
 
-        .popup-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 999;
-        }
-
-        .popup-overlay.show {
-            display: block;
-        }
-
         .admin-popup input[type="password"] {
             width: 100%;
             padding: 10px;
@@ -252,6 +158,7 @@
             border-radius: 5px;
             background-color: #1a1f2e;
             color: white;
+            box-sizing: border-box;
         }
 
         .admin-popup .number-input-container {
@@ -259,20 +166,31 @@
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             margin-top: 15px;
+            justify-items: center;
         }
 
         .admin-popup .number-input-container.show {
             display: grid;
         }
 
-        .admin-popup input[type="number"] {
-            width: 100%;
+        .admin-popup .number-input-container input[type="number"] {
+            width: 60px;
             padding: 10px;
             border: 2px solid #3498db;
             border-radius: 5px;
             background-color: #1a1f2e;
             color: white;
             text-align: center;
+            font-size: 1.1em;
+        }
+
+        .admin-popup .draw-label {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: #90caf9;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+            font-weight: bold;
         }
 
         .admin-popup button {
@@ -301,48 +219,8 @@
 </head>
 <body>
     <h1>로또 예상번호 순위표<div class="admin-dot"></div></h1>
-    <div class="prediction-container">
-        <div class="user-info">
-            <input type="text" class="user-id-input" placeholder="아이디" maxlength="20">
-            <button class="confirm-button">확인</button>
-            <div class="prediction-numbers">
-                <div class="number-ball">9</div>
-                <div class="number-ball">11</div>
-                <div class="number-ball">13</div>
-                <div class="number-ball">16</div>
-                <div class="number-ball">18</div>
-                <div class="number-ball">22</div>
-            </div>
-            <div class="timestamp">2025. 4. 20. 오후 5:29:55</div>
-        </div>
-    </div>
 
-    <div class="prediction-section">
-        <div class="section-header">이번 주 예측번호</div>
-        <div id="thisWeekPredictions">
-            <!-- 이번 주 예측 결과들이 여기에 동적으로 추가됩니다 -->
-        </div>
-    </div>
-
-    <div class="prediction-section">
-        <div class="section-header">1167회 당첨번호</div>
-        <div class="last-week-numbers">
-            <div class="number-ball">3</div>
-            <div class="number-ball">11</div>
-            <div class="number-ball">14</div>
-            <div class="number-ball">18</div>
-            <div class="number-ball">26</div>
-            <div class="number-ball">27</div>
-        </div>
-    </div>
-
-    <div class="prediction-section">
-        <div class="section-header">지난 주 예측 결과</div>
-        <div id="previousPredictions">
-            <!-- 지난 주 예측 결과들이 여기에 동적으로 추가됩니다 -->
-        </div>
-    </div>
-
+    <!-- 관리자 모달 -->
     <div class="popup-overlay"></div>
     <div class="admin-popup">
         <div class="password-section">
@@ -351,6 +229,7 @@
             <button id="passwordSubmit">확인</button>
         </div>
         <div class="number-input-container">
+            <div class="draw-label" id="drawLabel">당첨번호 입력</div>
             <input type="number" min="1" max="45" placeholder="1번">
             <input type="number" min="1" max="45" placeholder="2번">
             <input type="number" min="1" max="45" placeholder="3번">
@@ -361,211 +240,319 @@
         </div>
     </div>
 
-    <script>
-        const 당첨번호 = [3, 11, 14, 18, 26, 27]; // 1167회 당첨번호
+    <!-- 최신 당첨번호 섹션 -->
+    <div class="lotto-section">
+        <div class="lotto-title">1168회차 당첨번호</div>
+        <div class="number-display" id="winningNumbers">
+            <!-- 당첨번호는 자바스크립트로 동적 생성 -->
+        </div>
+    </div>
 
-        function 맞은개수계산(예측번호들) {
-            return 예측번호들.filter(번호 => 당첨번호.includes(번호)).length;
+    <!-- 이번 주 예측번호 섹션 -->
+    <div class="lotto-section">
+        <div class="lotto-title">이번 주 예측번호 목록</div>
+        <div class="number-display" id="predictionNumbers">
+            <!-- 예측번호는 자바스크립트로 동적 생성 -->
+        </div>
+        <button class="prediction-button" id="savePrediction">예측번호 저장하기</button>
+    </div>
+
+    <!-- 트로피 섹션 -->
+    <div class="trophy-section">
+        <img src="../images/gold.png" alt="1등" class="trophy">
+        <img src="../images/silver.png" alt="2등" class="trophy">
+        <img src="../images/bronze.png" alt="3등" class="trophy">
+    </div>
+
+    <!-- 완전일치 번호 목록 -->
+    <div class="history-section">
+        <div class="history-title">완전일치 번호 목록</div>
+        <div id="perfectMatchHistory" class="history-content">
+            <!-- 완전일치 기록은 자바스크립트로 동적 생성 -->
+        </div>
+    </div>
+
+    <!-- 지난 주 예측 결과 -->
+    <div class="history-section">
+        <div class="history-title">지난 주 예측 결과</div>
+        <div id="lastWeekResults" class="history-content">
+            <!-- 지난주 결과는 자바스크립트로 동적 생성 -->
+        </div>
+    </div>
+
+    <script>
+        // Firebase 초기화
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwh55rLOQkY8ZVCzaC4ZF3iaUVU5Vu0GM",
+            authDomain: "ai-lottosolutions.firebaseapp.com",
+            databaseURL: "https://ai-lottosolutions-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ai-lottosolutions",
+            storageBucket: "ai-lottosolutions.appspot.com",
+            messagingSenderId: "616782090306",
+            appId: "1:616782090306:web:688c710998dfce8e4d5ddb"
+        };
+        
+        // Firebase 초기화
+        firebase.initializeApp(firebaseConfig);
+        
+        // Realtime Database 참조 가져오기
+        const database = firebase.database();
+        
+        // 현재 로그인한 사용자 정보 가져오기
+        const loggedInUser = sessionStorage.getItem('loggedInUser');
+        const userUid = sessionStorage.getItem('userUid');
+
+        // 로그인하지 않아도 페이지 열람 가능, 단 저장 기능은 로그인 필요
+
+        /** 관리자가 입력 중인 당첨 회차 (drawRange.end + 1, Firebase에서 계산) */
+        let adminDrawToSave = null;
+
+        // 최신 당첨번호 표시
+        function displayWinningNumbers(numbers) {
+            const container = document.getElementById('winningNumbers');
+            container.innerHTML = '';
+            numbers.forEach(number => {
+                const numberDiv = document.createElement('div');
+                numberDiv.className = 'lotto-number';
+                numberDiv.textContent = number;
+                container.appendChild(numberDiv);
+            });
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const userIdInput = document.querySelector('.user-id-input');
-            const confirmButton = document.querySelector('.confirm-button');
-            const savedUserId = localStorage.getItem('userId');
-            const thisWeekPredictions = document.getElementById('thisWeekPredictions');
-            const adminDot = document.querySelector('.admin-dot');
-            const adminPopup = document.querySelector('.admin-popup');
-            const popupOverlay = document.querySelector('.popup-overlay');
-            const passwordInput = document.getElementById('adminPassword');
-            const passwordSubmit = document.getElementById('passwordSubmit');
-            const numberInputContainer = document.querySelector('.number-input-container');
-            const errorMessage = document.querySelector('.error-message');
-            const saveWinningNumbers = document.getElementById('saveWinningNumbers');
-            const numberInputs = document.querySelectorAll('.number-input-container input');
+        // 예측번호 표시
+        function displayPredictionNumbers(numbers) {
+            const container = document.getElementById('predictionNumbers');
+            container.innerHTML = '';
+            numbers.forEach(number => {
+                const numberDiv = document.createElement('div');
+                numberDiv.className = 'lotto-number';
+                numberDiv.textContent = number;
+                container.appendChild(numberDiv);
+            });
+        }
 
-            // 이번 주 예측 데이터 표시
-            function displayThisWeekPredictions() {
-                const currentPredictions = JSON.parse(localStorage.getItem('currentWeekPredictions') || '[]');
-                thisWeekPredictions.innerHTML = '';
+        // 예측번호 저장
+        document.getElementById('savePrediction').addEventListener('click', function() {
+            if (!userUid) {
+                alert('로그인이 필요합니다.');
+                return;
+            }
 
-                currentPredictions.forEach(prediction => {
-                    const predictionElement = document.createElement('div');
-                    predictionElement.className = 'prediction-row';
+            database.ref('drawRange').once('value').then(function(rangeSnap) {
+                const r = rangeSnap.val() || {};
+                const drawNo = r.next != null ? String(r.next) : '';
+
+                const predictionRef = database.ref('predictions').push();
+                const prediction = {
+                    userId: userUid,
+                    numbers: generateRandomNumbers(), // 실제로는 페이지4에서 가져온 번호 사용
+                    timestamp: Date.now(),
+                    nickname: loggedInUser,
+                    drawNo: drawNo
+                };
+
+                return predictionRef.set(prediction);
+            })
+                .then(() => {
+                    alert('예측번호가 저장되었습니다.');
+                    loadPredictions();
+                })
+                .catch(error => {
+                    console.error('예측번호 저장 실패:', error);
+                    alert('예측번호 저장에 실패했습니다.');
+                });
+        });
+
+        // 임시로 랜덤 번호 생성 (실제로는 페이지4의 예측 번호 사용)
+        function generateRandomNumbers() {
+            const numbers = [];
+            while (numbers.length < 6) {
+                const num = Math.floor(Math.random() * 45) + 1;
+                if (!numbers.includes(num)) {
+                    numbers.push(num);
+                }
+            }
+            return numbers.sort((a, b) => a - b);
+        }
+
+        // 예측 기록 로드
+        function loadPredictions() {
+            const predictionsRef = database.ref('predictions');
+            predictionsRef.orderByChild('userId').equalTo(userUid).once('value')
+                .then(snapshot => {
+                    const predictions = [];
+                    snapshot.forEach(child => {
+                        predictions.push({
+                            id: child.key,
+                            ...child.val()
+                        });
+                    });
                     
-                    const numbersHtml = prediction.numbers.map(num => 
-                        `<div class="number-ball">${num}</div>`
-                    ).join('');
+                    // 최신 예측 표시
+                    if (predictions.length > 0) {
+                        const latestPrediction = predictions[predictions.length - 1];
+                        displayPredictionNumbers(latestPrediction.numbers);
+                    }
+                })
+                .catch(error => {
+                    console.error('예측 기록 로드 실패:', error);
+                });
+        }
 
-                    predictionElement.innerHTML = `
-                        <div class="user-name">${prediction.userName || '익명'}</div>
-                        <div class="prediction-numbers">
-                            ${numbersHtml}
-                        </div>
-                        <div class="timestamp">${new Date(prediction.timestamp).toLocaleString()}</div>
-                    `;
-                    thisWeekPredictions.appendChild(predictionElement);
+        // 관리자 모달 관련 코드
+        document.querySelector('.admin-dot').addEventListener('click', function() {
+            document.querySelector('.popup-overlay').classList.add('show');
+            document.querySelector('.admin-popup').classList.add('show');
+            document.getElementById('adminPassword').value = '';
+            document.querySelector('.error-message').style.display = 'none';
+            document.querySelector('.number-input-container').classList.remove('show');
+        });
+
+        document.querySelector('.popup-overlay').addEventListener('click', function() {
+            document.querySelector('.popup-overlay').classList.remove('show');
+            document.querySelector('.admin-popup').classList.remove('show');
+        });
+
+        document.getElementById('passwordSubmit').addEventListener('click', function() {
+            const password = document.getElementById('adminPassword').value;
+            if (password === 'knue2000') {
+                document.querySelector('.password-section').style.display = 'none';
+                document.querySelector('.number-input-container').classList.add('show');
+
+                database.ref('drawRange').once('value').then(function(snap) {
+                    const r = snap.val() || {};
+                    const endNum = parseInt(r.end, 10);
+                    const nextNum = !isNaN(endNum) ? endNum + 1 : 1168;
+                    adminDrawToSave = String(nextNum);
+                    document.getElementById('drawLabel').textContent = `${adminDrawToSave}회차 당첨번호 입력`;
+                }).catch(function() {
+                    adminDrawToSave = '1168';
+                    document.getElementById('drawLabel').textContent = `${adminDrawToSave}회차 당첨번호 입력`;
+                });
+            } else {
+                document.querySelector('.error-message').style.display = 'block';
+            }
+        });
+
+        document.getElementById('saveWinningNumbers').addEventListener('click', function() {
+            const inputs = document.querySelectorAll('.number-input-container input[type="number"]');
+            const numbers = Array.from(inputs).map(input => parseInt(input.value));
+            
+            // 유효성 검사
+            if (numbers.some(num => isNaN(num) || num < 1 || num > 45)) {
+                alert('1부터 45 사이의 숫자를 입력해주세요.');
+                return;
+            }
+            
+            if (new Set(numbers).size !== 6) {
+                alert('중복되지 않는 6개의 숫자를 입력해주세요.');
+                return;
+            }
+
+            // 번호 정렬
+            numbers.sort((a, b) => a - b);
+
+            const runUpdate = function(drawKeyStr) {
+                const currentDrawNum = parseInt(drawKeyStr, 10);
+                if (isNaN(currentDrawNum)) {
+                    alert('회차 정보를 확인할 수 없습니다. 관리자 화면을 닫았다가 다시 열어주세요.');
+                    return;
+                }
+                const nextDraw = currentDrawNum + 1;
+
+                const updates = {};
+
+                updates[`/winningNumbers/${drawKeyStr}`] = {
+                    numbers: numbers,
+                    timestamp: Date.now()
+                };
+
+                updates['/currentDraw'] = {
+                    drawNumber: drawKeyStr,
+                    lastUpdated: Date.now()
+                };
+
+                const startDraw = Math.max(1, currentDrawNum - 14);
+                updates['/drawRange'] = {
+                    start: String(startDraw),
+                    end: drawKeyStr,
+                    next: String(nextDraw)
+                };
+
+                updates['/systemUpdates/latest'] = {
+                    type: 'newDrawNumber',
+                    timestamp: Date.now(),
+                    draw: currentDrawNum
+                };
+
+                database.ref().update(updates)
+                    .then(() => {
+                        alert('당첨번호가 성공적으로 저장되었습니다.');
+                        document.querySelector('.admin-popup').classList.remove('show');
+                        document.querySelector('.popup-overlay').classList.remove('show');
+                        location.reload();
+                    })
+                    .catch(error => {
+                        console.error('저장 중 오류 발생:', error);
+                        alert('저장 중 오류가 발생했습니다: ' + error.message);
+                    });
+            };
+
+            if (adminDrawToSave) {
+                runUpdate(adminDrawToSave);
+            } else {
+                database.ref('drawRange').once('value').then(function(snap) {
+                    const r = snap.val() || {};
+                    const endNum = parseInt(r.end, 10);
+                    const key = String(!isNaN(endNum) ? endNum + 1 : 1168);
+                    runUpdate(key);
                 });
             }
+        });
 
-            // 예측 번호 저장
-            function savePrediction() {
-                const userId = userIdInput.value.trim();
-                if (!userId) {
-                    alert('아이디를 입력해주세요.');
-                    return;
-                }
+        // 실시간 업데이트 리스너 추가
+        function setupRealtimeListeners() {
+            // 1. 당첨번호 변경 감지
+            database.ref('currentDraw').on('value', snapshot => {
+                if (snapshot.exists()) {
+                    const drawInfo = snapshot.val();
+                    const drawNumber = drawInfo.drawNumber != null ? drawInfo.drawNumber : drawInfo.number;
+                    document.querySelector('.lotto-title').textContent = `${drawNumber}회차 당첨번호`;
 
-                const numbers = Array.from(document.querySelectorAll('.prediction-container .number-ball'))
-                    .map(ball => parseInt(ball.textContent));
-
-                const prediction = {
-                    userName: userId,
-                    numbers: numbers,
-                    timestamp: new Date().getTime()
-                };
-
-                const currentPredictions = JSON.parse(localStorage.getItem('currentWeekPredictions') || '[]');
-                currentPredictions.push(prediction);
-                localStorage.setItem('currentWeekPredictions', JSON.stringify(currentPredictions));
-                localStorage.setItem('userId', userId);
-
-                displayThisWeekPredictions();
-                alert('예측번호가 저장되었습니다.');
-            }
-
-            // 이벤트 리스너 설정
-            if (savedUserId) {
-                userIdInput.value = savedUserId;
-            }
-
-            confirmButton.addEventListener('click', savePrediction);
-            userIdInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    savePrediction();
+                    database.ref(`winningNumbers/${drawNumber}`).once('value')
+                        .then(numberSnapshot => {
+                            if (numberSnapshot.exists()) {
+                                const winningData = numberSnapshot.val();
+                                if (winningData && Array.isArray(winningData.numbers)) {
+                                    displayWinningNumbers(winningData.numbers);
+                                } else if (Array.isArray(winningData)) {
+                                    displayWinningNumbers(winningData);
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('당첨번호 로딩 오류:', error);
+                        });
                 }
             });
 
-            // 초기 데이터 표시
-            displayThisWeekPredictions();
-
-            // 관리자 버튼 클릭 이벤트
-            adminDot.addEventListener('click', function() {
-                adminPopup.classList.add('show');
-                popupOverlay.classList.add('show');
-                passwordInput.value = '';
-                errorMessage.style.display = 'none';
-                numberInputContainer.classList.remove('show');
-            });
-
-            // 오버레이 클릭 시 팝업 닫기
-            popupOverlay.addEventListener('click', function() {
-                adminPopup.classList.remove('show');
-                popupOverlay.classList.remove('show');
-            });
-
-            // 비밀번호 확인
-            passwordSubmit.addEventListener('click', function() {
-                const ADMIN_PASSWORD = 'knue2000';
-                if (passwordInput.value === ADMIN_PASSWORD) {
-                    numberInputContainer.classList.add('show');
-                    errorMessage.style.display = 'none';
-                    passwordInput.style.display = 'none';
-                    passwordSubmit.style.display = 'none';
-                } else {
-                    errorMessage.style.display = 'block';
+            // 2. 시스템 업데이트 감지
+            database.ref('systemUpdates/latest').on('value', snapshot => {
+                if (snapshot.exists()) {
+                    const update = snapshot.val();
+                    if (update && update.type === 'newDrawNumber') {
+                        // 새 번호가 저장되면 페이지 새로고침
+                        window.location.reload();
+                    }
                 }
             });
+        }
 
-            // 당첨번호 저장
-            saveWinningNumbers.addEventListener('click', function() {
-                const numbers = Array.from(numberInputs).map(input => parseInt(input.value));
-                
-                // 유효성 검사
-                if (numbers.some(num => isNaN(num) || num < 1 || num > 45)) {
-                    alert('1부터 45 사이의 숫자를 입력해주세요.');
-                    return;
-                }
-                
-                if (new Set(numbers).size !== 6) {
-                    alert('중복되지 않는 6개의 숫자를 입력해주세요.');
-                    return;
-                }
-
-                // 당첨번호 정렬
-                numbers.sort((a, b) => a - b);
-
-                // 당첨번호 저장
-                const winningNumber = {
-                    numbers: numbers,
-                    timestamp: new Date().getTime(),
-                    round: getCurrentRound() // 회차 계산 함수 필요
-                };
-
-                const winningNumbers = JSON.parse(localStorage.getItem('winningNumbers') || '[]');
-                winningNumbers.push(winningNumber);
-                localStorage.setItem('winningNumbers', JSON.stringify(winningNumbers));
-
-                // 화면 업데이트
-                updateWinningNumbersDisplay();
-
-                // 팝업 닫기
-                adminPopup.classList.remove('show');
-                popupOverlay.classList.remove('show');
-                
-                alert('당첨번호가 저장되었습니다.');
-            });
-
-            function getCurrentRound() {
-                // 현재 회차 계산 로직 (필요에 따라 수정)
-                const winningNumbers = JSON.parse(localStorage.getItem('winningNumbers') || '[]');
-                return winningNumbers.length > 0 ? winningNumbers[winningNumbers.length - 1].round + 1 : 1167;
-            }
-
-            function updateWinningNumbersDisplay() {
-                const winningNumbers = JSON.parse(localStorage.getItem('winningNumbers') || '[]');
-                if (winningNumbers.length > 0) {
-                    const latestWinning = winningNumbers[winningNumbers.length - 1];
-                    const numberBalls = document.querySelectorAll('.last-week-numbers .number-ball');
-                    latestWinning.numbers.forEach((num, index) => {
-                        if (numberBalls[index]) {
-                            numberBalls[index].textContent = num;
-                        }
-                    });
-                }
-            }
-
-            // 초기 당첨번호 표시
-            updateWinningNumbersDisplay();
-
-            const predictions = Object.keys(localStorage)
-                .filter(key => key.startsWith('prediction_'))
-                .map(key => JSON.parse(localStorage.getItem(key)))
-                .sort((a, b) => b.timestamp - a.timestamp);
-
-            // 이전 예측 결과들 표시
-            const previousPredictionsContainer = document.getElementById('previousPredictions');
-            predictions.forEach(prediction => {
-                const matchCount = 맞은개수계산(prediction.numbers);
-                const predictionElement = document.createElement('div');
-                predictionElement.className = 'prediction-item';
-                
-                const numbersHtml = prediction.numbers.map(num => {
-                    const isWinning = 당첨번호.includes(num);
-                    return `<div class="number-ball ${isWinning ? 'winning-number' : ''}">${num}</div>`;
-                }).join('');
-
-                predictionElement.innerHTML = `
-                    <div class="prediction-info">
-                        <div class="user-name">${prediction.userName || '익명'}</div>
-                        <div class="prediction-numbers">
-                            ${numbersHtml}
-                        </div>
-                    </div>
-                    <div class="match-count">${matchCount}개 일치</div>
-                `;
-                previousPredictionsContainer.appendChild(predictionElement);
-            });
+        // 페이지 로드 시 실시간 리스너 설정
+        window.addEventListener('load', function() {
+            setupRealtimeListeners();
+            loadPredictions();
         });
     </script>
 </body>
-</html> 
+</html>

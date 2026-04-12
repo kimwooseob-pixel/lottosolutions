@@ -1,0 +1,698 @@
+/* 화살표 게임 CSS */
+:root {
+    --primary-color: #2196F3;
+    --primary-dark: #1976D2;
+    --accent-color: #FF4081;
+    --bg-color: #121212;
+    --card-bg: #1e1e1e;
+    --text-color: #ffffff;
+    --text-secondary: #b0bec5;
+    --grid-border: #333;
+    --grid-bg: #222;
+    --cell-highlight: #e74c3c;
+    --selected-color: #4CAF50;
+    --hint1-color: rgba(33, 150, 243, 0.5);
+    --hint2-color: rgba(156, 39, 176, 0.5);
+    --hint3-color: rgba(255, 152, 0, 0.5);
+    --hint4-color: rgba(76, 175, 80, 0.5);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    min-height: 100vh;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+.container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+h1 {
+    font-size: 2.5em;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.hint-button {
+    padding: 12px 24px;
+    font-size: 1em;
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.hint-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.game-container {
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+    overflow-x: auto;
+}
+
+.grid-container {
+    display: inline-grid;
+    grid-template-columns: 23px repeat(15, 23px) 23px;
+    gap: 1px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.number-cell {
+    width: 23px;
+    height: 23px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(33, 150, 243, 0.2);
+    font-size: 0.84em;
+    color: #fff;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.number-cell.empty {
+    background: transparent;
+}
+
+.number-cell.header {
+    background: rgba(33, 150, 243, 0.2);
+    font-size: 0.67em;
+    transform: rotate(-45deg);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0;
+    line-height: 1.1;
+}
+
+.number-cell.row-header {
+    background: rgba(33, 150, 243, 0.2);
+    font-weight: bold;
+}
+
+.grid-cell {
+    width: 23px;
+    height: 23px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.84em;
+    color: rgba(255, 255, 255, 0.9);
+    position: relative;
+}
+
+.grid-cell:hover {
+    filter: brightness(1.2);
+}
+
+.grid-cell.selected {
+    background-color: var(--selected-color);
+    color: white;
+    transition: all 0.2s ease;
+}
+
+.grid-cell.winning {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.grid-cell.winning::before {
+    content: "";
+    position: absolute;
+    width: 26px;
+    height: 26px;
+    background: transparent;
+    border: 2px solid #ff4444;
+    border-radius: 50%;
+}
+
+.grid-cell.hint1 {
+    background-color: var(--hint1-color);
+}
+
+.grid-cell.hint2 {
+    background-color: var(--hint2-color);
+}
+
+.grid-cell.hint3 {
+    background-color: var(--hint3-color);
+}
+
+.grid-cell.hint4 {
+    background-color: var(--hint4-color);
+}
+
+.grid-cell.hint5 {
+    background: rgba(255, 235, 59, 0.3);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.grid-cell.hint6 {
+    background: rgba(63, 81, 181, 0.3);
+}
+
+/* 힌트 중첩 효과 */
+.grid-cell[class*="hint"]:hover {
+    filter: brightness(1.2);
+}
+
+.grid-cell.winning[class*="hint"] {
+    background: rgba(255, 235, 59, 0.3);
+}
+
+.grid-cell.winning[class*="hint"]::before {
+    border-color: #ff4444;
+}
+
+/* 힌트5 관련 스타일 */
+.hint5-gradient-circle {
+    pointer-events: none;
+}
+
+.score-display {
+    position: absolute;
+    font-size: 12px;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 2px 5px;
+    border-radius: 10px;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0;
+    animation: fadeOut 2s forwards;
+}
+
+@keyframes fadeOut {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    80% {
+        opacity: 0.7;
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+}
+
+/* 힌트5가 활성화된 상태에서 winning 셀의 스타일 */
+.grid-cell.winning .hint5-gradient-circle,
+.grid-cell.winning .score-display {
+    display: none;
+}
+
+.score-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #2a3142;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+}
+
+.result-container {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.score-text {
+    font-size: 1.2em;
+    margin-bottom: 15px;
+}
+
+.numbers-column {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+
+.animal-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.animal-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+}
+
+.speech-bubble {
+    background: #3a4255;
+    padding: 15px;
+    border-radius: 10px;
+    position: relative;
+}
+
+.close-button {
+    width: 100%;
+    padding: 10px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+.close-button:hover {
+    background: #45a049;
+}
+
+.arrow-indicator {
+    pointer-events: none;
+    font-weight: bold;
+    z-index: 10;
+    text-shadow: 0 1px 4px #222, 0 0 2px #fff;
+}
+
+.arrow-target-highlight {
+    background: #ffeb3b !important;
+    color: #222 !important;
+    position: relative;
+}
+
+.arrow-target {
+    margin-left: 4px;
+    font-size: 1.2em;
+    color: #ffeb3b;
+    vertical-align: middle;
+}
+
+.arrow-indicator.anim-arrow {
+    color: #ff9800 !important;
+    font-size: 2em !important;
+    font-weight: bold;
+    text-shadow: 0 2px 8px #222, 0 0 4px #fff;
+    filter: drop-shadow(0 0 6px #ff9800);
+}
+
+.archer-container {
+    position: absolute;
+    left: 10px;
+    top: 0;
+    width: 96px;
+    height: 132px;
+    z-index: 20;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: top 0.2s;
+}
+
+#archer-img {
+    width: 100%;
+    height: auto;
+    transition: filter 0.2s;
+    user-select: none;
+}
+
+.arrow-fly {
+    position: absolute;
+    left: 60px;
+    top: 55px;
+    width: 40px;
+    height: 10px;
+    z-index: 30;
+    transition: left 0.5s linear;
+    pointer-events: none;
+}
+
+.arrow-fly.noimg {
+    background: linear-gradient(90deg, #333 70%, #fff 100%);
+    border-radius: 3px;
+    box-shadow: 1px 0 4px #fff8, 0 0 2px #0008;
+}
+
+@media screen and (max-width: 900px) {
+    .archer-container {
+        left: 5px;
+        width: 72px;
+        height: 96px;
+    }
+    .arrow-fly {
+        left: 40px;
+        top: 40px;
+        width: 28px;
+        height: 7px;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .archer-container {
+        left: 2px;
+        width: 48px;
+        height: 65px;
+    }
+    .arrow-fly {
+        left: 20px;
+        top: 24px;
+        width: 16px;
+        height: 4px;
+    }
+    .grid-container {
+        grid-template-columns: 16px repeat(15, 16px) 16px;
+        gap: 0.5px;
+        padding: 2px;
+    }
+    .number-cell {
+        width: 16px;
+        height: 16px;
+        font-size: 7px;
+    }
+    .grid-cell {
+        width: 16px;
+        height: 16px;
+        font-size: 7px;
+    }
+    .grid-cell.winning::before {
+        width: 10px;
+        height: 10px;
+    }
+}
+
+.title-box {
+    margin: 0 auto 10px auto;
+    margin-top: 12px;
+    width: 100%;
+    max-width: 1000px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+.title-box h1 {
+    background: #23283a;
+    color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    padding: 6px 0;
+    margin: 0;
+    font-size: 1em;
+    font-weight: 700;
+    width: 60%;
+    min-width: 120px;
+    max-width: 400px;
+    text-align: center;
+    letter-spacing: 2px;
+    flex-shrink: 1;
+}
+
+.title-box .hint-button.small {
+    padding: 3px 8px;
+    font-size: 0.75em;
+    border-radius: 4px;
+    min-width: 0;
+    height: 24px;
+    white-space: nowrap;
+}
+
+.title-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-left: 12px;
+}
+
+.hint-button.small {
+    padding: 4px 10px;
+    font-size: 0.85em;
+    border-radius: 4px;
+    min-width: 0;
+    height: 28px;
+}
+
+.arrow-panels {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 18px;
+    margin: 10px auto 18px auto;
+    width: 100%;
+    max-width: 1000px;
+}
+
+.arrow-panel {
+    display: flex;
+    gap: 7px;
+    background: #23283a;
+    border-radius: 10px;
+    padding: 8px 9px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    width: auto;
+    justify-content: center;
+}
+
+.arrow-num {
+    width: 29px;
+    height: 29px;
+    background: #181c28;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.0em;
+    color: #fff;
+    font-weight: bold;
+    border: 2px solid #1976d2;
+    box-sizing: border-box;
+    flex-direction: column;
+    position: relative;
+}
+
+.arrow-num-sub {
+    font-size: 0.7em;
+    color: #4fc3f7;
+    position: absolute;
+    left: 50%;
+    bottom: -13px;
+    transform: translateX(-50%);
+    font-weight: 600;
+    pointer-events: none;
+    line-height: 1;
+}
+
+.arrow-num-red1 {
+    background: #e57373 !important;
+    color: #fff !important;
+    border-color: #d32f2f !important;
+}
+
+.arrow-num-red2 {
+    background: #d32f2f !important;
+    color: #fff !important;
+    border-color: #b71c1c !important;
+}
+
+.arrow-num-red3 {
+    background: #b71c1c !important;
+    color: #fff !important;
+    border-color: #880000 !important;
+}
+
+@media screen and (max-width: 900px) {
+    .arrow-panels {
+        max-width: 100vw;
+        gap: 7px;
+    }
+    .arrow-panel {
+        padding: 5px 4px;
+        gap: 4px;
+    }
+    .arrow-num {
+        width: 20px;
+        height: 20px;
+        font-size: 0.85em;
+    }
+}
+
+/* 경로 계산을 위한 스타일 */
+.grid-cell.path-highlight {
+    position: relative;
+    z-index: 5;
+    animation: path-glow 1.5s infinite alternate;
+}
+
+@keyframes path-glow {
+    0% {
+        box-shadow: 0 0 5px rgba(33, 150, 243, 0.5);
+    }
+    100% {
+        box-shadow: 0 0 10px rgba(33, 150, 243, 0.8);
+    }
+}
+
+/* 애니메이션 스타일 */
+.archer-animation {
+    transform-origin: center left;
+    animation: drawBow 1s ease-in-out;
+}
+
+@keyframes drawBow {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* 경로 효과 애니메이션 */
+.path-effect {
+    position: absolute;
+    border-radius: 50%;
+    z-index: 60;
+    animation: pathEffect 0.8s forwards;
+}
+
+@keyframes pathEffect {
+    0% {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0.8;
+        box-shadow: 0 0 10px rgba(33, 150, 243, 0.8);
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 0;
+        box-shadow: 0 0 20px rgba(33, 150, 243, 0);
+    }
+}
+
+/* 결과 팝업 스타일 */
+.numbers-column .number-ball {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.numbers-column .number-ball.matched {
+    background: linear-gradient(135deg, #4CAF50, #2E7D32);
+    animation: pulse-matched 2s infinite alternate;
+}
+
+@keyframes pulse-matched {
+    0% {
+        box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+    }
+    100% {
+        box-shadow: 0 0 15px rgba(76, 175, 80, 0.8);
+    }
+}
+
+/* 화살표 경로 추적 애니메이션 */
+.arrow-path {
+    position: absolute;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color), transparent);
+    transform-origin: left center;
+    z-index: 50;
+    animation: pathGrow 0.5s forwards;
+}
+
+@keyframes pathGrow {
+    0% {
+        width: 0;
+    }
+    100% {
+        width: 100%;
+    }
+}
+
+/* 반응형 디자인 */
+@media (max-width: 600px) {
+    .numbers-column .number-ball {
+        width: 30px;
+        height: 30px;
+        font-size: 0.9rem;
+    }
+}
+
+/* 링크 및 버튼 스타일 */
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: var(--accent-color);
+    text-decoration: underline;
+}
+
+/* 화살 스타일 */
+.arrow {
+    position: absolute;
+    width: 30px;
+    height: 6px;
+    background-color: var(--primary-color);
+    border-radius: 2px;
+    z-index: 100;
+    transform-origin: left center;
+    box-shadow: 0 0 8px rgba(33, 150, 243, 0.6);
+}
+
+.arrow::before {
+    content: '';
+    position: absolute;
+    right: -10px;
+    top: -7px;
+    border-left: 12px solid var(--primary-color);
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+} 

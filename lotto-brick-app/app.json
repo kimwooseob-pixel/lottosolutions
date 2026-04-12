@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "로또 벽돌깨기",
+    "slug": "lotto-brick-breaker",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "lottobrick",
+    "userInterfaceStyle": "automatic",
+    "plugins": ["expo-router"],
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#121212"
+      }
+    }
+  }
+}

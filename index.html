@@ -3,112 +3,1318 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lotto Solutions - 로또 번호 예측 시스템</title>
+    <title>Lotto Solutions</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="manifest" href="manifest.json">
+    <!-- Firebase SDK 추가 -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
+        :root {
+            --primary-color: #2196F3;
+            --primary-dark: #1976D2;
+            --secondary-color: #FF4081;
+            --secondary-dark: #E91E63;
+            --green-color: #4CAF50;
+            --green-dark: #388E3C;
+            --purple-color: #9C27B0;
+            --purple-dark: #7B1FA2;
+            --orange-color: #FF9800;
+            --orange-dark: #F57C00;
+            --text-color: #ffffff;
+            --text-secondary: #b0bec5;
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --card-hover: #2c2c2c;
+        }
+        
+        * {
             margin: 0;
             padding: 0;
-            background-color: #1a1f2e;
-            color: white;
+            box-sizing: border-box;
         }
-
+        
+        body {
+            font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #adminBtn {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            width: 12px;
+            height: 12px;
+            background-color: #e74c3c;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 10000;
+            border: none;
+        }
+        
+        #adminBtn:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+        }
+        
         .container {
-            max-width: 1200px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 32px 20px;
+            max-width: 1000px;
             margin: 0 auto;
-            padding: 20px;
+            width: 100%;
         }
-
-        header {
+        
+        .header {
+            margin-bottom: 30px;
             text-align: center;
-            padding: 40px 0;
         }
-
+        
         h1 {
-            font-size: 2.5em;
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 16px;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.03em;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+        
+        .section-title {
+            width: 100%;
+            text-align: left;
+            margin: 15px 0 10px 0;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding-left: 10px;
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            width: 100%;
             margin-bottom: 20px;
         }
-
-        .description {
-            font-size: 1.2em;
-            color: #888;
-            margin-bottom: 40px;
+        
+        .button-grid.board-section {
+            grid-template-columns: repeat(2, 1fr);
         }
-
-        .menu-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-top: 40px;
+        
+        .button-grid.main-section {
+            grid-template-columns: repeat(3, 1fr);
         }
-
-        .menu-item {
-            background-color: rgba(255, 255, 255, 0.1);
+        
+        .button-grid.game-section {
+            grid-template-columns: repeat(3, 1fr);
+            max-width: 50%;
+            margin: 0 auto 20px auto;
+        }
+        
+        .button-grid.prediction-tools {
+            grid-template-columns: 2fr 0.5fr 0.5fr;
+        }
+        
+        .nav-button {
+            padding: 18px;
+            font-size: 0.9rem;
+            border: none;
             border-radius: 10px;
-            padding: 20px;
-            text-align: center;
-            transition: transform 0.3s ease;
             cursor: pointer;
-            text-decoration: none;
-            color: white;
+            transition: all 0.3s ease;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            position: relative;
+            overflow: hidden;
+            height: 100%;
         }
-
-        .menu-item:hover {
-            transform: translateY(-5px);
-            background-color: rgba(255, 255, 255, 0.15);
+        
+        .btn-large {
+            padding: 24px;
+            font-size: 1.1rem;
         }
-
-        .menu-item h3 {
-            margin: 0 0 10px 0;
-            color: #3498db;
+        
+        .btn-large .button-icon {
+            font-size: 2rem;
+            margin-bottom: 12px;
         }
-
-        .menu-item p {
-            margin: 0;
-            color: #888;
+        
+        .btn-large .button-title {
+            font-size: 1.5rem;
         }
-
+        
+        .btn-large .button-description {
+            font-size: 1.1rem;
+        }
+        
+        .btn-small {
+            padding: 10px;
+            font-size: 0.75rem;
+            min-height: 75px;
+        }
+        
+        .btn-small .button-icon {
+            font-size: 0.9rem;
+            margin-bottom: 3px;
+        }
+        
+        .btn-small .button-title {
+            font-size: 0.85rem;
+        }
+        
+        .btn-small .button-description {
+            font-size: 0.7rem;
+            line-height: 1.1;
+        }
+        
+        .game-button-small {
+            padding: 8px;
+            font-size: 0.75rem;
+            min-height: 70px;
+        }
+        
+        .game-button-small .button-icon {
+            font-size: 0.95rem;
+            margin-bottom: 2px;
+        }
+        
+        .game-button-small .button-title {
+            font-size: 0.8rem;
+        }
+        
+        .game-button-small .button-description {
+            font-size: 0.7rem;
+            line-height: 1.1;
+        }
+        
+        .nav-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            transition: height 0.3s ease;
+        }
+        
+        .nav-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+            background-color: var(--card-hover);
+        }
+        
+        .nav-button:hover::before {
+            height: 6px;
+        }
+        
+        .button-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        
+        .button-description {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.3;
+        }
+        
+        .button-icon {
+            font-size: 1.3rem;
+            margin-bottom: 5px;
+        }
+        
+        /* 버튼 색상 변형 */
+        .game-button::before {
+            background: linear-gradient(90deg, #FF4081, #F06292);
+        }
+        
+        .led-button::before {
+            background: linear-gradient(90deg, #4CAF50, #66BB6A);
+        }
+        
+        .brush-button::before {
+            background: linear-gradient(90deg, #9C27B0, #BA68C8);
+        }
+        
+        .random-button::before {
+            background: linear-gradient(90deg, #FF9900, #FFBB33);
+        }
+        
+        /* 로그인 모달 스타일 */
+        #loginModal {
+            display: none;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.75);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(6px);
+        }
+        
+        .modal-content {
+            background: #23283a;
+            border-radius: 16px;
+            padding: 32px 28px 24px 28px;
+            min-width: 320px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        
+        #closeLogin {
+            position: absolute;
+            right: 20px;
+            top: 16px;
+            font-size: 1.5em;
+            color: #aaa;
+            cursor: pointer;
+        }
+        
+        #closeLogin:hover {
+            color: #fff;
+        }
+        
+        .modal-title {
+            margin-bottom: 24px;
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .input-field {
+            width: 100%;
+            margin-bottom: 16px;
+        }
+        
+        .input-field input {
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid #3c4154;
+            width: 100%;
+            background: #2a2f42;
+            color: #fff;
+            font-size: 1rem;
+        }
+        
+        .input-field input::placeholder {
+            color: #8b95a5;
+        }
+        
+        .login-btn {
+            padding: 12px 0;
+            width: 100%;
+            background: linear-gradient(45deg, var(--primary-color), var(--primary-dark));
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+        }
+        
+        .signup-btn {
+            padding: 12px 0;
+            width: 100%;
+            background: transparent;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .signup-btn:hover {
+            background-color: rgba(33, 150, 243, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        #userBar {
+            position: absolute;
+            top: 18px;
+            right: 32px;
+            z-index: 10000;
+            display: none;
+            align-items: center;
+        }
+        
+        #userWelcome {
+            margin-right: 16px;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 80px;
+        }
+        
+        #logoutBtn {
+            padding: 6px 10px;
+            background: #e74c3c;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s ease;
+        }
+        
+        #logoutBtn:hover {
+            background: #c0392b;
+        }
+        
         footer {
             text-align: center;
             padding: 20px;
-            margin-top: 60px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        /* 반응형 디자인 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 24px 16px;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+            
+            .button-grid.board-section,
+            .button-grid.main-section {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .button-grid.game-section {
+                grid-template-columns: 1fr 1fr 1fr;
+                max-width: 100%;
+            }
+            
+            .button-grid.prediction-tools {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto;
+            }
+            
+            .nav-button {
+                padding: 16px;
+            }
+            
+            .game-button-small {
+                padding: 6px;
+            }
+            
+            .btn-large {
+                padding: 20px;
+            }
+            
+            .btn-small {
+                padding: 8px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .button-grid.board-section,
+            .button-grid.main-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-grid.game-section {
+                grid-template-columns: 1fr 1fr 1fr;
+                max-width: 100%;
+            }
+            
+            .button-grid.prediction-tools {
+                grid-template-columns: 1fr;
+                grid-gap: 10px;
+            }
+        }
+        
+        .coming-soon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #fff;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+    </style>
+
+    <style id="brick-game-styles">
+        /* Styles for Brick Breaker Game - Scoped for index.html */
+        .game-wrapper {
+            background: #2c3e50;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            margin: 30px auto; /* Center game wrapper and add margin */
+            width: fit-content; 
+        }
+
+        .game-wrapper .header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            color: white;
+            font-size: 18px;
+        }
+
+        .game-wrapper .game-container {
+            width: 720px; 
+            height: 520px; 
+            background: #1a1a1a;
+            position: relative;
+            border-radius: 10px;
+            overflow: visible; 
+            margin-bottom: 20px;
+            padding: 0;
+            box-sizing: border-box;
+            margin-left: 50px; 
+        }
+
+        .game-wrapper .round-display { display: none; }
+        .game-wrapper .number-header { display: none; }
+
+        .game-wrapper .round-header {
+            position: absolute;
+            left: -50px; 
+            top: 0px; /* Align with top of brick container */
+            height: 320px; /* 16 rows * 20px/row */
+            width: 45px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding: 0;
+            z-index: 100;
+            gap: 0; 
+            pointer-events: none;
+        }
+
+        .game-wrapper .round-number {
+            height: 20px; 
+            font-size: 12px;
+            color: white;
+            text-align: right;
+            padding-right: 5px;
+            line-height: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+            /* margin: 1px 0; Removed for tighter fit if gap is 0 */
+            font-weight: bold;
+        }
+
+        .game-wrapper .game-area {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: #1a1a1a;
+        }
+
+        .game-wrapper .play-area {
+            position: absolute; left: 0; right: 0; bottom: 0;
+            height: 200px; 
+            background: #1a1a1a;
+            border-top: none;
+        }
+
+        .game-wrapper #brickContainer {
+            position: relative; 
+            width: 100%; 
+            height: 320px; /* 16 rows * 20px/row */
+            padding:0; 
+            box-sizing: border-box; 
+            display: grid;
+            grid-template-columns: repeat(45, 1fr);
+            grid-template-rows: repeat(16, 1fr); /* Match brickRowCount = 16 */
+            gap: 1px;
+            background: #1a1a1a; 
+            margin-top:0; 
+            border-bottom: none; 
+        }
+
+        .game-wrapper .brick {
+            width: 100%; height: 100%;
+            position: relative; border: none; box-sizing: border-box;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 8px; color: white;
+            background-color: #666666; 
+            transition: background-color 0.3s;
+            cursor: default; user-select: none;
+            margin:0; padding:0; 
+            outline: 1px solid #333; 
+        }
+        .game-wrapper .header-brick {
+             background-color: #3498db !important; 
+             color: white; font-weight: bold;
+        }
+
+        .game-wrapper #ball {
+            width: 8px; height: 8px;
+            background-color: white; border-radius: 50%;
+            position: absolute; z-index: 10;
+        }
+
+        .game-wrapper #paddle {
+            width: 80px; height: 10px;
+            background-color: #4CAF50; 
+            position: absolute; border-radius: 5px; z-index: 10;
+        }
+        
+        .game-wrapper #bottomWall {
+            display: none; position: absolute; bottom: 0; left: 0; 
+            width: 100%; height: 10px; background-color: #4CAF50;
+        }
+
+        .game-wrapper .controls {
+            display: flex; justify-content: center;
+            gap: 10px; margin-top: 10px;
+        }
+
+        .game-wrapper .controls button {
+            padding: 10px 20px; font-size: 16px;
+            border: none; border-radius: 5px; cursor: pointer;
+            background: #3498db; color: white;
+            transition: background 0.3s;
+        }
+
+        .game-wrapper .controls button:hover:not(:disabled) { background: #2980b9; }
+        .game-wrapper .controls button:disabled { background: #95a5a6; cursor: not-allowed; }
+        
+        .game-wrapper #gameStatus {
+            color: white; text-align: center; margin-top: 10px; min-height: 1.2em;
+        }
+        .game-wrapper #debugInfo {
+            color: white; font-size: 10px; margin-top: 5px; white-space: pre-wrap;
+            background-color: rgba(0,0,0,0.2); padding: 5px; border-radius: 3px;
+            max-height: 100px; overflow-y: auto;
+        }
+        .game-stats-panel {
+            background: #2c3e50; /* 게임 래퍼와 유사한 배경 */
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            margin: 20px auto; /* 게임 영역 아래, 중앙 정렬 */
+            width: 720px; /* 게임 컨테이너 너비와 일치시켜 정렬 */
+            max-width: 90%; /* 반응형 고려 */
+            text-align: left;
+        }
+        .game-stats-panel .stats-title {
+            font-size: 1.2em;
+            margin-top: 0; /* 제목 상단 여백 제거 */
+            margin-bottom: 10px;
+            text-align: center;
+            border-bottom: 1px solid #4a5a6a;
+            padding-bottom: 8px;
+        }
+        .game-stats-panel .stats-content {
+            font-size: 0.9em;
+            line-height: 1.6;
+            max-height: 200px; /* 내용이 많을 경우 스크롤 */
+            overflow-y: auto;
+        }
+        .game-stats-panel .stats-content ul {
+            list-style-type: none;
+            padding-left: 0;
+            margin-top: 0; /* 리스트 상단 여백 제거 */
+        }
+        .game-stats-panel .stats-content li {
+            padding: 3px 0;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Lotto Solutions</h1>
-            <div class="description">AI 기반 로또 번호 예측 시스템</div>
-        </header>
+    <!-- 관리자 모드 버튼 -->
+    <button id="adminBtn" title="관리자 모드"></button>
 
-        <div class="menu-grid">
-            <a href="pages/page1.html" class="menu-item">
-                <h3>번호 생성기</h3>
-                <p>AI가 분석한 로또 번호를 생성합니다</p>
-            </a>
-            <a href="pages/page2.html" class="menu-item">
-                <h3>번호 분석기</h3>
-                <p>선택한 번호의 패턴을 분석합니다</p>
-            </a>
-            <a href="pages/page3.html" class="menu-item">
-                <h3>연습 게임</h3>
-                <p>실전처럼 번호를 연습해보세요</p>
-            </a>
-            <a href="pages/page4.html" class="menu-item">
-                <h3>당첨 분석</h3>
-                <p>당첨 번호와 비교 분석합니다</p>
-            </a>
-            <a href="pages/page5.html" class="menu-item">
-                <h3>순위표</h3>
-                <p>예상 번호 순위를 확인하세요</p>
-            </a>
-        </div>
-
-        <footer>
-            <p>© 2024 Lotto Solutions. All rights reserved.</p>
-        </footer>
+    <div id="userBar">
+        <span id="userWelcome"></span>
+        <button id="logoutBtn">로그아웃</button>
     </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Lotto Solutions</h1>
+            <div class="subtitle">AI 기반 로또 번호 예측 시스템</div>
+        </div>
+        
+<div class="game-wrapper">
+    <div class="header">
+        <div class="score">점수: <span id="score">0</span></div>
+        <div class="lives">남은 공: <span id="lives">3</span></div>
+        <div class="level">단계: <span id="level">1</span></div>
+    </div>
+    <div class="game-container">
+        <div class="round-header">
+            <!-- 회차 번호가 동적으로 여기에 추가됩니다 -->
+        </div>
+        <div id="brickContainer">
+            <!-- 벽돌이 여기에 동적으로 추가됩니다 -->
+        </div>
+        <div class="play-area">
+            <div id="ball"></div>
+            <div id="paddle"></div>
+            <div id="bottomWall"></div>
+        </div>
+    </div>
+    <div class="controls">
+        <button id="godModeButton">무적모드</button>
+        <button id="restartButton" disabled>다시시작</button>
+    </div>
+    <div id="gameStatus"></div>
+    <div id="debugInfo"></div>
+</div>
+
+<div id="brickStatsPanel" class="game-stats-panel">
+    <h3 class="stats-title">첫 줄 벽돌 충돌 통계</h3>
+    <div id="statsContent" class="stats-content">
+        게임 종료 후 통계가 여기에 표시됩니다.
+    </div>
+</div>
+
+<!-- 랜덤 번호 뽑기 게임 섹션 -->
+<div id="randomNumbersSection" class="game-stats-panel">
+    <h3 class="stats-title">랜덤 번호 뽑기 게임</h3>
+    <iframe src="pages/random-numbers.html" width="100%" height="500" style="border:none;"></iframe>
+</div>
+
+        <div class="section-title">번호 예측 도구</div>
+        <div class="button-grid prediction-tools">
+            <!-- 기존 로또 관련 버튼들 -->
+            <button class="nav-button btn-large" onclick="location.href='pages/page2.html'">
+                <div class="button-icon">📊</div>
+                <span class="button-title">(당첨) 연습하기</span>
+                <span class="button-description">이전 회차 당첨번호로 연습</span>
+            </button>
+
+            <button class="nav-button btn-small" id="btn-predict">
+                <div class="button-icon">🔮</div>
+                <span class="button-title">이번주 번호</span>
+                <span class="button-description">AI 힌트</span>
+            </button>
+
+            <button class="nav-button btn-small" id="btn-ranking">
+                <div class="button-icon">🏆</div>
+                <span class="button-title">랭킹표</span>
+                <span class="button-description">상위랭커</span>
+            </button>
+        </div>
+        
+        <div class="section-title">커뮤니티 게시판</div>
+        <div class="button-grid board-section">
+            <!-- 게시판 버튼들 -->
+            <button class="nav-button led-button" onclick="location.href='pages/led-board.html'">
+                <div class="button-icon">💡</div>
+                <span class="button-title">LED 영상게시판</span>
+                <span class="button-description">LED 디스플레이 영상</span>
+            </button>
+
+            <button class="nav-button brush-button" onclick="location.href='pages/brush-board.html'">
+                <div class="button-icon">🖌️</div>
+                <span class="button-title">붓그리기 게시판</span>
+                <span class="button-description">붓으로 그린 영상</span>
+            </button>
+        </div>
+        
+        <div class="section-title">게임 번호예측</div>
+        <div class="button-grid game-section" style="display:flex; justify-content:center; gap:16px; flex-wrap:nowrap;">
+            <!-- 랜덤뽑기 버튼 -->
+            <button class="nav-button random-button game-button-small" onclick="showComingSoon(event)">
+                <div class="button-icon">🎲</div>
+                <span class="button-title">랜덤뽑기</span>
+                <span class="button-description">랜덤추출</span>
+                <span class="coming-soon">준비중</span>
+            </button>
+
+            <!-- 화살표 게임 버튼 -->
+            <button class="nav-button game-button game-button-small" onclick="showComingSoon(event)">
+                <div class="button-icon">🏹</div>
+                <span class="button-title">화살표</span>
+                <span class="button-description">화살예측</span>
+                <span class="coming-soon">준비중</span>
+            </button>
+
+            <!-- 벽돌깨기 게임 버튼 -->
+            <button class="nav-button game-button game-button-small" onclick="showComingSoon(event)">
+                <div class="button-icon">🧱</div>
+                <span class="button-title">벽돌깨기</span>
+                <span class="button-description">벽돌예측</span>
+                <span class="coming-soon">준비중</span>
+            </button>
+
+            <!-- 실시간 채팅방 버튼 -->
+            <button class="nav-button game-button game-button-small" onclick="showComingSoon(event)">
+                <div class="button-icon">💬</div>
+                <span class="button-title">채팅방</span>
+                <span class="button-description">실시간 이슈</span>
+                <span class="coming-soon">준비중</span>
+            </button>
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2023 Lotto Solutions. All rights reserved.
+    </footer>
+
+    <!-- 로그인 모달 -->
+    <div id="loginModal">
+        <div class="modal-content">
+            <span id="closeLogin">&times;</span>
+            <h2 class="modal-title">로그인</h2>
+            <div class="input-field">
+                <input type="text" id="loginId" placeholder="아이디">
+            </div>
+            <div class="input-field">
+                <input type="password" id="loginPw" placeholder="비밀번호">
+            </div>
+            <button id="loginBtn" class="login-btn">로그인</button>
+            <button id="signupBtn" class="signup-btn">회원가입</button>
+        </div>
+    </div>
+
+    <!-- 회원가입 모달 -->
+    <div id="signupModal" style="display: none; position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(6px);">
+        <div class="modal-content">
+            <span id="closeSignup">&times;</span>
+            <h2 class="modal-title">회원가입</h2>
+            <div class="input-field">
+                <input type="text" id="signupId" placeholder="아이디">
+            </div>
+            <div class="input-field">
+                <input type="email" id="signupEmail" placeholder="이메일">
+            </div>
+            <div class="input-field">
+                <input type="password" id="signupPw" placeholder="비밀번호">
+            </div>
+            <div class="input-field">
+                <input type="password" id="signupPwConfirm" placeholder="비밀번호 확인">
+            </div>
+            <button id="registerBtn" class="login-btn">가입하기</button>
+            <button id="backToLoginBtn" class="signup-btn">로그인으로 돌아가기</button>
+        </div>
+    </div>
+
+    <!-- 관리자 대시보드 모달 -->
+    <div id="adminDashboardModal" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.75); z-index:10001; justify-content:center; align-items:center; backdrop-filter:blur(6px);">
+        <div style="background:#23283a; border-radius:18px; padding:36px 32px 28px 32px; min-width:380px; max-width:90vw; box-shadow:0 8px 32px rgba(0,0,0,0.4); display:flex; flex-direction:column; align-items:center; position:relative; color:#fff; max-height:90vh; overflow-y:auto;">
+            <span id="closeAdminDashboard" style="position:absolute; right:24px; top:18px; font-size:1.7em; color:#aaa; cursor:pointer;">&times;</span>
+            <h2 style="margin-bottom:18px; font-size:1.7rem; font-weight:800; letter-spacing:-0.02em;">관리자 대시보드</h2>
+            <div id="adminStats" style="width:100%; margin-bottom:24px;"></div>
+            <div style="width:100%; margin-bottom:24px;">
+                <h3 style="font-size:1.2rem; margin-bottom:8px; color:#90caf9;">회원 전체 목록</h3>
+                <div id="userListTable" style="overflow-x:auto;"></div>
+            </div>
+            <div style="width:100%; margin-bottom:24px;">
+                <h3 style="font-size:1.2rem; margin-bottom:8px; color:#90caf9;">날짜별 방문자수</h3>
+                <div id="visitorStatsTable" style="overflow-x:auto;"></div>
+            </div>
+            <div style="width:100%;">
+                <h3 style="font-size:1.2rem; margin-bottom:8px; color:#90caf9;">로또번호 업데이트 현황</h3>
+                <div id="lottoUpdateStatus" style="overflow-x:auto;"></div>
+            </div>
+        </div>
+    </div>
+    <!-- 관리자 비밀번호 입력 모달 -->
+    <div id="adminPwModal" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.45); z-index:10001; justify-content:center; align-items:center; backdrop-filter:blur(6px);">
+        <div style="background:#23283a; border-radius:16px; padding:32px 28px 24px 28px; min-width:320px; box-shadow:0 8px 32px rgba(0,0,0,0.4); display:flex; flex-direction:column; align-items:center; position:relative;">
+            <span id="closeAdminPwModal" style="position:absolute; right:20px; top:16px; font-size:1.5em; color:#aaa; cursor:pointer;">&times;</span>
+            <h2 style="margin-bottom:24px; color:#fff; font-size:1.5rem; font-weight:700;">관리자 비밀번호</h2>
+            <input type="password" id="adminPwInput" placeholder="비밀번호 입력" style="margin-bottom:16px; padding:12px 16px; border-radius:8px; border:1px solid #3c4154; width:100%; background:#2a2f42; color:#fff; font-size:1rem;">
+            <button id="adminPwCheckBtn" style="padding:12px 0; width:100%; background:linear-gradient(45deg,#2196F3,#1976D2); color:#fff; border:none; border-radius:8px; font-size:1rem; font-weight:600; cursor:pointer; transition:all 0.3s ease;">확인</button>
+            <div id="adminPwError" style="color:#e74c3c; margin-top:8px; display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase 초기화
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwh55rLOQkY8ZVCzaC4ZF3iaUVU5Vu0GM",
+            authDomain: "ai-lottosolutions.firebaseapp.com",
+            databaseURL: "https://ai-lottosolutions-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ai-lottosolutions",
+            storageBucket: "ai-lottosolutions.appspot.com",
+            messagingSenderId: "616782090306",
+            appId: "1:616782090306:web:688c710998dfce8e4d5ddb"
+        };
+        
+        // Firebase 초기화
+        firebase.initializeApp(firebaseConfig);
+        
+        // Firebase 초기화 및 참조
+        const database = firebase.database();
+        const usersRef = database.ref('users');
+        const authRef = database.ref('auth/users');
+        
+        // 기존 자바스크립트 코드가 여기에 위치해야 합니다
+        document.getElementById('adminBtn').addEventListener('click', function() {
+            document.getElementById('adminPwModal').style.display = 'flex';
+            document.getElementById('adminPwInput').value = '';
+            document.getElementById('adminPwError').style.display = 'none';
+        });
+
+        document.getElementById('closeAdminPwModal').onclick = function() {
+            document.getElementById('adminPwModal').style.display = 'none';
+        };
+        // 엔터키로도 확인
+        document.getElementById('adminPwInput').addEventListener('keypress', function(e) {
+            if(e.key === 'Enter') document.getElementById('adminPwCheckBtn').click();
+        });
+        // 비밀번호 확인
+        document.getElementById('adminPwCheckBtn').onclick = function() {
+            const pw = document.getElementById('adminPwInput').value;
+            if(pw === 'knue2000') {
+                document.getElementById('adminPwModal').style.display = 'none';
+                showAdminDashboard();
+            } else {
+                document.getElementById('adminPwError').textContent = '비밀번호가 올바르지 않습니다.';
+                document.getElementById('adminPwError').style.display = 'block';
+            }
+        };
+        // 관리자 대시보드 닫기
+        document.getElementById('closeAdminDashboard').onclick = function() {
+            document.getElementById('adminDashboardModal').style.display = 'none';
+        };
+        // 관리자 대시보드 표시 함수
+        function showAdminDashboard() {
+            // Firebase 참조 설정
+            const db = firebase.database();
+            const usersRef = db.ref('users');
+            
+            // 사용자 목록 업데이트 함수
+            const updateUserList = (snapshot) => {
+                if (!snapshot.exists()) {
+                    document.getElementById('userListTable').innerHTML = 
+                        '<div style="color:#e57373; padding:10px;">등록된 사용자가 없습니다.</div>';
+                    return;
+                }
+                
+                let userTableHtml = '<table style="width:100%; border-collapse:collapse; background:#1e1e1e; color:#fff;">';
+                userTableHtml += '<tr style="background:#263238;"><th style="padding:8px;">아이디</th><th style="padding:8px;">이메일</th><th style="padding:8px;">가입일</th><th style="padding:8px;">최근 접속일</th></tr>';
+                
+                let userCount = 0;
+                snapshot.forEach((userSnapshot) => {
+                    userCount++;
+                    const user = userSnapshot.val();
+                    // 프로필 정보가 있는지 확인하고 없으면 기본값 사용
+                    const profile = user.profile || {};
+                    const joinDate = (profile.joinDate || user.joinDate) ? 
+                        new Date(profile.joinDate || user.joinDate).toLocaleString() : '알 수 없음';
+                    const lastLogin = (profile.lastLogin || user.lastLogin) ? 
+                        new Date(profile.lastLogin || user.lastLogin).toLocaleString() : '로그인 이력 없음';
+                    
+                    userTableHtml += `
+                        <tr style="border-bottom:1px solid #333;">
+                            <td style='padding:10px 8px;'>${user.id || 'N/A'}</td>
+                            <td style='padding:10px 8px;'>${profile.email || user.email || 'N/A'}</td>
+                            <td style='padding:10px 8px;'>${joinDate}</td>
+                            <td style='padding:10px 8px;'>${lastLogin}</td>
+                        </tr>`;
+                });
+                
+                userTableHtml += '</table>';
+                document.getElementById('userListTable').innerHTML = userTableHtml;
+                
+                // 통계 업데이트
+                updateStats(userCount);
+            };
+            
+            // 통계 업데이트 함수
+            const updateStats = (userCount) => {
+                const today = new Date().toISOString().slice(0,10);
+                const visitorStats = JSON.parse(localStorage.getItem('visitorStats') || '{}');
+                
+                let statsHtml = `
+                    <div style='margin-bottom:12px; padding:10px; background:#1e1e1e; border-radius:8px;'>
+                        <div style='margin-bottom:8px;'><b>총 회원수:</b> <span style='color:#ffb300; font-weight:bold;'>${userCount}명</span></div>
+                        <div style='margin-bottom:8px;'><b>오늘 방문자수:</b> <span style='color:#4caf50; font-weight:bold;'>${visitorStats[today] || 0}명</span></div>
+                `;
+                
+                // 로또 데이터
+                try {
+                    const lottoData = JSON.parse(localStorage.getItem('latestWinningNumber'));
+                    if (lottoData && lottoData.drawNumber) {
+                        statsHtml += `
+                            <div style='margin-bottom:8px;'><b>로또 최신 회차:</b> 
+                                <span style='color:#2196f3; font-weight:bold;'>${lottoData.drawNumber}회</span>
+                            </div>
+                            <div style='margin-top:5px;'>
+                                <span style='color:#90caf9;'>${lottoData.date ? lottoData.date.slice(0,10) : '업데이트 날짜 없음'}</span>
+                                <span style='margin-left:10px;'>${lottoData.numbers ? lottoData.numbers.join(', ') : ''}</span>
+                            </div>`;
+                    } else {
+                        statsHtml += '<div style="color:#e57373;">로또 정보를 불러올 수 없습니다.</div>';
+                    }
+                } catch (e) {
+                    console.error("로또 데이터 파싱 오류:", e);
+                    statsHtml += '<div style="color:#e57373;">로또 정보를 불러오는 중 오류가 발생했습니다.</div>';
+                }
+                
+                statsHtml += '</div>';
+                document.getElementById('adminStats').innerHTML = statsHtml;
+            };
+            
+            // 실시간 리스너 등록
+            usersRef.on('value', updateUserList, (error) => {
+                console.error("사용자 데이터 가져오기 실패:", error);
+                document.getElementById('userListTable').innerHTML = `
+                    <div style="color:#e57373; padding:15px; background:#1e1e1e; border-radius:8px; margin:10px 0;">
+                        <p>사용자 목록을 불러오는 중 오류가 발생했습니다.</p>
+                        <p style="margin-top:5px; font-size:0.9em; color:#ffcdd2;">${error.message || '알 수 없는 오류'}</p>
+                    </div>`;
+            });
+            
+            // 대시보드가 닫힐 때 리스너 제거를 위한 함수 등록
+            const adminModal = document.getElementById('adminDashboardModal');
+            const closeBtn = document.getElementById('closeAdminDashboard');
+            const closeModal = () => {
+                adminModal.style.display = 'none';
+                usersRef.off('value', updateUserList); // 리스너 제거
+                closeBtn.removeEventListener('click', closeModal);
+            };
+            closeBtn.addEventListener('click', closeModal);
+            
+            // 모달이 닫힐 때도 리스너 제거
+            adminModal.addEventListener('click', (e) => {
+                if (e.target === adminModal) {
+                    closeModal();
+                }
+            });
+
+            // 방문자 통계 표시 (기존 코드 유지)
+            let visitorStats = JSON.parse(localStorage.getItem('visitorStats') || '{}');
+            let visitorTableHtml = '<table style="width:100%; border-collapse:collapse; background:#1e1e1e; color:#fff;">';
+            visitorTableHtml += '<tr style="background:#263238;"><th style="padding:8px;">날짜</th><th style="padding:8px;">방문자수</th></tr>';
+            Object.keys(visitorStats).sort((a,b)=>b.localeCompare(a)).forEach(date => {
+                visitorTableHtml += `<tr><td style='padding:8px;'>${date}</td><td style='padding:8px;'>${visitorStats[date]}</td></tr>`;
+            });
+            visitorTableHtml += '</table>';
+            document.getElementById('visitorStatsTable').innerHTML = visitorTableHtml;
+
+            // 로또 업데이트 현황 표시 (기존 코드 유지)
+            let lottoData = null;
+            try {
+                lottoData = JSON.parse(localStorage.getItem('latestWinningNumber'));
+            } catch(e) {}
+            let lottoStatusHtml = '';
+            if(lottoData && lottoData.drawNumber && lottoData.numbers) {
+                lottoStatusHtml += `<div style='margin-bottom:8px;'>최신 업데이트 회차: <b style='color:#ff9800;'>${lottoData.drawNumber}회</b></div>`;
+                lottoStatusHtml += `<div>업데이트 날짜: <b style='color:#90caf9;'>${lottoData.date ? lottoData.date.slice(0,10) : '알수없음'}</b></div>`;
+                lottoStatusHtml += `<div style='margin-top:8px;'>번호: <span style='color:#fff;'>${lottoData.numbers.join(', ')}</span></div>`;
+            } else {
+                lottoStatusHtml = '<div style="color:#e57373;">로또번호 업데이트 기록이 없습니다.</div>';
+            }
+            document.getElementById('lottoUpdateStatus').innerHTML = lottoStatusHtml;
+
+            document.getElementById('adminDashboardModal').style.display = 'flex';
+        }
+
+        // 방문자수 집계: 날짜별로 localStorage에 저장
+        function updateVisitorCount() {
+            const today = new Date().toISOString().slice(0,10);
+            let visitorStats = JSON.parse(localStorage.getItem('visitorStats') || '{}');
+            visitorStats[today] = (visitorStats[today] || 0) + 1;
+            localStorage.setItem('visitorStats', JSON.stringify(visitorStats));
+        }
+        updateVisitorCount();
+
+        // 버튼들에 대한 이벤트 리스너 유지
+        if(document.getElementById('btn-predict')) {
+            document.getElementById('btn-predict').addEventListener('click', function() {
+                location.href = 'pages/page4.html'; // 이번주 번호 예측 페이지
+            });
+        }
+        
+        if(document.getElementById('btn-ranking')) {
+            document.getElementById('btn-ranking').addEventListener('click', function() {
+                location.href = 'pages/page5.html'; // 랭킹표 페이지
+            });
+        }
+        
+        // 회원가입 버튼 클릭 이벤트
+        document.getElementById('signupBtn').addEventListener('click', function() {
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('signupModal').style.display = 'flex';
+        });
+        
+        // 회원가입 모달 닫기
+        document.getElementById('closeSignup').addEventListener('click', function() {
+            document.getElementById('signupModal').style.display = 'none';
+        });
+        
+        // 로그인으로 돌아가기 버튼
+        document.getElementById('backToLoginBtn').addEventListener('click', function() {
+            document.getElementById('signupModal').style.display = 'none';
+            document.getElementById('loginModal').style.display = 'flex';
+        });
+        
+        // 회원가입 처리
+        document.getElementById('registerBtn').addEventListener('click', function() {
+            const id = document.getElementById('signupId').value;
+            const email = document.getElementById('signupEmail').value;
+            const pw = document.getElementById('signupPw').value;
+            const pwConfirm = document.getElementById('signupPwConfirm').value;
+            
+            // 유효성 검사
+            if (!id || !email || !pw || !pwConfirm) {
+                alert('모든 필드를 입력해주세요.');
+                return;
+            }
+            
+            if (pw !== pwConfirm) {
+                alert('비밀번호가 일치하지 않습니다.');
+                return;
+            }
+            
+            // 이메일 형식 검사
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                alert('유효한 이메일 주소를 입력해주세요.');
+                return;
+            }
+
+            // ID 중복 검사 먼저 수행
+            database.ref('auth/users').orderByChild('id').equalTo(id).once('value')
+                .then((snapshot) => {
+                    if (snapshot.exists()) {
+                        throw new Error('이미 사용 중인 아이디입니다.');
+                    }
+                    
+                    // 새 사용자 데이터 생성
+                    const newUserRef = database.ref('users').push();
+                    const userId = newUserRef.key;
+                    const currentTime = Date.now();
+                    
+                    // 사용자 데이터 구조 통일
+                    const userData = {
+                        id: id,
+                        email: email,
+                        password: pw,  // 실제 프로덕션에서는 암호화되어야 함
+                        joinDate: currentTime,
+                        lastLogin: currentTime,
+                        profile: {
+                            email: email,
+                            joinDate: currentTime,
+                            lastLogin: currentTime
+                        }
+                    };
+
+                    // users 경로에만 데이터 저장 (중복 저장 제거)
+                    return database.ref(`users/${userId}`).set(userData);
+                })
+                .then(() => {
+                    alert('회원가입이 완료되었습니다. 로그인해주세요.');
+                    document.getElementById('signupModal').style.display = 'none';
+                    document.getElementById('loginModal').style.display = 'flex';
+                    
+                    // 입력 필드 초기화
+                    document.getElementById('signupId').value = '';
+                    document.getElementById('signupEmail').value = '';
+                    document.getElementById('signupPw').value = '';
+                    document.getElementById('signupPwConfirm').value = '';
+                })
+                .catch((error) => {
+                    if (error.message === '이미 사용 중인 아이디입니다.') {
+                        alert(error.message);
+                    } else {
+                        console.error('회원가입 오류:', error);
+                        alert('회원가입 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+                    }
+                });
+        });
+        
+        // 로그인 모달 닫기 버튼
+        document.getElementById('closeLogin').addEventListener('click', function() {
+            document.getElementById('loginModal').style.display = 'none';
+        });
+
+        // 로그인 처리
+        document.getElementById('loginBtn').addEventListener('click', function() {
+            const id = document.getElementById('loginId').value;
+            const pw = document.getElementById('loginPw').value;
+            
+            if (!id || !pw) {
+                alert('아이디와 비밀번호를 모두 입력해주세요.');
+                return;
+            }
+            
+            // 아이디로 사용자 찾기
+            database.ref('users').orderByChild('id').equalTo(id).once('value')
+                .then((snapshot) => {
+                    if (!snapshot.exists()) {
+                        alert('등록되지 않은 아이디입니다.');
+                        return;
+                    }
+
+                    // 첫 번째 일치하는 사용자
+                    const userId = Object.keys(snapshot.val())[0];
+                    const userData = snapshot.val()[userId];
+
+                    if (userData.password !== pw) {
+                        alert('비밀번호가 일치하지 않습니다.');
+                        return;
+                    }
+
+                    // 로그인 성공
+                    sessionStorage.setItem('loggedInUser', userData.id);
+                    sessionStorage.setItem('userUid', userId);
+                    const currentTime = Date.now();
+
+                    // 마지막 로그인 시간 업데이트 (users와 profile 모두 업데이트)
+                    const updates = {
+                        lastLogin: currentTime,
+                        'profile/lastLogin': currentTime
+                    };
+                    return database.ref(`users/${userId}`).update(updates);
+                })
+                .then(() => {
+                    document.getElementById('loginModal').style.display = 'none';
+                    document.getElementById('userBar').style.display = 'flex';
+                    const user = sessionStorage.getItem('loggedInUser');
+                    document.getElementById('userWelcome').textContent = user + '님';
+                })
+                .catch((error) => {
+                    console.error('로그인 오류:', error);
+                    alert('로그인 중 오류가 발생했습니다.');
+                });
+        });
+        
+        // 로그아웃 처리
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            sessionStorage.removeItem('loggedInUser');
+            sessionStorage.removeItem('userUid');
+            document.getElementById('userBar').style.display = 'none';
+            location.reload();
+        });
+
+        // 실시간 뉴스 키워드 업데이트 함수
+        async function updateNewsKeywords() {
+            try {
+                // 로또 관련 키워드 목록
+                const lottoKeywords = [
+                    '로또 당첨 예측',
+                    '이번주 로또 분석',
+                    '로또 필승 전략',
+                    '로또 명당 정보',
+                    '로또 당첨 패턴',
+                    '로또 분석 AI',
+                    '로또 통계 분석',
+                    '로또 번호 생성',
+                    '로또 당첨 후기',
+                    '로또 예상번호'
+                ];
+
+                // 일반 뉴스 키워드 목록
+                const newsKeywords = [
+                    '오늘의 경제',
+                    '주식 시장 동향',
+                    '부동산 소식',
+                    '투자 정보',
+                    '재테크 소식',
+                    '금융 뉴스',
+                    '시장 분석',
+                    '경제 전망',
+                    '주요 뉴스',
+                    '핫이슈'
+                ];
+
+                // 랜덤으로 2-3개 키워드 선택
+                const selectedKeywords = [];
+                
+                // 로또 키워드에서 1개 선택
+                const lottoIndex = Math.floor(Math.random() * lottoKeywords.length);
+                selectedKeywords.push(lottoKeywords[lottoIndex]);
+
+                // 일반 뉴스에서 1-2개 선택
+                const newsCount = Math.floor(Math.random() * 2) + 1; // 1 또는 2
+                const shuffledNews = [...newsKeywords].sort(() => Math.random() - 0.5);
+                selectedKeywords.push(...shuffledNews.slice(0, newsCount));
+
+                // 키워드 조합 및 표시
+                const keywordsText = selectedKeywords.join(' • ');
+                document.getElementById('live-news-keywords').textContent = keywordsText;
+
+                // 업데이트 시간 및 키워드 저장
+                localStorage.setItem('lastNewsUpdate', Date.now().toString());
+                localStorage.setItem('newsKeywords', keywordsText);
+                console.log('뉴스 키워드 업데이트: ' + keywordsText);
+
+            } catch (error) {
+                console.error('뉴스 키워드 업데이트 실패:', error);
+                document.getElementById('live-news-keywords').textContent = '로또 정보 • 실시간 뉴스';
+            }
+        }
+        
+        // 페이지 로드 시 뉴스 키워드 초기화
+        window.addEventListener('load', function() {
+            // 마지막 업데이트 시간 확인
+            const lastUpdate = localStorage.getItem('lastNewsUpdate');
+            const currentTime = Date.now();
+            const updateInterval = 4 * 60 * 60 * 1000; // 4시간 (밀리초)
+            
+            if (!lastUpdate || (currentTime - parseInt(lastUpdate)) > updateInterval) {
+                // 4시간 이상 지났거나 처음 로드할 때 업데이트
+                updateNewsKeywords();
+            } else {
+                // 저장된 키워드가 있으면 복원
+                const savedKeywords = localStorage.getItem('newsKeywords');
+                if (savedKeywords) {
+                    document.getElementById('live-news-keywords').textContent = savedKeywords;
+                }
+            }
+            
+            // 4시간마다 업데이트하는 타이머 설정
+            setInterval(updateNewsKeywords, updateInterval);
+        });
+    </script>
+    <script>
+        function showComingSoon(e){
+          e.preventDefault();
+          alert('준비중입니다.');
+        }
+    </script>
+    <script src="js/brick-game.js" defer></script>
 </body>
-</html> 
+</html>

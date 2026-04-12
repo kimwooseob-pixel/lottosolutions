@@ -17,12 +17,33 @@
             gap: 2px;
             margin: 20px auto;
             justify-content: center;
-            max-width: 520px;
+            width: fit-content;
             padding: 10px;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+            position: relative;
+            overflow: visible;
+        }
+
+        @media screen and (max-width: 600px) {
+            .grid-container {
+                grid-template-columns: repeat(16, 18px);
+                width: 320px;
+                gap: 1px;
+            }
+
+            .grid-cell {
+                width: 18px;
+                height: 18px;
+                font-size: 8px;
+            }
+
+            .grid-cell.header {
+                font-size: 7px;
+            }
+
+            .grid-cell.pattern::before {
+                width: 14px;
+                height: 14px;
+            }
         }
 
         .grid-cell {
@@ -35,6 +56,7 @@
             border: 1px solid #ddd;
             background: white;
             position: relative;
+            box-sizing: border-box;
         }
 
         .grid-cell.header {
@@ -70,127 +92,1302 @@
         .controls {
             display: flex;
             justify-content: center;
-            gap: 10px;
-            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 24px 0;
+            padding: 0 10px;
+        }
+
+        @media screen and (max-width: 600px) {
+            .controls {
+                gap: 8px;
+            }
+            
+            .hint-button {
+                padding: 10px 16px;
+                font-size: 0.85rem;
+            }
         }
 
         .hint-button {
-            padding: 10px 20px;
+            padding: 12px 20px;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
-            font-weight: bold;
+            font-weight: 600;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hint-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .hint-button:hover::before {
+            transform: translateX(0);
+        }
+        
+        .hint-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        .hint-button:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .hint-button:first-child {
-            background-color: #28a745;
+            background: linear-gradient(135deg, #28a745, #20c997);
             color: white;
         }
 
         .hint-button:nth-child(2) {
-            background-color: #dc3545;
+            background: linear-gradient(135deg, #dc3545, #e83e8c);
             color: white;
         }
 
         .hint-button:nth-child(3) {
+            background: linear-gradient(135deg, #ffc107, #fd7e14);
+            color: #212529;
+        }
+
+        .hint-button:nth-child(4) {
+            background: linear-gradient(135deg, #17a2b8, #0096c7);
+            color: white;
+        }
+
+        .hint-button:nth-child(5) {
+            background: linear-gradient(135deg, #9c27b0, #6f42c1);
+            color: white;
+        }
+
+        .hint-button:nth-child(6) {
             background-color: #ffc107;
             color: black;
         }
 
-        .hint-button:nth-child(4) {
+        .hint-button:nth-child(7) {
             background-color: #17a2b8;
             color: white;
         }
 
-        .complete-button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
+        .hint-button:nth-child(8) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(9) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(10) {
             background-color: #dc3545;
             color: white;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s ease;
         }
 
-        .complete-button:disabled {
-            background-color: #6c757d;
-            cursor: not-allowed;
-            opacity: 0.65;
+        .hint-button:nth-child(11) {
+            background-color: #ffc107;
+            color: black;
         }
 
-        .turn-controls {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 1rem;
-            margin: 1rem 0;
-        }
-
-        .turn-button {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 5px;
-            background: #3498db;
+        .hint-button:nth-child(12) {
+            background-color: #17a2b8;
             color: white;
-            cursor: pointer;
         }
 
-        #턴표시 {
-            font-size: 1.1rem;
-            font-weight: bold;
+        .hint-button:nth-child(13) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(14) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(15) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(16) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(17) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(18) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(19) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(20) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(21) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(22) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(23) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(24) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(25) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(26) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(27) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(28) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(29) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(30) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(31) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(32) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(33) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(34) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(35) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(36) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(37) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(38) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(39) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(40) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(41) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(42) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(43) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(44) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(45) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(46) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(47) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(48) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(49) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(50) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(51) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(52) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(53) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(54) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(55) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(56) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(57) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(58) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(59) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(60) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(61) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(62) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(63) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(64) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(65) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(66) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(67) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(68) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(69) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(70) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(71) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(72) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(73) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(74) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(75) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(76) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(77) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(78) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(79) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(80) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(81) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(82) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(83) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(84) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(85) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(86) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(87) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(88) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(89) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(90) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(91) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(92) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(93) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(94) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(95) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(96) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(97) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(98) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(99) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(100) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(101) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(102) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(103) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(104) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(105) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(106) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(107) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(108) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(109) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(110) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(111) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(112) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(113) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(114) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(115) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(116) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(117) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(118) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(119) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(120) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(121) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(122) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(123) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(124) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(125) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(126) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(127) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(128) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(129) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(130) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(131) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(132) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(133) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(134) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(135) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(136) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(137) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(138) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(139) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(140) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(141) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(142) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(143) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(144) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(145) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(146) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(147) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(148) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(149) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(150) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(151) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(152) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(153) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(154) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(155) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(156) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(157) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(158) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(159) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(160) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(161) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(162) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(163) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(164) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(165) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(166) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(167) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(168) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(169) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(170) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(171) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(172) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(173) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(174) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(175) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(176) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(177) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(178) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(179) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(180) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(181) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(182) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(183) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(184) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(185) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(186) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(187) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(188) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(189) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(190) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(191) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(192) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(193) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(194) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(195) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(196) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(197) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(198) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(199) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(200) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(201) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(202) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(203) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(204) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(205) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(206) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(207) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(208) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(209) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(210) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(211) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(212) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(213) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(214) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(215) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(216) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(217) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(218) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(219) {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .hint-button:nth-child(220) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hint-button:nth-child(221) {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .hint-button:nth-child(222) {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .hint-button:nth-child(223) {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .hint-button:nth-child(224) {
+            background-color: #28a745;
+            color: white;
         }
 
         .navigation {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
             margin: 20px 0;
+            padding: 0 10px;
         }
 
         .nav-button {
-            padding: 10px 20px;
+            padding: 12px 24px;
             font-size: 1em;
-            background: linear-gradient(to right, #3498db, #2980b9);
+            background: linear-gradient(135deg, #3498db, #2980b9);
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
             min-width: 150px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .nav-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .nav-button:hover::before {
+            transform: translateX(0);
         }
 
         .nav-button:hover {
-            background: linear-gradient(to right, #2980b9, #2c3e50);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        .nav-button:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .turn-display {
-            font-size: 1.2em;
+            font-size: 1.1em;
             font-weight: bold;
             color: #2c3e50;
-            padding: 10px 20px;
-            background-color: rgba(255, 255, 255, 0.9);
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 14px 0;
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.4;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto 20px auto;
+        }
+        
+        .turn-display > div {
+            margin: 0 12px;
+        }
+
+        .turn-score-box {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto 20px auto;
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            text-align: center;
+            font-size: 0.7em;
+            font-weight: bold;
+            color: #1976d2;
+            padding: 12px 0;
         }
 
         .score-popup {
             position: fixed;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%) scale(0.9);
             background: white;
-            padding: 30px;
+            padding: 18px;
             border-radius: 15px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             text-align: center;
-            min-width: 320px;
-            max-width: 90%;
+            min-width: 252px;
+            max-width: 72%;
+            max-height: 60vh;
             z-index: 1000;
+            max-width: 95vw;
+            width: 420px;
+            max-height: 80vh;
+            min-width: 0;
+            padding: 12px 10px 10px 10px;
+            box-sizing: border-box;
+            overflow: visible;
+        }
+
+        @media (max-width: 600px) {
+            .score-popup {
+                width: 98vw;
+                max-width: 98vw;
+                min-width: 0;
+                padding: 8px 2vw 8px 2vw;
+            }
         }
 
         .result-container {
@@ -202,12 +1399,12 @@
         }
 
         .score-text {
-            font-size: 1.3em;
+            font-size: 1em;
             color: #2c3e50;
             white-space: nowrap;
             background: #f8f9fa;
-            padding: 10px 20px;
-            border-radius: 10px;
+            padding: 12px 18px;
+            border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
@@ -219,51 +1416,39 @@
 
         .numbers-column {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
+            flex-wrap: wrap;
             gap: 10px;
             align-items: center;
+            justify-content: center;
         }
 
         .number-ball {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: #f8f9fa;
-            border: 2px solid #ddd;
+            width: 26px;
+            height: 26px;
+            font-size: 1em;
+            margin: 2px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            margin: 5px;
-            font-weight: bold;
-            animation: fadeIn 0.5s ease-in-out forwards;
+            border-radius: 50%;
+            border: 2px solid #1976D2;
+            background: transparent;
+            box-sizing: border-box;
         }
 
-        .number-ball.matched {
-            background-color: #e74c3c;
-            border-color: #c0392b;
-            color: white;
-            animation: pulse 1s infinite;
-        }
-
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4);
-            }
-            70% {
-                transform: scale(1.1);
-                box-shadow: 0 0 0 10px rgba(231, 76, 60, 0);
-            }
-            100% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(231, 76, 60, 0);
-            }
+        .number-ball img {
+            width: 25px;
+            height: 25px;
+            display: block;
+            margin: 2px auto 0 auto;
         }
 
         .animal-container {
             position: relative;
-            height: 280px;
-            margin: 20px 0;
+            height: 180px;
+            margin: 15px 0;
             display: flex;
             justify-content: center;
             align-items: flex-end;
@@ -271,7 +1456,8 @@
         }
 
         .animal-image {
-            height: 250px;
+            height: 90px;
+            max-width: 100%;
             object-fit: contain;
             transform: translateY(100%);
             opacity: 0;
@@ -280,14 +1466,14 @@
 
         .speech-bubble {
             position: absolute;
-            top: 20px;
-            right: -20px;
+            top: 10px;
+            right: -10px;
             background: white;
-            padding: 15px 20px;
-            border-radius: 15px;
+            padding: 7px 10px;
+            border-radius: 12px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            font-size: 1.1em;
-            max-width: 220px;
+            font-size: 0.95em;
+            max-width: 140px;
             opacity: 0;
             animation: fadeIn 0.5s ease-out 1.2s forwards;
         }
@@ -303,23 +1489,29 @@
         }
 
         .close-button {
-            padding: 12px 40px;
-            background: linear-gradient(to right, #3498db, #2980b9);
+            padding: 10px 24px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
             color: white;
             border: none;
             border-radius: 25px;
             cursor: pointer;
-            font-size: 1.1em;
+            font-size: 1em;
             font-weight: bold;
             transition: all 0.3s ease;
             margin-top: 10px;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            letter-spacing: 0.5px;
         }
 
         .close-button:hover {
-            background: linear-gradient(to right, #2980b9, #2c3e50);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+            background: linear-gradient(135deg, #2980b9, #2c3e50);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+        }
+        
+        .close-button:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         @keyframes bounceIn {
@@ -364,31 +1556,187 @@
         }
 
         .next-turn-button {
-            background-color: #6c5ce7 !important;
+            background: linear-gradient(135deg, #6c5ce7, #5541d8) !important;
             color: white !important;
             transition: all 0.3s ease;
         }
 
         .next-turn-button:hover {
-            background-color: #5541d8 !important;
-            transform: translateY(-2px);
+            background: linear-gradient(135deg, #5541d8, #4834d4) !important;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(108, 92, 231, 0.2) !important;
+        }
+        
+        .next-turn-button:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 4px rgba(108, 92, 231, 0.1) !important;
+        }
+
+        .score-display {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 2px;
+            padding: 1px;
+            width: 12px !important;
+            height: 12px !important;
+            border-radius: 4px;
+            padding: 2px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .grid-cell {
+            position: relative;
+        }
+
+        @keyframes gradient-pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50%      { transform: translate(-50%, -50%) scale(1.18); }
+        }
+        .hint5-gradient-circle {
+            animation: gradient-pulse 1.2s infinite;
+        }
+
+        @keyframes cell-pulse-rainbow {
+            0%   { box-shadow: 0 0 0 0 rgba(255,0,0,0.7); }
+            16%  { box-shadow: 0 0 0 8px rgba(255,165,0,0.5); }
+            33%  { box-shadow: 0 0 0 12px rgba(255,255,0,0.5); }
+            50%  { box-shadow: 0 0 0 16px rgba(0,255,0,0.5); }
+            66%  { box-shadow: 0 0 0 12px rgba(0,0,255,0.5); }
+            83%  { box-shadow: 0 0 0 8px rgba(75,0,130,0.5); }
+            100% { box-shadow: 0 0 0 0 rgba(148,0,211,0.7); }
+        }
+        .pulse {
+            animation: cell-pulse-rainbow 0.5s;
+        }
+
+        /* 이미지 갤러리 스타일 */
+        .image-gallery {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            margin: 20px auto;
+            overflow: hidden;
+            border-radius: 10px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+        }
+
+        .image-slider {
+            display: flex;
+            width: 300%;
+            transition: transform 1s ease;
+        }
+
+        .image-slider img {
+            width: 33.333%;
+            height: 300px;
+            object-fit: contain;
+        }
+
+        /* 슬라이더 네비게이션 버튼 개선 */
+        .slider-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        
+        .slider-nav:hover {
+            background: rgba(0,0,0,0.7);
+            transform: translateY(-50%) scale(1.1);
+        }
+        
+        .slider-nav.prev {
+            left: 15px;
+        }
+        
+        .slider-nav.next {
+            right: 15px;
+        }
+        
+        .slider-indicators {
+            position: absolute;
+            bottom: 15px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+        
+        .indicator {
+            width: 12px;
+            height: 12px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .indicator.active {
+            background: rgba(255,255,255,1);
+            transform: scale(1.2);
+            box-shadow: 0 0 8px rgba(255,255,255,0.5);
+        }
+        
+        .indicator:hover {
+            background: rgba(255,255,255,0.8);
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>로또 패턴 분석</h1>
+        <!-- 이미지 갤러리 추가 -->
+        <div class="image-gallery">
+            <div class="image-slider">
+                <img src="../images/vi1.png" alt="이미지 1" onerror="this.onerror=null; this.src='../images/ca2.png';">
+                <img src="../images/vi2.png" alt="이미지 2" onerror="this.onerror=null; this.src='../images/ca2.png';">
+                <img src="../images/vi3.png" alt="이미지 3" onerror="this.onerror=null; this.src='../images/ca2.png';">
+            </div>
+            <!-- 화살표 버튼 추가 -->
+            <button class="slider-nav prev">&lt;</button>
+            <button class="slider-nav next">&gt;</button>
+            <!-- 인디케이터 추가 -->
+            <div class="slider-indicators">
+                <span class="indicator active" data-index="0"></span>
+                <span class="indicator" data-index="1"></span>
+                <span class="indicator" data-index="2"></span>
+            </div>
+        </div>
+        
+        <!-- <h1>로또 패턴 분석</h1> -->
         <div class="controls">
             <button class="hint-button" onclick="힌트1()">힌트1</button>
             <button class="hint-button" onclick="힌트2()">힌트2</button>
             <button class="hint-button" onclick="힌트3()">힌트3</button>
             <button class="hint-button" onclick="힌트4()">힌트4</button>
-            <button class="hint-button next-turn-button" onclick="다음턴()">다음턴</button>
+            <button class="hint-button" onclick="힌트5()">힌트5</button>
         </div>
         <div class="navigation">
-            <button class="nav-button" onclick="location.href='page4.html'">이번주번호 도전</button>
-            <div class="turn-display">1턴 (1000회-1014회)</div>
-            <button class="nav-button" onclick="location.href='page5.html'">랭킹 확인</button>
+            <!-- <button class="nav-button" onclick="이번주번호도전()">
+                <span class="top-text">이번주</span>
+                <span class="bottom-text">도전</span>
+            </button> -->
+            <div class="turn-display">
+                <div>2턴</div>
+                <div>1001-1015</div>
+            </div>
+            <div class="turn-score-box">
+                <div id="turn-score-list"></div>
+                <div id="turn-score-sum"></div>
+            </div>
+            <!-- <button class="nav-button" onclick="랭킹확인()">랭킹확인</button> -->
         </div>
         <div class="game-container">
             <div class="grid-container"></div>
@@ -415,5 +1763,230 @@
         </div>
     </template>
     <script src="../js/script.js"></script>
+    
+    <script>
+        // 이미지 슬라이드쇼 기능
+        let currentSlide = 0;
+        const totalSlides = 3;
+        let slideInterval;
+        
+        function showSlide(index) {
+            const slider = document.querySelector('.image-slider');
+            const indicators = document.querySelectorAll('.indicator');
+            if (!slider || !indicators.length) return;
+            
+            if (index >= totalSlides) {
+                currentSlide = 0;
+            } else if (index < 0) {
+                currentSlide = totalSlides - 1;
+            } else {
+                currentSlide = index;
+            }
+            
+            slider.style.transform = `translateX(-${currentSlide * 33.333}%)`;
+            
+            // 인디케이터 업데이트
+            indicators.forEach((indicator, i) => {
+                if (i === currentSlide) {
+                    indicator.style.background = 'rgba(255,255,255,1)';
+                    indicator.classList.add('active');
+                } else {
+                    indicator.style.background = 'rgba(255,255,255,0.5)';
+                    indicator.classList.remove('active');
+                }
+            });
+        }
+        
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+        
+        function prevSlide() {
+            showSlide(currentSlide - 1);
+        }
+        
+        function startSlideShow() {
+            stopSlideShow();
+            slideInterval = setInterval(nextSlide, 5000);
+        }
+        
+        function stopSlideShow() {
+            if (slideInterval) {
+                clearInterval(slideInterval);
+            }
+        }
+        
+        // 페이지 로드 시 초기화
+        window.addEventListener('load', function() {
+            showSlide(0);
+            startSlideShow();
+            
+            // 버튼 이벤트 리스너 추가
+            const prevButton = document.querySelector('.slider-nav.prev');
+            const nextButton = document.querySelector('.slider-nav.next');
+            const indicators = document.querySelectorAll('.indicator');
+            
+            if (prevButton) {
+                prevButton.addEventListener('click', function() {
+                    prevSlide();
+                    startSlideShow(); // 수동 전환 후 타이머 재시작
+                });
+            }
+            
+            if (nextButton) {
+                nextButton.addEventListener('click', function() {
+                    nextSlide();
+                    startSlideShow(); // 수동 전환 후 타이머 재시작
+                });
+            }
+            
+            // 인디케이터 이벤트 리스너 추가
+            indicators.forEach(indicator => {
+                indicator.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    showSlide(index);
+                    startSlideShow(); // 수동 전환 후 타이머 재시작
+                });
+            });
+            
+            // 이미지에 마우스 올릴 때 슬라이드쇼 일시 정지
+            const gallery = document.querySelector('.image-gallery');
+            if (gallery) {
+                gallery.addEventListener('mouseenter', stopSlideShow);
+                gallery.addEventListener('mouseleave', startSlideShow);
+            }
+            
+            // 페이지 로드 시 힌트5 버튼 자동 활성화
+            setTimeout(function() {
+                // 힌트5 버튼 찾아서 클릭
+                const 힌트5버튼 = document.querySelectorAll('.hint-button')[4]; // 5번째 버튼(0부터 시작하므로 인덱스 4)
+                if (힌트5버튼) {
+                    // 버튼에 활성화 스타일 추가
+                    document.querySelectorAll('.hint-button').forEach(btn => {
+                        btn.classList.remove('active-hint');
+                    });
+                    힌트5버튼.classList.add('active-hint');
+                    
+                    // 힌트5 함수 호출
+                    힌트5();
+                    
+                    // 설명 팝업 표시
+                    setTimeout(showHint5Explanation, 500);
+                }
+            }, 800);
+        });
+    </script>
+    
+    <script>
+        // 힌트5 설명 팝업
+        function showHint5Explanation() {
+            // 기존 팝업이 있으면 제거
+            const existingPopup = document.querySelector('.hint5-explanation');
+            if (existingPopup) {
+                existingPopup.remove();
+            }
+            
+            // 팝업 컨테이너 생성
+            const popup = document.createElement('div');
+            popup.className = 'hint5-explanation';
+            popup.style.position = 'fixed';
+            popup.style.top = '50%';
+            popup.style.left = '50%';
+            popup.style.transform = 'translate(-50%, -50%)';
+            popup.style.backgroundColor = 'white';
+            popup.style.padding = '20px';
+            popup.style.borderRadius = '15px';
+            popup.style.boxShadow = '0 5px 15px rgba(0,0,0,0.3)';
+            popup.style.zIndex = '9999';
+            popup.style.maxWidth = '80%';
+            popup.style.textAlign = 'center';
+            
+            // 설명 이미지 추가
+            const img = document.createElement('img');
+            img.src = '../images/ca1.png';
+            img.alt = '힌트5 설명';
+            img.style.maxWidth = '100%';
+            img.style.height = 'auto';
+            img.style.marginBottom = '15px';
+            img.style.borderRadius = '8px';
+            img.onerror = function() {
+                this.src = '../images/ca2.png'; // 이미지 로드 실패 시 대체 이미지
+            };
+            
+            // 설명 텍스트 추가
+            const description = document.createElement('p');
+            description.textContent = '힌트5 기능은 패턴 예측을 도와주는 색상 그라데이션을 제공합니다. 숨겨진 패턴을 시각적으로 확인하여 로또 번호를 더 정확하게 예측해보세요.';
+            description.style.margin = '15px 0';
+            description.style.lineHeight = '1.5';
+            description.style.fontSize = '16px';
+            description.style.color = '#333';
+            
+            // 닫기 버튼 추가
+            const closeButton = document.createElement('button');
+            closeButton.textContent = '확인';
+            closeButton.className = 'hint-button';
+            closeButton.style.background = 'linear-gradient(135deg, #9c27b0, #6f42c1)';
+            closeButton.style.color = 'white';
+            closeButton.style.border = 'none';
+            closeButton.style.borderRadius = '8px';
+            closeButton.style.padding = '10px 25px';
+            closeButton.style.cursor = 'pointer';
+            closeButton.style.fontWeight = 'bold';
+            closeButton.style.margin = '10px auto';
+            closeButton.style.display = 'block';
+            closeButton.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+            
+            closeButton.addEventListener('click', function() {
+                popup.remove();
+            });
+            
+            // 요소들을 팝업에 추가
+            popup.appendChild(img);
+            popup.appendChild(description);
+            popup.appendChild(closeButton);
+            
+            // 배경 딤처리 추가
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100%';
+            overlay.style.height = '100%';
+            overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+            overlay.style.zIndex = '9998';
+            
+            // 오버레이 클릭 시 팝업 닫기
+            overlay.addEventListener('click', function(e) {
+                // 팝업 영역 클릭 시 이벤트 버블링 막기
+                if (e.target === overlay) {
+                    overlay.remove();
+                    popup.remove();
+                }
+            });
+            
+            // 문서에 추가
+            document.body.appendChild(overlay);
+            document.body.appendChild(popup);
+        }
+        
+        // 힌트 버튼에 활성화 스타일 추가
+        document.addEventListener('DOMContentLoaded', function() {
+            // 활성화된 힌트 버튼 스타일 추가
+            const style = document.createElement('style');
+            style.textContent = `
+                .hint-button.active-hint {
+                    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5), 0 6px 12px rgba(0,0,0,0.15);
+                    animation: pulse-border 1.5s infinite;
+                }
+                
+                @keyframes pulse-border {
+                    0% { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5), 0 6px 12px rgba(0,0,0,0.15); }
+                    50% { box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.3), 0 6px 12px rgba(0,0,0,0.15); }
+                    100% { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5), 0 6px 12px rgba(0,0,0,0.15); }
+                }
+            `;
+            document.head.appendChild(style);
+        });
+    </script>
 </body>
 </html> 

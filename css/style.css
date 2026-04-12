@@ -45,10 +45,13 @@ h1 {
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    min-width: 100px;
+    min-width: 80px;
     display: flex;
     align-items: center;
     justify-content: center;
+    text-align: center;
+    line-height: 1.2;
+    white-space: pre-line;
 }
 
 .hint-button:active {
@@ -101,9 +104,9 @@ h1 {
 .grid-cell.marked::before {
     content: '';
     position: absolute;
-    width: 20px;
-    height: 20px;
-    border: 4px solid red;
+    width: 14px;
+    height: 14px;
+    border: 2px solid red;
     border-radius: 50%;
     background-color: white;
     z-index: 1;
@@ -119,23 +122,54 @@ h1 {
 
 .connection-line {
     position: absolute;
-    background-color: #007bff;
+    background: rgba(76, 175, 80, 0.6);
     transform-origin: left center;
     border-radius: 4px;
     pointer-events: none;
-    transition: opacity 0.3s ease;
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
+    height: 6px !important;
+}
+
+/* 힌트1용 스타일 */
+.hint1-line {
+    position: absolute;
+    background: linear-gradient(90deg, 
+        rgba(33, 150, 243, 0.2) 0%,
+        rgba(100, 181, 246, 0.9) 25%,
+        rgba(33, 150, 243, 0.9) 50%,
+        rgba(100, 181, 246, 0.9) 75%,
+        rgba(33, 150, 243, 0.2) 100%
+    );
+    background-size: 200% 100%;
+    transform-origin: left center;
+    border-radius: 5px;
+    pointer-events: none;
+    animation: flowHint1Line 4s linear infinite;
+    box-shadow: 
+        0 0 10px rgba(33, 150, 243, 0.4),
+        0 0 20px rgba(33, 150, 243, 0.2);
+    height: 8px !important;
+}
+
+@keyframes flowHint1Line {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
 }
 
 .connection-line.strong {
-    height: 4px;
-    background-color: #1976D2;
-    box-shadow: 0 0 4px rgba(33, 150, 243, 0.5);
+    height: 6px;
+    background: rgba(76, 175, 80, 0.8);
+    box-shadow: 0 0 12px rgba(76, 175, 80, 0.6);
 }
 
 .connection-line.weak {
-    height: 2px;
-    background-color: #90CAF9;
-    opacity: 0.7;
+    height: 4px;
+    background: rgba(76, 175, 80, 0.4);
+    box-shadow: 0 0 6px rgba(76, 175, 80, 0.3);
 }
 
 .prediction-button {
@@ -202,8 +236,9 @@ h1 {
     }
 
     .grid-cell.marked::before {
-        width: 16px;
-        height: 16px;
+        width: 11px;
+        height: 11px;
+        border: 1px solid red;
     }
 
     .prediction-button {
@@ -215,7 +250,7 @@ h1 {
     .hint-button {
         padding: 10px 15px;
         font-size: 0.8rem;
-        min-width: 90px;
+        min-width: 72px;
     }
 
     .grid-container {
@@ -657,11 +692,78 @@ h1 {
 
 .angle-connection {
     position: absolute;
-    background-color: #4CAF50;
+    background: linear-gradient(90deg, 
+        rgba(76, 175, 80, 0.2) 0%,
+        rgba(129, 199, 132, 0.9) 25%,
+        rgba(255, 193, 7, 0.9) 50%,
+        rgba(129, 199, 132, 0.9) 75%,
+        rgba(76, 175, 80, 0.2) 100%
+    );
+    background-size: 200% 100%;
     transform-origin: left center;
     border-radius: 4px;
     pointer-events: none;
-    transition: opacity 0.3s ease;
+    animation: flowLine 2s linear infinite;
+    box-shadow: 
+        0 0 10px rgba(76, 175, 80, 0.5),
+        0 0 20px rgba(255, 193, 7, 0.3);
+    height: 6px !important;
+    z-index: 3;
+}
+
+@keyframes flowAngleLine {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.angle-dot {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #ffffff;
+    border-radius: 50%;
+    filter: blur(0.5px);
+    box-shadow: 
+        0 0 4px #fff,
+        0 0 8px #fff,
+        0 0 12px #4CAF50,
+        0 0 16px #4CAF50,
+        0 0 20px #FFC107;
+    animation: moveAngleDot 3s linear infinite;
+    z-index: 10;
+}
+
+@keyframes moveAngleDot {
+    0% {
+        left: -10px;
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    10% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    90% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    100% {
+        left: calc(100% + 10px);
+        opacity: 0;
+        transform: scale(0.8);
+    }
+}
+
+.angle-dot-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    z-index: 5;
 }
 
 .gradient-circle {
@@ -669,4 +771,334 @@ h1 {
     border-radius: 50%;
     pointer-events: none;
     transition: all 0.3s ease;
+    animation: pulseCircle 2s infinite;
+}
+
+@keyframes pulseCircle {
+    0% {
+        transform: scale(1);
+        opacity: 0.7;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 0.7;
+    }
+}
+
+.nav-button {
+    padding: 10px 20px;
+    font-size: 1em;
+    background: linear-gradient(to right, #3498db, #2980b9);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.nav-button .top-text {
+    font-size: 0.9em;
+    line-height: 1.2;
+}
+
+.nav-button .bottom-text {
+    font-size: 1.1em;
+    line-height: 1.4;
+    font-weight: bold;
+}
+
+.moving-dot {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: #000000;
+    border-radius: 50%;
+    filter: blur(0px);
+    box-shadow: 
+        0 0 2px #000,
+        0 0 4px #000,
+        0 0 1px #fff;
+    animation: moveDot 3s linear infinite;
+    z-index: 10;
+    opacity: 0.9;
+}
+
+@keyframes moveDot {
+    0% {
+        left: -10px;
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    10% {
+        opacity: 0.9;
+        transform: scale(1);
+    }
+    90% {
+        opacity: 0.9;
+        transform: scale(1);
+    }
+    100% {
+        left: calc(100% + 10px);
+        opacity: 0;
+        transform: scale(0.8);
+    }
+}
+
+.dot-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    z-index: 5;
+}
+
+.hint6-moving-dot {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: linear-gradient(45deg, #2196F3, #03A9F4);
+    border-radius: 50%;
+    filter: blur(0px);
+    box-shadow: 
+        0 0 4px #2196F3,
+        0 0 8px #03A9F4,
+        0 0 12px rgba(3, 169, 244, 0.5);
+    animation: moveHint6Dot 5s linear infinite;
+    z-index: 10;
+    opacity: 0.9;
+    transform: translateY(-5px);
+}
+
+@keyframes moveHint6Dot {
+    0% {
+        left: -10px;
+        opacity: 0;
+        transform: translateY(-5px) scale(0.8);
+        background: #2196F3;
+    }
+    10% {
+        opacity: 0.9;
+        transform: translateY(-5px) scale(1);
+        background: #03A9F4;
+    }
+    50% {
+        background: #00BCD4;
+    }
+    90% {
+        opacity: 0.9;
+        transform: translateY(-5px) scale(1);
+        background: #03A9F4;
+    }
+    100% {
+        left: calc(100% + 10px);
+        opacity: 0;
+        transform: translateY(-5px) scale(0.8);
+        background: #2196F3;
+    }
+}
+
+.hint6-dot-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    z-index: 5;
+}
+
+.hint6-line {
+    position: absolute;
+    background: linear-gradient(90deg, 
+        rgba(33, 150, 243, 0.1) 0%,
+        rgba(3, 169, 244, 0.2) 50%,
+        rgba(33, 150, 243, 0.1) 100%
+    );
+    pointer-events: none;
+    height: 4px !important;
+    border-radius: 2px;
 } 
+
+/* 예측번호 카드 스타일 개선 */
+.prediction-row {
+    background: #32384a;
+    border-radius: 12px;
+    margin: 10px 0;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    max-width: 400px;
+    width: 100%;
+    box-sizing: border-box;
+}
+.prediction-numbers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.timestamp {
+    color: #aaa;
+    font-size: 0.95em;
+    margin-top: 4px;
+    margin-bottom: 0;
+}
+@media (max-width: 600px) {
+    .prediction-row {
+        max-width: 98vw;
+        padding: 10px 4px;
+    }
+    .prediction-numbers {
+        gap: 5px;
+    }
+}
+
+/* 점수/결과 팝업창 크기/위치/스크롤 조정 */
+.score-popup {
+    position: fixed;
+    top: 5%;
+    left: 50%;
+    transform: translate(-50%, 0) scale(0.54);
+    background: #fff;
+    padding: 8px 4px 4px 4px;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    z-index: 1001;
+    min-width: 220px;
+    max-width: 90vw;
+    min-height: 120px;
+    max-height: 50vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+@media (max-width: 600px) {
+    .score-popup {
+        transform: translate(-50%, 0) scale(0.48);
+        top: 2%;
+        min-width: 120px;
+        min-height: 80px;
+        max-height: 38vh;
+        padding: 4px 2px 2px 2px;
+    }
+}
+
+/* Brick Game Styles */
+.game-container {
+    position: relative;
+    width: 100%;
+    max-width: 900px;
+    height: 600px;
+    margin: 0 auto;
+    background-color: #1a1a1a;
+    overflow: hidden;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.play-area {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+#brickContainer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: auto;
+    z-index: 1;
+}
+
+.brick {
+    position: absolute;
+    border-radius: 3px;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+    transition: all 0.1s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    text-shadow: 0 0 2px #000;
+    cursor: pointer;
+}
+
+.brick:hover {
+    opacity: 0.8;
+    transform: scale(1.05);
+}
+
+#paddle {
+    position: absolute;
+    height: 10px;
+    background: linear-gradient(90deg, #4CAF50, #8BC34A);
+    border-radius: 5px;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+}
+
+.ball {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #ffffff, #ff5252);
+    box-shadow: 0 0 10px rgba(255, 82, 82, 0.7);
+    z-index: 5;
+}
+
+.game-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding: 0 10px;
+    color: #333;
+    font-weight: bold;
+}
+
+.game-stats div {
+    background: rgba(255, 255, 255, 0.8);
+    padding: 5px 15px;
+    border-radius: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.game-controls {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.game-controls button {
+    padding: 10px 20px;
+    margin: 0 5px;
+    border: none;
+    border-radius: 5px;
+    background: linear-gradient(145deg, #2196F3, #1976D2);
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.game-controls button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.game-controls button:active {
+    transform: translateY(1px);
+}

@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2196F3">
+    <meta name="description" content="로또 당첨번호 패턴을 분석하고 예측하는 앱">
+    <title>화살표 게임</title>
+    <link rel="manifest" href="../manifest.json">
+    <link rel="stylesheet" href="../css/arrow-game.css">
+    <link rel="icon" type="image/png" sizes="192x192" href="../images/icons/icon-192x192.png">
+    <link rel="apple-touch-icon" href="../images/icons/icon-192x192.png">
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --primary-dark: #1976D2;
+            --accent-color: #FF4081;
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #ffffff;
+            --text-secondary: #b0bec5;
+            --grid-border: #333;
+            --grid-bg: #222;
+            --cell-highlight: #e74c3c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .title-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 24px;
+            padding: 0 10px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+            letter-spacing: -0.03em;
+        }
+
+        .hint-button {
+            padding: 10px 16px;
+            background: linear-gradient(45deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .hint-button.small {
+            padding: 8px 14px;
+            font-size: 0.85rem;
+        }
+
+        .hint-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+        }
+
+        .hint-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(33, 150, 243, 0.2);
+        }
+
+        .arrow-panels {
+            width: 100%;
+            margin-bottom: 20px;
+            background-color: rgba(30, 30, 30, 0.7);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .arrow-panel {
+            width: 100%;
+            margin: 0 auto 8px auto;
+            height: 36px;
+            padding: 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .arrow-num {
+            width: 36px;
+            height: 36px;
+            background-color: var(--grid-bg);
+            border: 1px solid var(--grid-border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        .game-container {
+            position: relative;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+            background-color: rgba(30, 30, 30, 0.7);
+            border-radius: 12px;
+            padding: 24px;
+            padding-left: 60px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            overflow: visible;
+        }
+
+        .archer-container {
+            position: absolute;
+            top: 40px;
+            left: -40px;
+            z-index: 100;
+            width: 80px;
+            display: flex;
+        }
+
+        #archer-img {
+            width: 100%;
+            height: auto;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(17, 32px);
+            gap: 1px;
+            margin: 20px auto;
+            justify-content: center;
+            width: fit-content;
+            position: relative;
+            overflow: visible;
+        }
+
+        .grid-cell, .grid-header {
+            width: 32px;
+            height: 29px;
+            font-size: 14px;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--grid-border);
+            background: var(--grid-bg);
+            color: var(--text-color);
+            transition: all 0.2s ease;
+        }
+
+        .grid-cell.winning {
+            position: relative;
+            color: var(--cell-highlight);
+            font-weight: bold;
+            z-index: 1;
+        }
+
+        .winning-circle {
+            position: absolute;
+            width: 26px;
+            height: 26px;
+            border: 2px solid var(--cell-highlight);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 0;
+        }
+
+        .number-cell.row-header {
+            background: var(--primary-dark);
+            color: white;
+            font-weight: bold;
+            position: relative;
+        }
+
+        .number-cell.header {
+            background: var(--primary-color);
+            color: white;
+            font-weight: bold;
+        }
+
+        .score-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            width: 90%;
+            max-width: 500px;
+            display: none;
+        }
+
+        .result-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .score-text {
+            font-size: 1.2rem;
+            margin-bottom: 16px;
+            text-align: center;
+            color: var(--text-color);
+        }
+
+        .match-count, .score-value {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .numbers-column {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .animal-container {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .animal-image {
+            width: 80px;
+            height: auto;
+        }
+
+        .speech-bubble {
+            background-color: var(--primary-dark);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: white;
+            margin-left: 15px;
+            position: relative;
+            max-width: 70%;
+            line-height: 1.5;
+        }
+
+        .speech-bubble::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-width: 10px 10px 10px 0;
+            border-style: solid;
+            border-color: transparent var(--primary-dark) transparent transparent;
+        }
+
+        .close-button {
+            padding: 10px 24px;
+            background: linear-gradient(45deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 16px auto 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .close-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        @media (max-width: 700px) {
+            body {
+                width: 100vw;
+                overflow-x: hidden;
+            }
+            .container, .game-container, .grid-container {
+                width: 100%;
+                max-width: 100%;
+                margin: 0 auto;
+                padding: 10px;
+            }
+            .arrow-panel {
+                width: 100%;
+                max-width: 100%;
+                margin: 0 auto 8px auto;
+                height: 25px;
+                padding: 0;
+                display: flex;
+                justify-content: space-between;
+            }
+            .arrow-num {
+                width: 12vw;
+                height: 12vw;
+                max-width: 29px;
+                max-height: 29px;
+                font-size: 0.95em;
+                margin: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .grid-cell, .grid-header {
+                width: 6vw;
+                min-width: 14px;
+                max-width: 28px;
+                height: 6vw;
+                min-height: 14px;
+                max-height: 28px;
+                font-size: 0.95em;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            .title-box {
+                padding: 0;
+            }
+            h1 {
+                font-size: 1.5rem;
+            }
+            .hint-button.small {
+                padding: 6px 10px;
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .grid-cell, .grid-header {
+                min-width: 25px;
+                min-height: 22px;
+                font-size: 12px;
+                width: 25px;
+                height: 22px;
+            }
+            .grid-container {
+                grid-template-columns: repeat(17, 25px);
+                gap: 1px;
+                width: fit-content;
+                margin: 10px auto;
+                padding: 5px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .grid-container {
+                grid-template-columns: repeat(17, 22px);
+                width: 374px;
+                gap: 1px;
+            }
+            .grid-cell, .grid-header {
+                width: 22px;
+                height: 18px;
+                font-size: 10px;
+            }
+            .score-popup {
+                padding: 16px;
+            }
+            .animal-image {
+                width: 60px;
+            }
+            .speech-bubble {
+                font-size: 0.9rem;
+                padding: 10px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title-box">
+            <button class="hint-button small" onclick="힌트5()">경로계산</button>
+            <h1>화살표</h1>
+            <button class="hint-button small" onclick="location.href='../index.html'">돌아가기</button>
+        </div>
+        <div class="arrow-panels">
+            <div class="arrow-panel">
+                <div class="arrow-num"></div>
+                <div class="arrow-num"></div>
+                <div class="arrow-num"></div>
+                <div class="arrow-num"></div>
+                <div class="arrow-num"></div>
+                <div class="arrow-num"></div>
+                <div class="arrow-num"></div>
+                <div class="arrow-num"></div>
+                <div class="arrow-num"></div>
+                <div class="arrow-num"></div>
+            </div>
+        </div>
+        <div class="game-container">
+            <div class="archer-container">
+              <img id="archer-img" src="../images/ar1.png" alt="archer" />
+            </div>
+            <div class="grid-container"></div>
+        </div>
+    </div>
+    <template id="score-popup-template">
+        <div class="score-popup">
+            <div class="result-container">
+                <div class="score-text">
+                    맞춘 개수: <span class="match-count">0</span>개&nbsp;&nbsp;/&nbsp;&nbsp;획득 점수: <span class="score-value">0</span>점
+                </div>
+                <div class="numbers-column">
+                    <!-- Numbers will be inserted here by JavaScript -->
+                </div>
+            </div>
+            <div class="animal-container">
+                <img src="../images/fa2.png" alt="동물 캐릭터" class="animal-image">
+                <div class="speech-bubble">
+                    다시 한번 확인해 보고<br>
+                    패턴을 찾아볼까요!!
+                </div>
+            </div>
+            <button class="close-button" onclick="closeScorePopup()">닫기</button>
+        </div>
+    </template>
+    <script src="../js/arrow-game.js"></script>
+</body>
+</html> 
