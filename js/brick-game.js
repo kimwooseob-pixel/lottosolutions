@@ -40,7 +40,8 @@ const gameState = {
     draws: [],
     currentRound: 1,
     totalBalls: 45, // 무적모드 공 개수
-    removedBalls: 0 // 무적모드에서 사라진 공 개수
+    removedBalls: 0, // 무적모드에서 사라진 공 개수
+    gameOver: false
 };
 
 // 무적모드 토글 함수
@@ -770,6 +771,7 @@ function checkGameOverByNoBall() {
     // 2) 공은 하나만 남았지만 더 이상 움직이지 않는 경우(중앙에 멈춘 흰 점)
     if (activeBalls.length === 1 && !gameState.ballMoving && gameState.gameStarted) {
         showScoreTable();
+        return;
     }
 
     // 3) 무적모드에서 관리 배열이 비거나 모든 공 DOM이 사라진 경우
@@ -813,6 +815,7 @@ function checkBrickCollision() {
     // 벽돌 충돌 체크 후 모든 벽돌이 제거되었는지 확인
     if (document.querySelectorAll('.brick').length === 0 && !gameState.gameOver) {
         showScoreTable();
+        return;
     }
 }
 
@@ -922,6 +925,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 페이지가 로드되면 즉시 무적모드(45개 공) 실행
     toggleGodMode();
+
+    const playAgain = document.getElementById('result-play-again');
+    if (playAgain) {
+        playAgain.addEventListener('click', hideResultPanelAndRestart);
+    }
 });
 
 // 게임 시작
@@ -993,73 +1001,90 @@ function startGame() {
     console.log('게임이 시작되었습니다.');
 }
 
-// 최종 점수표 표시
+// 최종 점수표 표시 (#result-panel)
 function showScoreTable() {
-    const statsPanel = document.getElementById('brickStatsPanel');
-    const statsContent = document.getElementById('statsContent');
-    const gameStatusElement = document.getElementById('gameStatus'); // 게임 상태 메시지 표시용
+    if (gameState.gameOver) return;
 
-    if (!statsPanel || !statsContent) {
-        console.error('통계 패널 또는 내용 요소를 찾을 수 없습니다. ID를 확인해주세요: brickStatsPanel, statsContent');
-        // Fallback: 이전처럼 alert로 표시
-        let statsMessage = "첫 번째 줄 벽돌 충돌 통계:\n";
-        let hasStats = false;
-        for (const brickNum in gameState.headerBrickHitStats) {
-            if (gameState.headerBrickHitStats.hasOwnProperty(brickNum)) {
-                statsMessage += `${brickNum}번 벽돌: ${gameState.headerBrickHitStats[brickNum]}회\n`;
-                hasStats = true;
-            }
-        }
-        if (!hasStats) {
-            statsMessage += "충돌 기록 없음\n";
-        }
-        alert(`게임 오버! 최종 점수: ${gameState.score}\n\n${statsMessage}`);
-        return;
-    }
+    gameState.gameOver = true;
 
-    let statsHTML = '<ul>';
-    const entries = Object.entries(gameState.headerBrickHitStats).sort((a,b)=>b[1]-a[1]);
-    const top4 = entries.slice(0,4).map(e=>e[0]);
-    const maxHits = entries.length? entries[0][1]:0;
-    statsHTML += '<ul style="column-count:5; padding-left:20px;">';
-    for (const [brickNum,hits] of entries) {
-        let style = hits>=4 ? 'color:red;font-weight:bold;' : '';
-        statsHTML += `<li style="${style}">${brickNum}번 벽돌: ${hits}회</li>`;
-    }
-    statsHTML += '</ul>';
-
-    // 무적모드 공 제거 통계 표시
-    if (gameState.godMode) {
-        const maxHits = Math.max(...Object.values(gameState.headerBrickHitStats || {0:0}));
-        statsHTML += `<p>사라진 공 개수: ${gameState.removedBalls} / ${gameState.totalBalls}</p>`;
-        statsHTML += '<ul style="column-count:5; padding-left:20px;">';
-        for (const brickNum in gameState.headerBrickHitStats) {
-            if (gameState.headerBrickHitStats.hasOwnProperty(brickNum)) {
-                const hits = gameState.headerBrickHitStats[brickNum];
-                const highlight = hits>=4 ? 'color:red;font-weight:bold;' : '';
-                statsHTML += `<li style="${highlight}">${brickNum}번 벽돌: ${hits}회</li>`;
-            }
-        }
-        statsHTML += '</ul>';
-    }
-    statsContent.innerHTML = statsHTML;
-    statsPanel.style.display = 'block'; // 패널을 보이도록 설정
-
-    // 모든 공 요소 제거 (멈춰있는 초기 공 포함)
-    document.querySelectorAll('.ball').forEach(el => el.remove());
-    if (gameState.balls) gameState.balls = [];
-
-    gameState.gameOver = true; // 종료 플래그
-    gameState.gameStarted = false;
-    gameState.ballMoving = false;
     if (gameState.animationId) {
         cancelAnimationFrame(gameState.animationId);
         gameState.animationId = null;
     }
-    console.log('showScoreTable 호출됨. 통계가 패널에 표시되었습니다.', gameState.headerBrickHitStats);
-    // 게임 재시작 로직은 사용자가 명시적으로 버튼을 누르거나, 
-    // 통계 패널에 재시작 버튼을 추가하여 처리하는 것이 좋습니다.
-    // resetGame(); // 일단 주석 처리
+
+    gameState.gameStarted = false;
+    gameState.ballMoving = false;
+
+    document.querySelectorAll('.ball').forEach(el => el.remove());
+    if (gameState.balls) gameState.balls = [];
+
+    const panel = document.getElementById('result-panel');
+    const scoreOut = document.getElementById('result-final-score');
+    const ballsRow = document.getElementById('result-hit-numbers');
+    if (!panel || !scoreOut || !ballsRow) {
+        console.warn('result-panel 요소를 찾을 수 없습니다.');
+        return;
+    }
+
+    scoreOut.textContent = String(gameState.score);
+
+    const nums = Object.keys(gameState.headerBrickHitStats).filter(function (k) {
+        return gameState.headerBrickHitStats[k] > 0;
+    });
+    nums.sort(function (a, b) {
+        return parseInt(a, 10) - parseInt(b, 10);
+    });
+
+    ballsRow.innerHTML = '';
+    if (nums.length === 0) {
+        const hint = document.createElement('span');
+        hint.className = 'result-empty-hint';
+        hint.textContent = '첫 줄 맞춘 번호 없음';
+        ballsRow.appendChild(hint);
+    } else {
+        nums.forEach(function (num) {
+            const span = document.createElement('span');
+            span.className = 'result-num-ball';
+            span.textContent = String(num).trim();
+            ballsRow.appendChild(span);
+        });
+    }
+
+    panel.style.display = 'block';
+    console.log('showScoreTable: 결과 패널 표시', gameState.headerBrickHitStats);
+}
+
+function ensureMainBallInPlayArea() {
+    let ball = document.getElementById('ball');
+    if (ball) return;
+    const playArea = document.querySelector('.play-area');
+    const paddle = document.getElementById('paddle');
+    if (!playArea || !paddle) return;
+    ball = document.createElement('div');
+    ball.id = 'ball';
+    ball.style.width = '10px';
+    ball.style.height = '10px';
+    ball.style.backgroundColor = '#ffffff';
+    ball.style.borderRadius = '50%';
+    ball.style.position = 'absolute';
+    ball.style.zIndex = '10';
+    playArea.insertBefore(ball, paddle);
+    ball.style.left = gameState.ballX + 'px';
+    ball.style.bottom = gameState.ballY + 'px';
+}
+
+function hideResultPanelAndRestart() {
+    const panel = document.getElementById('result-panel');
+    if (panel) panel.style.display = 'none';
+    document.querySelectorAll('.ball').forEach(function (el) {
+        el.remove();
+    });
+    gameState.balls = [];
+    gameState.removedBalls = 0;
+    const bottomWall = document.getElementById('bottomWall');
+    if (bottomWall) bottomWall.style.display = 'none';
+    resetGame();
+    ensureMainBallInPlayArea();
 }
 
 // 게임 재시작
