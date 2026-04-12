@@ -334,25 +334,41 @@ async function 초기화() {
 }
 
 function 완료() {
-    if (선택된번호들.length === 6) {
-        // 선택된 번호들을 오름차순으로 정렬
-        선택된번호들.sort((a, b) => a - b);
-        
-        // 예측 데이터 생성
-        const predictionData = {
-            numbers: 선택된번호들,
-            timestamp: new Date().getTime(),
-            userName: '익명 사용자',
-            source: 'page4'  // 페이지 출처 표시
-        };
-        
-        // 고유 ID로 저장
-        const predictionId = `prediction_${new Date().getTime()}`;
-        localStorage.setItem(predictionId, JSON.stringify(predictionData));
-        
-        // page5로 이동
-        location.href = 'page5.html';
+    if (선택된번호들.length !== 6) return;
+
+    const userUid = sessionStorage.getItem('userUid');
+    const loggedInUser = sessionStorage.getItem('loggedInUser');
+    if (!userUid || !loggedInUser) {
+        alert('로그인이 필요합니다.');
+        location.href = '../index.html?openLogin=1';
+        return;
     }
+
+    선택된번호들.sort((a, b) => a - b);
+    const numbersToSave = 선택된번호들.slice();
+
+    database
+        .ref('drawRange')
+        .once('value')
+        .then(function (rangeSnap) {
+            const r = rangeSnap.val() || {};
+            const drawNo = r.next != null ? String(r.next) : '';
+            const predictionRef = database.ref('predictions').push();
+            return predictionRef.set({
+                userId: userUid,
+                nickname: loggedInUser,
+                numbers: numbersToSave,
+                drawNo: drawNo,
+                timestamp: Date.now()
+            });
+        })
+        .then(function () {
+            location.href = 'page5.html';
+        })
+        .catch(function (err) {
+            console.error('예측 저장 실패:', err);
+            alert('예측 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+        });
 }
 
 function 힌트1() {

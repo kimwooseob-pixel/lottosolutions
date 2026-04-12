@@ -18,6 +18,39 @@
             color: #ffffff;
             margin: 0;
             padding: 20px;
+            padding-top: 52px;
+        }
+
+        .auth-status-bar {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            z-index: 3000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #4dd0e1;
+        }
+
+        .auth-status-bar .auth-label {
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .auth-status-bar .auth-logout {
+            padding: 6px 12px;
+            border: 1px solid #4dd0e1;
+            border-radius: 8px;
+            background: rgba(30, 45, 74, 0.95);
+            color: #80deea;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .auth-status-bar .auth-logout:hover {
+            background: rgba(0, 188, 212, 0.2);
         }
 
         .page5-top-bar {
@@ -31,26 +64,6 @@
             position: absolute;
             top: 0;
             right: 0;
-        }
-
-        .prediction-actions {
-            max-width: 560px;
-            margin: 0 auto 24px;
-            text-align: center;
-        }
-
-        .prediction-button {
-            background-color: #3498db;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1em;
-        }
-
-        .prediction-button:hover {
-            background-color: #2980b9;
         }
 
         .admin-dot {
@@ -321,6 +334,25 @@
     </style>
 </head>
 <body>
+    <div class="auth-status-bar" aria-label="로그인 상태">
+        <span class="auth-label">👤 <span id="auth-nickname"></span>님 로그인 중</span>
+        <button type="button" class="auth-logout" id="auth-logout-btn">로그아웃</button>
+    </div>
+    <script>
+        (function () {
+            var nick = sessionStorage.getItem('loggedInUser') || '';
+            var el = document.getElementById('auth-nickname');
+            if (el) el.textContent = nick;
+            var btn = document.getElementById('auth-logout-btn');
+            if (btn) {
+                btn.addEventListener('click', function () {
+                    sessionStorage.removeItem('loggedInUser');
+                    sessionStorage.removeItem('userUid');
+                    window.location.href = '../index.html';
+                });
+            }
+        })();
+    </script>
     <header class="page5-top-bar" aria-label="페이지 도구">
         <div class="admin-dot" title="관리자"></div>
     </header>
@@ -346,10 +378,6 @@
             <h2 class="rank-section-title">많이 맞춘 유저 TOP 3</h2>
             <div id="top-users-list"></div>
         </section>
-    </div>
-
-    <div class="prediction-actions">
-        <button class="prediction-button" id="savePrediction">예측번호 저장하기</button>
     </div>
 
     <!-- 관리자 모달 -->
@@ -392,8 +420,6 @@
 
         /** 관리자가 입력 중인 당첨 회차 (drawRange.end + 1, Firebase에서 계산) */
         let adminDrawToSave = null;
-
-        // 예측번호 저장: ../js/page5.js 의 setupSavePredictionButton(rtdb)에서 처리
 
         // 관리자 모달 관련 코드
         document.querySelector('.admin-dot').addEventListener('click', function() {

@@ -2,6 +2,17 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <script>
+        (function () {
+            try {
+                if (!sessionStorage.getItem('loggedInUser') || !sessionStorage.getItem('userUid')) {
+                    window.location.replace('../index.html?openLogin=1');
+                }
+            } catch (e) {
+                window.location.replace('../index.html?openLogin=1');
+            }
+        })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#2196F3">
     <meta name="description" content="로또 당첨번호 패턴을 분석하고 예측하는 앱">
@@ -20,10 +31,43 @@
             margin: 0;
             padding: 16px;
             padding-bottom: 32px;
+            padding-top: 48px;
             background: #f0f2f7;
             color: #2c3e50;
             min-height: 100vh;
             box-sizing: border-box;
+        }
+
+        .auth-status-bar {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            z-index: 3000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #00acc1;
+        }
+
+        .auth-status-bar .auth-label {
+            text-shadow: 0 0 1px rgba(255, 255, 255, 0.8);
+        }
+
+        .auth-status-bar .auth-logout {
+            padding: 6px 12px;
+            border: 1px solid #00acc1;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #00838f;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .auth-status-bar .auth-logout:hover {
+            background: #e0f7fa;
         }
 
         .pattern-section {
@@ -257,6 +301,25 @@
     </style>
 </head>
 <body>
+    <div class="auth-status-bar" aria-label="로그인 상태">
+        <span class="auth-label">👤 <span id="auth-nickname"></span>님 로그인 중</span>
+        <button type="button" class="auth-logout" id="auth-logout-btn">로그아웃</button>
+    </div>
+    <script>
+        (function () {
+            var nick = sessionStorage.getItem('loggedInUser') || '';
+            var el = document.getElementById('auth-nickname');
+            if (el) el.textContent = nick;
+            var btn = document.getElementById('auth-logout-btn');
+            if (btn) {
+                btn.addEventListener('click', function () {
+                    sessionStorage.removeItem('loggedInUser');
+                    sessionStorage.removeItem('userUid');
+                    window.location.href = '../index.html';
+                });
+            }
+        })();
+    </script>
     <div class="pattern-section">
         <div class="pattern-card">
             <h1>로또 패턴 분석</h1>
