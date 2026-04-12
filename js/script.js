@@ -70,6 +70,11 @@ const 실제당첨번호 = {
     // ... 나머지 회차는 유지
 };
 
+const 당첨번호데이터 =
+    typeof LOTTO_DATA !== 'undefined' && LOTTO_DATA && typeof LOTTO_DATA === 'object'
+        ? LOTTO_DATA
+        : 실제당첨번호;
+
 // 턴 관련 변수들
 let 현재턴 = parseInt(localStorage.getItem('현재턴')) || 1;
 const 총턴수 = 30;  // 30턴으로 변경
@@ -609,7 +614,7 @@ function 격자초기화() {
                 `;
                 
                 const 현재회차 = 턴정보.시작회차 + col;
-                const 해당회차번호들 = 실제당첨번호[현재회차];
+                const 해당회차번호들 = 당첨번호데이터[현재회차];
                 
                 if (해당회차번호들 && 해당회차번호들.includes(num)) {
                     cell.classList.add('marked');
@@ -722,7 +727,7 @@ function 턴완료() {
 
     // 예측 회차의 당첨번호 가져오기 (종료회차 + 1)
     const 예측회차 = 턴정보.예측회차;
-    const 당첨번호 = 실제당첨번호[예측회차.toString()];
+    const 당첨번호 = 당첨번호데이터[예측회차.toString()];
     console.log(`예측 회차(${예측회차})의 당첨번호:`, 당첨번호);
 
     if (!당첨번호) {
@@ -1586,7 +1591,7 @@ function 격자초기화() {
                 `;
                 
                 const 현재회차 = 턴정보.시작회차 + col;
-                const 해당회차번호들 = 실제당첨번호[현재회차];
+                const 해당회차번호들 = 당첨번호데이터[현재회차];
                 
                 if (해당회차번호들 && 해당회차번호들.includes(num)) {
                     cell.classList.add('marked');
@@ -1699,7 +1704,7 @@ function 턴완료() {
 
     // 예측 회차의 당첨번호 가져오기 (종료회차 + 1)
     const 예측회차 = 턴정보.예측회차;
-    const 당첨번호 = 실제당첨번호[예측회차.toString()];
+    const 당첨번호 = 당첨번호데이터[예측회차.toString()];
     console.log(`예측 회차(${예측회차})의 당첨번호:`, 당첨번호);
 
     if (!당첨번호) {

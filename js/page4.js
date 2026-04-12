@@ -61,6 +61,16 @@ function 당첨엔트리를번호배열로(entry) {
     return Array.isArray(numbers) ? numbers : null;
 }
 
+function 로컬당첨번호맵() {
+    const d =
+        typeof window !== 'undefined' && window.LOTTO_DATA && typeof window.LOTTO_DATA === 'object'
+            ? window.LOTTO_DATA
+            : typeof LOTTO_DATA !== 'undefined' && LOTTO_DATA && typeof LOTTO_DATA === 'object'
+              ? LOTTO_DATA
+              : null;
+    return d;
+}
+
 /** 회차 문자열 키 → 번호 배열 맵 (Firebase + 구형 호환) */
 function 당첨번호맵정규화(raw) {
     const out = {};
@@ -97,8 +107,12 @@ async function get턴정보() {
     return defaults;
 }
 
-// 당첨번호 가져오기
+// 당첨번호 가져오기 (LOTTO_DATA 우선, 없으면 Firebase winningNumbers)
 async function get실제당첨번호() {
+    const local = 로컬당첨번호맵();
+    if (local) {
+        return 당첨번호맵정규화(local);
+    }
     try {
         const snapshot = await database.ref('winningNumbers').once('value');
         if (snapshot.exists()) {
@@ -162,12 +176,14 @@ function setupRealtimeListeners() {
         }
     });
 
-    database.ref('winningNumbers').on('value', snapshot => {
-        if (snapshot.exists()) {
-            console.log('당첨번호 업데이트 감지');
-            초기화();
-        }
-    });
+    if (!로컬당첨번호맵()) {
+        database.ref('winningNumbers').on('value', snapshot => {
+            if (snapshot.exists()) {
+                console.log('당첨번호 업데이트 감지');
+                초기화();
+            }
+        });
+    }
 
     listenersInitialized = true;
 }
