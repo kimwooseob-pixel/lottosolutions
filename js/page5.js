@@ -757,24 +757,6 @@ async function updateDrawLabel() {
 
 // --- page5.html RTDB 랭킹 대시보드 (읽기 전용) ---
 (function () {
-    const 기본당첨번호 = {
-        '1153': [2, 8, 19, 22, 32, 42],
-        '1154': [6, 10, 12, 14, 20, 42],
-        '1155': [17, 25, 33, 35, 38, 45],
-        '1156': [1, 4, 29, 39, 43, 45],
-        '1157': [7, 15, 30, 37, 39, 44],
-        '1158': [8, 13, 18, 24, 27, 29],
-        '1159': [8, 11, 15, 16, 17, 37],
-        '1160': [8, 11, 16, 19, 21, 25],
-        '1161': [9, 11, 30, 31, 41, 44],
-        '1162': [15, 23, 29, 34, 40, 44],
-        '1163': [9, 12, 15, 25, 34, 36],
-        '1164': [1, 9, 12, 26, 35, 38],
-        '1165': [5, 11, 18, 20, 35, 45],
-        '1166': [21, 22, 26, 34, 36, 41],
-        '1167': [3, 11, 14, 18, 26, 27]
-    };
-
     function 당첨엔트리를번호배열로(entry) {
         if (entry == null) return null;
         const numbers = entry.numbers ? entry.numbers : entry;
@@ -857,21 +839,32 @@ async function updateDrawLabel() {
 
             const winningMap = 당첨번호맵정규화(winSnap.val() || {});
 
-            let displayDraw = 턴정보.end;
+            let displayDraw = '';
             if (cdSnap.exists()) {
                 const cd = cdSnap.val();
-                const d = cd != null && typeof cd === 'object' && cd.drawNumber != null ? cd.drawNumber : cd;
+                const d =
+                    cd != null && typeof cd === 'object' && cd.drawNumber != null
+                        ? cd.drawNumber
+                        : cd;
                 if (d != null && d !== '') displayDraw = String(d);
             }
 
             const titleEl = document.getElementById('winning-section-title');
-            if (titleEl) titleEl.textContent = `${displayDraw}회차 당첨번호`;
-
-            const winNums = winningMap[displayDraw] || 기본당첨번호[displayDraw] || [];
-            if (normalizeNumbers(winNums).length === 0) {
-                winningBalls.innerHTML = '<p class="empty-hint">등록된 당첨번호가 없습니다.</p>';
+            if (!displayDraw) {
+                if (titleEl) titleEl.textContent = '당첨번호';
+                winningBalls.innerHTML =
+                    '<p class="empty-hint">currentDraw에 등록된 회차가 없습니다. RTDB의 currentDraw / winningNumbers를 확인해 주세요.</p>';
             } else {
-                appendRankBalls(winningBalls, winNums, 'win');
+                if (titleEl) titleEl.textContent = `${displayDraw}회차 당첨번호`;
+                const winNums = winningMap[displayDraw] || [];
+                if (normalizeNumbers(winNums).length === 0) {
+                    winningBalls.innerHTML =
+                        '<p class="empty-hint">winningNumbers/' +
+                        displayDraw +
+                        ' 에 등록된 번호가 없습니다.</p>';
+                } else {
+                    appendRankBalls(winningBalls, winNums, 'win');
+                }
             }
 
             const preds = [];

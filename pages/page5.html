@@ -23,87 +23,30 @@
         h1 {
             color: #ffffff;
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 24px;
+            position: relative;
+            display: inline-block;
+            width: 100%;
         }
 
-        .lotto-section {
-            background-color: #252b3d;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 30px;
-        }
-
-        .lotto-title {
-            color: #4a9eff;
-            margin-bottom: 15px;
-            font-size: 1.2em;
-        }
-
-        .number-display {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .lotto-number {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: #e74c3c;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.2em;
+        .prediction-actions {
+            max-width: 560px;
+            margin: 0 auto 24px;
+            text-align: center;
         }
 
         .prediction-button {
             background-color: #3498db;
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
+            padding: 12px 24px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 1em;
-            margin-top: 10px;
         }
 
         .prediction-button:hover {
             background-color: #2980b9;
-        }
-
-        .trophy-section {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin: 40px 0;
-        }
-
-        .trophy {
-            width: 100px;
-            height: auto;
-        }
-
-        .history-section {
-            background-color: #252b3d;
-            border-radius: 15px;
-            padding: 20px;
-        }
-
-        .history-title {
-            color: #4a9eff;
-            margin-bottom: 15px;
-            font-size: 1.2em;
-        }
-
-        .history-content {
-            color: #b0bec5;
-        }
-
-        .no-history {
-            text-align: center;
-            color: #b0bec5;
-            padding: 20px;
         }
 
         .admin-dot {
@@ -374,6 +317,8 @@
     </style>
 </head>
 <body>
+    <h1>로또 예상번호 순위표<div class="admin-dot"></div></h1>
+
     <div class="ranking-dashboard">
         <section class="rank-card" id="section-winning">
             <h2 class="rank-section-title" id="winning-section-title">당첨번호</h2>
@@ -397,7 +342,9 @@
         </section>
     </div>
 
-    <h1>로또 예상번호 순위표<div class="admin-dot"></div></h1>
+    <div class="prediction-actions">
+        <button class="prediction-button" id="savePrediction">예측번호 저장하기</button>
+    </div>
 
     <!-- 관리자 모달 -->
     <div class="popup-overlay"></div>
@@ -419,46 +366,6 @@
         </div>
     </div>
 
-    <!-- 최신 당첨번호 섹션 -->
-    <div class="lotto-section">
-        <div class="lotto-title">1168회차 당첨번호</div>
-        <div class="number-display" id="winningNumbers">
-            <!-- 당첨번호는 자바스크립트로 동적 생성 -->
-        </div>
-    </div>
-
-    <!-- 이번 주 예측번호 섹션 -->
-    <div class="lotto-section">
-        <div class="lotto-title">이번 주 예측번호 목록</div>
-        <div class="number-display" id="predictionNumbers">
-            <!-- 예측번호는 자바스크립트로 동적 생성 -->
-        </div>
-        <button class="prediction-button" id="savePrediction">예측번호 저장하기</button>
-    </div>
-
-    <!-- 트로피 섹션 -->
-    <div class="trophy-section">
-        <img src="../images/gold.png" alt="1등" class="trophy">
-        <img src="../images/silver.png" alt="2등" class="trophy">
-        <img src="../images/bronze.png" alt="3등" class="trophy">
-    </div>
-
-    <!-- 완전일치 번호 목록 -->
-    <div class="history-section">
-        <div class="history-title">완전일치 번호 목록</div>
-        <div id="perfectMatchHistory" class="history-content">
-            <!-- 완전일치 기록은 자바스크립트로 동적 생성 -->
-        </div>
-    </div>
-
-    <!-- 지난 주 예측 결과 -->
-    <div class="history-section">
-        <div class="history-title">지난 주 예측 결과</div>
-        <div id="lastWeekResults" class="history-content">
-            <!-- 지난주 결과는 자바스크립트로 동적 생성 -->
-        </div>
-    </div>
-
     <script>
         // Firebase 초기화
         const firebaseConfig = {
@@ -471,10 +378,10 @@
             appId: "1:616782090306:web:688c710998dfce8e4d5ddb"
         };
         
-        // Firebase 초기화
-        firebase.initializeApp(firebaseConfig);
-        
-        // Realtime Database 참조 가져오기
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
         const database = firebase.database();
         
         // 현재 로그인한 사용자 정보 가져오기
@@ -485,30 +392,6 @@
 
         /** 관리자가 입력 중인 당첨 회차 (drawRange.end + 1, Firebase에서 계산) */
         let adminDrawToSave = null;
-
-        // 최신 당첨번호 표시
-        function displayWinningNumbers(numbers) {
-            const container = document.getElementById('winningNumbers');
-            container.innerHTML = '';
-            numbers.forEach(number => {
-                const numberDiv = document.createElement('div');
-                numberDiv.className = 'lotto-number';
-                numberDiv.textContent = number;
-                container.appendChild(numberDiv);
-            });
-        }
-
-        // 예측번호 표시
-        function displayPredictionNumbers(numbers) {
-            const container = document.getElementById('predictionNumbers');
-            container.innerHTML = '';
-            numbers.forEach(number => {
-                const numberDiv = document.createElement('div');
-                numberDiv.className = 'lotto-number';
-                numberDiv.textContent = number;
-                container.appendChild(numberDiv);
-            });
-        }
 
         // 예측번호 저장
         document.getElementById('savePrediction').addEventListener('click', function() {
@@ -534,7 +417,6 @@
             })
                 .then(() => {
                     alert('예측번호가 저장되었습니다.');
-                    loadPredictions();
                 })
                 .catch(error => {
                     console.error('예측번호 저장 실패:', error);
@@ -552,30 +434,6 @@
                 }
             }
             return numbers.sort((a, b) => a - b);
-        }
-
-        // 예측 기록 로드
-        function loadPredictions() {
-            const predictionsRef = database.ref('predictions');
-            predictionsRef.orderByChild('userId').equalTo(userUid).once('value')
-                .then(snapshot => {
-                    const predictions = [];
-                    snapshot.forEach(child => {
-                        predictions.push({
-                            id: child.key,
-                            ...child.val()
-                        });
-                    });
-                    
-                    // 최신 예측 표시
-                    if (predictions.length > 0) {
-                        const latestPrediction = predictions[predictions.length - 1];
-                        displayPredictionNumbers(latestPrediction.numbers);
-                    }
-                })
-                .catch(error => {
-                    console.error('예측 기록 로드 실패:', error);
-                });
         }
 
         // 관리자 모달 관련 코드
@@ -689,48 +547,19 @@
             }
         });
 
-        // 실시간 업데이트 리스너 추가
-        function setupRealtimeListeners() {
-            // 1. 당첨번호 변경 감지
-            database.ref('currentDraw').on('value', snapshot => {
-                if (snapshot.exists()) {
-                    const drawInfo = snapshot.val();
-                    const drawNumber = drawInfo.drawNumber != null ? drawInfo.drawNumber : drawInfo.number;
-                    document.querySelector('.lotto-title').textContent = `${drawNumber}회차 당첨번호`;
-
-                    database.ref(`winningNumbers/${drawNumber}`).once('value')
-                        .then(numberSnapshot => {
-                            if (numberSnapshot.exists()) {
-                                const winningData = numberSnapshot.val();
-                                if (winningData && Array.isArray(winningData.numbers)) {
-                                    displayWinningNumbers(winningData.numbers);
-                                } else if (Array.isArray(winningData)) {
-                                    displayWinningNumbers(winningData);
-                                }
-                            }
-                        })
-                        .catch(error => {
-                            console.error('당첨번호 로딩 오류:', error);
-                        });
-                }
-            });
-
-            // 2. 시스템 업데이트 감지
+        function setupSystemUpdateListener() {
             database.ref('systemUpdates/latest').on('value', snapshot => {
                 if (snapshot.exists()) {
                     const update = snapshot.val();
                     if (update && update.type === 'newDrawNumber') {
-                        // 새 번호가 저장되면 페이지 새로고침
                         window.location.reload();
                     }
                 }
             });
         }
 
-        // 페이지 로드 시 실시간 리스너 설정
         window.addEventListener('load', function() {
-            setupRealtimeListeners();
-            loadPredictions();
+            setupSystemUpdateListener();
         });
     </script>
     <script src="../js/page5.js"></script>
