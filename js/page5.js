@@ -713,26 +713,11 @@ function showAdminForm() {
     }
 }
 
-// Firebase 설정 (Firestore 레거시 페이지용; page5.html은 인라인에서 이미 초기화)
-const firebaseConfig = {
-    apiKey: "AIzaSyAwh55rLOQkY8ZVCzaC4ZF3iaUVU5Vu0GM",
-    authDomain: "ai-lottosolutions.firebaseapp.com",
-    databaseURL: "https://ai-lottosolutions-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "ai-lottosolutions",
-    storageBucket: "ai-lottosolutions.firebasestorage.app",
-    messagingSenderId: "616782090306",
-    appId: "1:616782090306:web:688c710998dfce8e4d5ddb",
-    measurementId: "G-NEXMN4FFJG"
-};
-
-if (typeof firebase !== 'undefined') {
-    try {
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-    } catch (e) { /* 이미 초기화됨 */ }
-}
-const db = (typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null;
+// Firebase 앱은 page5.html 인라인 스크립트에서만 초기화됨
+const db =
+    typeof firebase !== 'undefined' && firebase.firestore
+        ? firebase.firestore()
+        : null;
 
 // Firestore에서 최신 회차 불러오기 및 drawLabel 표시
 async function updateDrawLabel() {
