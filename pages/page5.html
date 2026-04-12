@@ -292,6 +292,26 @@
             color: #ffab40;
         }
 
+        #my-history-list {
+            max-height: 210px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #00bcd4 transparent;
+        }
+
+        #my-history-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #my-history-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #my-history-list::-webkit-scrollbar-thumb {
+            background-color: #00bcd4;
+            border-radius: 4px;
+        }
+
         .top-user-block {
             padding: 12px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
