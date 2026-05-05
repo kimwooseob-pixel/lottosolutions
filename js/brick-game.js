@@ -7,7 +7,7 @@ const gameState = {
     gamePaused: false,
     godMode: false, // 무적모드 상태 추가
     score: 0,
-    lives: 3,
+    lives: 1,
     level: 1,
     ballX: 360,
     ballY: 300,
@@ -559,7 +559,7 @@ function resetGame() {
     gameState.gamePaused = false;
     gameState.godMode = false; // 무적모드 초기화
     gameState.score = 0;
-    gameState.lives = 3;
+    gameState.lives = 1;
     gameState.level = 1;
     gameState.gameOver = false; // 게임 오버 플래그 초기화
     gameState.headerBrickHitStats = {}; // 첫 번째 줄 벽돌 충돌 통계 초기화
@@ -945,9 +945,12 @@ function checkSingleBallCollision(collidingEntity, ballRect, ballIndexInGodMode 
 
 // 점수 업데이트
 function updateScore() {
-    document.getElementById('score').textContent = gameState.score;
-    document.getElementById('lives').textContent = gameState.lives;
-    document.getElementById('level').textContent = gameState.level;
+    const scoreEl = document.getElementById('score');
+    const livesEl = document.getElementById('lives');
+    const levelEl = document.getElementById('level');
+    if (scoreEl) scoreEl.textContent = gameState.score;
+    if (livesEl) livesEl.textContent = gameState.lives;
+    if (levelEl) levelEl.textContent = gameState.level;
 }
 
 // 페이지 로드 시 게임 초기화
@@ -958,11 +961,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 페이지가 로드되면 즉시 무적모드(45개 공) 실행
     toggleGodMode();
-
-    const playAgain = document.getElementById('result-play-again');
-    if (playAgain) {
-        playAgain.addEventListener('click', hideResultPanelAndRestart);
-    }
 
     const resetBtn = document.getElementById('resetButton');
     if (resetBtn) {
@@ -1000,7 +998,7 @@ function startGame() {
     gameState.gamePaused = false;
     gameState.ballMoving = true;
     gameState.score = 0;
-    gameState.lives = 3;
+    gameState.lives = 1;
     gameState.level = 1;
     
     // 공 재생성 및 위치 초기화 (패들 위로)
@@ -1046,7 +1044,7 @@ function startGame() {
     console.log('게임이 시작되었습니다.');
 }
 
-// 최종 점수표 표시 (#result-panel)
+// 게임 종료 시 상태만 정리 (별도 결과 UI 없음)
 function showScoreTable() {
     if (gameState.gameOver) return;
 
@@ -1063,40 +1061,7 @@ function showScoreTable() {
     document.querySelectorAll('.ball').forEach(el => el.remove());
     if (gameState.balls) gameState.balls = [];
 
-    const panel = document.getElementById('result-panel');
-    const scoreOut = document.getElementById('result-final-score');
-    const ballsRow = document.getElementById('result-hit-numbers');
-    if (!panel || !scoreOut || !ballsRow) {
-        console.warn('result-panel 요소를 찾을 수 없습니다.');
-        return;
-    }
-
-    scoreOut.textContent = String(gameState.score);
-
-    const nums = Object.keys(gameState.headerBrickHitStats).filter(function (k) {
-        return gameState.headerBrickHitStats[k] > 0;
-    });
-    nums.sort(function (a, b) {
-        return parseInt(a, 10) - parseInt(b, 10);
-    });
-
-    ballsRow.innerHTML = '';
-    if (nums.length === 0) {
-        const hint = document.createElement('span');
-        hint.className = 'result-empty-hint';
-        hint.textContent = '첫 줄 맞춘 번호 없음';
-        ballsRow.appendChild(hint);
-    } else {
-        nums.forEach(function (num) {
-            const span = document.createElement('span');
-            span.className = 'result-num-ball';
-            span.textContent = String(num).trim();
-            ballsRow.appendChild(span);
-        });
-    }
-
-    panel.style.display = 'block';
-    console.log('showScoreTable: 결과 패널 표시', gameState.headerBrickHitStats);
+    updateScore();
 }
 
 function ensureMainBallInPlayArea() {
@@ -1116,20 +1081,6 @@ function ensureMainBallInPlayArea() {
     playArea.insertBefore(ball, paddle);
     ball.style.left = gameState.ballX + 'px';
     ball.style.bottom = gameState.ballY + 'px';
-}
-
-function hideResultPanelAndRestart() {
-    const panel = document.getElementById('result-panel');
-    if (panel) panel.style.display = 'none';
-    document.querySelectorAll('.ball').forEach(function (el) {
-        el.remove();
-    });
-    gameState.balls = [];
-    gameState.removedBalls = 0;
-    const bottomWall = document.getElementById('bottomWall');
-    if (bottomWall) bottomWall.style.display = 'none';
-    resetGame();
-    ensureMainBallInPlayArea();
 }
 
 // 게임 재시작
