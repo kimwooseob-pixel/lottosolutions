@@ -742,6 +742,41 @@ async function updateDrawLabel() {
 
 // --- page5.html RTDB 랭킹 대시보드 (읽기 전용) ---
 (function () {
+    const SOURCE_LABELS = {
+        horeum: '호름예측',
+        brick: '벽돌게임',
+        dart: '로또다트'
+    };
+
+    /** 예측 회차 키 (winningNumbers 맵 조회용) — round 우선, 없으면 drawNo */
+    function getPredictionRoundKey(p) {
+        if (p == null) return null;
+        if (p.round != null && p.round !== '') {
+            const r = typeof p.round === 'number' ? p.round : parseInt(p.round, 10);
+            if (Number.isFinite(r)) return String(r);
+            const s = String(p.round).trim();
+            return s || null;
+        }
+        if (p.drawNo != null && p.drawNo !== '') return String(p.drawNo).trim();
+        return null;
+    }
+
+    function getSourceCategory(source) {
+        if (source === 'lotto_brick') return 'brick';
+        if (source === 'lotto_dart') return 'dart';
+        return 'horeum';
+    }
+
+    function formatPredDate(ts) {
+        const t = typeof ts === 'number' ? ts : parseInt(ts, 10);
+        if (!Number.isFinite(t)) return '—';
+        try {
+            return new Date(t).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' });
+        } catch (e) {
+            return '—';
+        }
+    }
+
     function 당첨엔트리를번호배열로(entry) {
         if (entry == null) return null;
         const numbers = entry.numbers ? entry.numbers : entry;
@@ -810,6 +845,119 @@ async function updateDrawLabel() {
 
     let rankingListenersOn = false;
 
+    function renderPopularAllGrid(gridEl, preds) {
+        if (!gridEl) return;
+        gridEl.innerHTML = '';
+        const freq = {};
+        for (let i = 1; i <= 45; i++) freq[i] = 0;
+        preds.forEach(function (p) {
+            normalizeNumbers(p.numbers).forEach(function (n) {
+                if (freq[n] != null) freq[n]++;
+            });
+        });
+        const sorted = Object.entries(freq)
+            .sort(function (a, b) {
+                return b[1] - a[1];
+            })
+            .slice(0, 6);
+        if (sorted.length === 0 || sorted.every(function (x) { return x[1] === 0; })) {
+            const ph = document.createElement('p');
+            ph.className = 'empty-hint';
+            ph.textContent = '예측 데이터가 없습니다.';
+            gridEl.appendChild(ph);
+            return;
+        }
+        sorted.forEach(function (_ref) {
+            const num = _ref[0];
+            const cnt = _ref[1];
+            const item = document.createElement('div');
+            item.className = 'top6-item';
+            const b = document.createElement('span');
+            b.className = 'rank-ball rank-ball--popular';
+            b.textContent = num;
+            const c = document.createElement('span');
+            c.className = 'top6-count';
+            c.textContent = cnt + '회';
+            item.appendChild(b);
+            item.appendChild(c);
+            gridEl.appendChild(item);
+        });
+    }
+
+    function renderMyHistoryGrouped(myList, mine, winningMap) {
+        myList.innerHTML = '';
+        const byCat = { horeum: [], brick: [], dart: [] };
+        mine.forEach(function (p) {
+            const cat = getSourceCategory(p.source);
+            byCat[cat].push(p);
+        });
+        ['horeum', 'brick', 'dart'].forEach(function (cat) {
+            const items = byCat[cat];
+            items.sort(function (a, b) {
+                return (b.timestamp || 0) - (a.timestamp || 0);
+            });
+            const block = document.createElement('div');
+            block.className = 'history-source-block';
+            const head = document.createElement('div');
+            head.className = 'history-source-head';
+            const h3 = document.createElement('h3');
+            h3.className = 'history-source-title';
+            h3.textContent = SOURCE_LABELS[cat];
+            const cntEl = document.createElement('span');
+            cntEl.className = 'history-source-count';
+            cntEl.textContent = '총 ' + items.length + '건';
+            head.appendChild(h3);
+            head.appendChild(cntEl);
+            const rowsWrap = document.createElement('div');
+            rowsWrap.className = 'history-source-rows';
+            if (items.length === 0) {
+                const emp = document.createElement('p');
+                emp.className = 'empty-hint';
+                emp.style.margin = '0';
+                emp.textContent = '내역 없음';
+                rowsWrap.appendChild(emp);
+            } else {
+                items.forEach(function (p) {
+                    const row = document.createElement('div');
+                    row.className = 'history-row history-row--mine';
+                    const main = document.createElement('div');
+                    main.className = 'history-row-main';
+                    const rk = getPredictionRoundKey(p);
+                    const drawLabel = document.createElement('span');
+                    drawLabel.className = 'history-draw';
+                    drawLabel.textContent = rk != null ? rk + '회' : '—';
+                    const dateEl = document.createElement('span');
+                    dateEl.className = 'history-meta-date';
+                    dateEl.textContent = formatPredDate(p.timestamp);
+                    const balls = document.createElement('div');
+                    balls.className = 'ball-row';
+                    appendRankBalls(balls, p.numbers, 'pred');
+                    main.appendChild(drawLabel);
+                    main.appendChild(dateEl);
+                    main.appendChild(balls);
+                    const status = document.createElement('span');
+                    status.className = 'history-status';
+                    const wk = rk != null ? String(rk) : '';
+                    const wnums = winningMap[wk];
+                    if (!wk || !wnums || wnums.length === 0) {
+                        status.classList.add('history-status--wait');
+                        status.textContent = '대기중';
+                    } else {
+                        const m = countMatches(p.numbers, wnums);
+                        status.classList.add('history-status--hit');
+                        status.textContent = m + '개 일치';
+                    }
+                    row.appendChild(main);
+                    row.appendChild(status);
+                    rowsWrap.appendChild(row);
+                });
+            }
+            block.appendChild(head);
+            block.appendChild(rowsWrap);
+            myList.appendChild(block);
+        });
+    }
+
     async function renderRankingPanels(rtdb) {
         const winningBalls = document.getElementById('winning-balls');
         if (!winningBalls || !rtdb) return;
@@ -859,52 +1007,26 @@ async function updateDrawLabel() {
                 });
             }
 
+            const popularGrid = document.getElementById('popular-all-grid');
+            const popularSub = document.getElementById('popular-all-sub');
+            if (popularSub) {
+                popularSub.textContent =
+                    '누적된 전체 예측(' + preds.length + '건)에서 번호별 출현 횟수 · 상위 6개';
+            }
+            renderPopularAllGrid(popularGrid, preds);
+
             const myList = document.getElementById('my-history-list');
             if (myList) {
-                myList.innerHTML = '';
                 const myUid = sessionStorage.getItem('userUid');
                 if (!myUid) {
+                    myList.innerHTML = '';
                     const p = document.createElement('p');
                     p.className = 'empty-hint';
                     p.textContent = '로그인 후 나의 예측 내역이 표시됩니다.';
                     myList.appendChild(p);
                 } else {
                     const mine = preds.filter(p => p.userId === myUid);
-                    mine.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                    if (mine.length === 0) {
-                        const p = document.createElement('p');
-                        p.className = 'empty-hint';
-                        p.textContent = '저장된 예측이 없습니다.';
-                        myList.appendChild(p);
-                    } else {
-                        mine.forEach(p => {
-                            const row = document.createElement('div');
-                            row.className = 'history-row';
-                            const drawLabel = document.createElement('span');
-                            drawLabel.className = 'history-draw';
-                            const dno = p.drawNo != null ? String(p.drawNo) : '—';
-                            drawLabel.textContent = `${dno}회`;
-                            const balls = document.createElement('div');
-                            balls.className = 'ball-row';
-                            appendRankBalls(balls, p.numbers, 'pred');
-                            const status = document.createElement('span');
-                            status.className = 'history-status';
-                            const wk = p.drawNo != null ? String(p.drawNo) : '';
-                            const wnums = winningMap[wk];
-                            if (!wk || !wnums || wnums.length === 0) {
-                                status.classList.add('history-status--wait');
-                                status.textContent = '대기중';
-                            } else {
-                                const m = countMatches(p.numbers, wnums);
-                                status.classList.add('history-status--hit');
-                                status.textContent = `${m}개 일치`;
-                            }
-                            row.appendChild(drawLabel);
-                            row.appendChild(balls);
-                            row.appendChild(status);
-                            myList.appendChild(row);
-                        });
-                    }
+                    renderMyHistoryGrouped(myList, mine, winningMap);
                 }
             }
 
@@ -915,7 +1037,10 @@ async function updateDrawLabel() {
             const top6Grid = document.getElementById('top6-grid');
             if (top6Grid) {
                 top6Grid.innerHTML = '';
-                const forNext = preds.filter(p => p.drawNo != null && String(p.drawNo) === nextDraw);
+                const forNext = preds.filter(p => {
+                    const k = getPredictionRoundKey(p);
+                    return k != null && k === nextDraw;
+                });
                 const freq = {};
                 for (let i = 1; i <= 45; i++) freq[i] = 0;
                 forNext.forEach(p => {
@@ -948,7 +1073,7 @@ async function updateDrawLabel() {
 
             const userBest = {};
             preds.forEach(p => {
-                const wk = p.drawNo != null ? String(p.drawNo) : '';
+                const wk = getPredictionRoundKey(p) || '';
                 const wnums = winningMap[wk];
                 if (!wk || !wnums || !p.numbers) return;
                 const m = countMatches(p.numbers, wnums);

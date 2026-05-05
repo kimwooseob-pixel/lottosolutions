@@ -351,6 +351,93 @@
             margin: 0;
             line-height: 1.5;
         }
+
+        /* 전체 인기번호 TOP 6 — 파란 볼 */
+        .rank-ball--popular {
+            background: linear-gradient(145deg, #29b6f6, #0288d1);
+            box-shadow: 0 2px 10px rgba(3, 169, 244, 0.35);
+        }
+
+        .popular-all-sub {
+            font-size: 0.82rem;
+            color: #90a4ae;
+            margin: 0 0 12px;
+        }
+
+        /* 나의 예측: source별 블록 */
+        .history-source-block {
+            margin-bottom: 18px;
+        }
+
+        .history-source-block:last-child {
+            margin-bottom: 0;
+        }
+
+        .history-source-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0, 188, 212, 0.2);
+        }
+
+        .history-source-title {
+            margin: 0;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #4dd0e1;
+        }
+
+        .history-source-count {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #b0bec5;
+        }
+
+        .history-meta-date {
+            font-size: 0.78rem;
+            color: #78909c;
+            min-width: 120px;
+            flex-shrink: 0;
+        }
+
+        .history-row--mine {
+            align-items: flex-start;
+        }
+
+        .history-row-main {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px 12px;
+            flex: 1;
+        }
+
+        #my-history-list {
+            max-height: none;
+        }
+
+        .history-source-rows {
+            max-height: 220px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #00bcd4 transparent;
+        }
+
+        .history-source-rows::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .history-source-rows::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .history-source-rows::-webkit-scrollbar-thumb {
+            background-color: #00bcd4;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -378,6 +465,12 @@
     </header>
 
     <div class="ranking-dashboard">
+        <section class="rank-card" id="section-popular-all">
+            <h2 class="rank-section-title">전체 인기번호 TOP 6</h2>
+            <p class="popular-all-sub" id="popular-all-sub">전체 예측에서 번호 출현 빈도 기준</p>
+            <div class="top6-grid" id="popular-all-grid"></div>
+        </section>
+
         <section class="rank-card" id="section-winning">
             <h2 class="rank-section-title" id="winning-section-title">당첨번호</h2>
             <div class="ball-row" id="winning-balls"></div>
