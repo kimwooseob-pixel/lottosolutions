@@ -1,5 +1,5 @@
 // 벽돌깨기 게임 JavaScript
-// Firebase 관련 코드 완전 제거 (로컬 데이터만 사용)
+// Firebase RTDB: 읽기 전용 (currentDraw, winningNumbers/{회차})
 
 // 게임 상태
 const gameState = {
@@ -139,7 +139,133 @@ const defaultWinningNumbers = {
     '1169': [7, 12, 23, 29, 33, 44]
 };
 
-/** 기본 당첨 맵 + `window.LOTTO_DATA`(lotto-data.js) 병합 */
+/** RTDB에서 가져온 회차별 당첨번호 (merge 시 LOTTO_DATA보다 우선) */
+let brickFirebaseWinningMap = {};
+
+const brickFirebaseConfig = {
+    apiKey: 'AIzaSyAwh55rLOQkY8ZVCzaC4ZF3iaUVU5Vu0GM',
+    authDomain: 'ai-lottosolutions.firebaseapp.com',
+    databaseURL: 'https://ai-lottosolutions-default-rtdb.asia-southeast1.firebasedatabase.app',
+    projectId: 'ai-lottosolutions',
+    storageBucket: 'ai-lottosolutions.appspot.com',
+    messagingSenderId: '616782090306',
+    appId: '1:616782090306:web:688c710998dfce8e4d5ddb',
+};
+
+function initBrickFirebase() {
+    try {
+        if (typeof firebase === 'undefined' || !firebase.initializeApp) return;
+        if (!firebase.apps.length) {
+            firebase.initializeApp(brickFirebaseConfig);
+        }
+    } catch (e) {
+        console.warn('[brick-game] Firebase 초기화 실패', e);
+    }
+}
+
+/** 스냅샷 값 → 번호 배열 (배열 또는 { numbers }) */
+function brickWinningFromVal(val) {
+    if (!val) return [];
+    if (Array.isArray(val)) {
+        return val.filter(function (n) {
+            return typeof n === 'number' && Number.isFinite(n);
+        });
+    }
+    if (val.numbers && Array.isArray(val.numbers)) {
+        return val.numbers.filter(function (n) {
+            return typeof n === 'number' && Number.isFinite(n);
+        });
+    }
+    return [];
+}
+
+async function resolveLatestDrawNumber() {
+    initBrickFirebase();
+    if (typeof firebase === 'undefined' || !firebase.apps.length) {
+        return lottoData.drawNumber;
+    }
+    try {
+        const snap = await firebase.database().ref('currentDraw').once('value');
+        const val = snap.val();
+        if (val != null && typeof val.drawNumber === 'number' && Number.isFinite(val.drawNumber)) {
+            return val.drawNumber;
+        }
+    } catch (e) {
+        console.warn('[brick-game] currentDraw 읽기 실패', e);
+    }
+    try {
+        const dr = await firebase.database().ref('drawRange').once('value');
+        const v = dr.val();
+        if (v != null && typeof v === 'object') {
+            const end = parseInt(v.end, 10);
+            if (Number.isFinite(end)) return end;
+        }
+    } catch (e) {
+        /* ignore */
+    }
+    return lottoData.drawNumber;
+}
+
+/** 그리드 2~15행에 쓰는 회차들(latest … latest-13)의 당첨번호만 RTDB에서 읽기 */
+async function loadFirebaseWinningOverlay(latest) {
+    initBrickFirebase();
+    const map = {};
+    if (typeof firebase === 'undefined' || !firebase.apps.length) {
+        brickFirebaseWinningMap = map;
+        return;
+    }
+    const db = firebase.database();
+    for (let i = 1; i < 15; i++) {
+        const round = latest - (i - 1);
+        if (!Number.isFinite(round) || round < 1) continue;
+        try {
+            const snap = await db.ref('winningNumbers/' + round).once('value');
+            const nums = brickWinningFromVal(snap.val());
+            if (nums.length >= 6) {
+                map[String(round)] = nums.slice(0, 6);
+            }
+        } catch (e) {
+            /* 해당 회차만 스킵 */
+        }
+    }
+    brickFirebaseWinningMap = map;
+}
+
+async function loadBrickFirebaseState() {
+    const latest = await resolveLatestDrawNumber();
+    lottoData.drawNumber = latest;
+    await loadFirebaseWinningOverlay(latest);
+    const top = brickFirebaseWinningMap[String(latest)];
+    if (top && top.length >= 6) {
+        lottoData.winningNumbers = top.slice(0, 6);
+    }
+}
+
+let brickCurrentDrawListenerAttached = false;
+
+function attachBrickCurrentDrawListener() {
+    initBrickFirebase();
+    if (brickCurrentDrawListenerAttached) return;
+    if (typeof firebase === 'undefined' || !firebase.apps.length) return;
+    brickCurrentDrawListenerAttached = true;
+    firebase.database().ref('currentDraw').on('value', function (snap) {
+        const v = snap.val();
+        const d = v != null && typeof v.drawNumber === 'number' && Number.isFinite(v.drawNumber) ? v.drawNumber : null;
+        if (d == null) return;
+        if (d === lottoData.drawNumber) return;
+        lottoData.drawNumber = d;
+        void (async function () {
+            await loadFirebaseWinningOverlay(d);
+            const top = brickFirebaseWinningMap[String(d)];
+            if (top && top.length >= 6) {
+                lottoData.winningNumbers = top.slice(0, 6);
+            }
+            createBricks();
+        })();
+    });
+}
+
+/** 기본 당첨 맵 + LOTTO_DATA + Firebase(회차별 오버레이) 병합 */
 function mergeWinningNumbersMap() {
     const out = {};
     for (const k of Object.keys(defaultWinningNumbers)) {
@@ -156,6 +282,12 @@ function mergeWinningNumbersMap() {
         }
     } catch (e) {
         /* ignore */
+    }
+    if (brickFirebaseWinningMap && typeof brickFirebaseWinningMap === 'object') {
+        for (const k of Object.keys(brickFirebaseWinningMap)) {
+            const v = brickFirebaseWinningMap[k];
+            if (Array.isArray(v) && v.length) out[k] = v;
+        }
     }
     return out;
 }
@@ -953,26 +1085,36 @@ function updateScore() {
     if (levelEl) levelEl.textContent = gameState.level;
 }
 
-// 페이지 로드 시 게임 초기화
+// 페이지 로드 시 Firebase 회차·당첨 반영 후 게임 초기화
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM이 로드되었습니다. 게임을 초기화합니다.');
-    
-    initGame();
-    
-    // 페이지가 로드되면 즉시 무적모드(45개 공) 실행
-    toggleGodMode();
 
-    const resetBtn = document.getElementById('resetButton');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', function () {
-            resetGame();
-            ensureMainBallInPlayArea();
-        });
+    function wireToolbar() {
+        const resetBtn = document.getElementById('resetButton');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function () {
+                resetGame();
+                ensureMainBallInPlayArea();
+            });
+        }
+        const godBtn = document.getElementById('godModeButton');
+        if (godBtn) {
+            godBtn.addEventListener('click', toggleGodMode);
+        }
     }
-    const godBtn = document.getElementById('godModeButton');
-    if (godBtn) {
-        godBtn.addEventListener('click', toggleGodMode);
-    }
+
+    wireToolbar();
+
+    void (async function () {
+        try {
+            await loadBrickFirebaseState();
+        } catch (e) {
+            console.warn('[brick-game] Firebase 동기화 실패, 로컬 회차/LOTTO_DATA 사용', e);
+        }
+        attachBrickCurrentDrawListener();
+        initGame();
+        toggleGodMode();
+    })();
 });
 
 // 게임 시작
