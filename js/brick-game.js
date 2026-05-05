@@ -58,8 +58,10 @@ function toggleGodMode() {
     
     if (gameState.godMode) {
         // 무적모드 ON
-        godModeButton.textContent = '무적모드 ON';
-        godModeButton.style.backgroundColor = '#ff4444';
+        if (godModeButton) {
+            godModeButton.textContent = '무적모드 ON';
+            godModeButton.style.backgroundColor = '#ff4444';
+        }
         
         // 패들 숨기고 하단 벽 표시
         if (paddle) paddle.style.display = 'none';
@@ -95,10 +97,13 @@ function toggleGodMode() {
                 statusElement.textContent = '';
             }, 2000);
         }
+        updateBallRemovalStats();
     } else {
         // 무적모드 OFF
-        godModeButton.textContent = '무적모드';
-        godModeButton.style.backgroundColor = '';
+        if (godModeButton) {
+            godModeButton.textContent = '무적모드';
+            godModeButton.style.backgroundColor = '';
+        }
         
         // 패들 표시하고 하단 벽 숨기기
         if (paddle) paddle.style.display = 'block';
@@ -133,6 +138,27 @@ const defaultWinningNumbers = {
     '1168': [5, 13, 19, 24, 38, 40],
     '1169': [7, 12, 23, 29, 33, 44]
 };
+
+/** 기본 당첨 맵 + `window.LOTTO_DATA`(lotto-data.js) 병합 */
+function mergeWinningNumbersMap() {
+    const out = {};
+    for (const k of Object.keys(defaultWinningNumbers)) {
+        const arr = defaultWinningNumbers[k];
+        if (Array.isArray(arr) && arr.length) out[k] = arr;
+    }
+    try {
+        const ld = typeof window !== 'undefined' ? window.LOTTO_DATA : null;
+        if (ld && typeof ld === 'object') {
+            for (const k of Object.keys(ld)) {
+                const v = ld[k];
+                if (Array.isArray(v) && v.length) out[k] = v;
+            }
+        }
+    } catch (e) {
+        /* ignore */
+    }
+    return out;
+}
 
 // 로또 당첨번호 데이터 (최근 16회차)
 const lottoData = {
@@ -219,11 +245,13 @@ function createRoundNumbers() {
     
     roundHeader.innerHTML = ''; // 기존 내용 초기화
     
-    // 1170회부터 15회차까지 역순으로 표시
+    const latest = lottoData.drawNumber;
+    // 1줄: 다음 회차(예측), 이후 최신 회차부터 역순
     for (let i = 0; i < 15; i++) {
         const roundNumber = document.createElement('div');
-        roundNumber.className = 'round-number';
-        roundNumber.textContent = 1170 - i; // 1170회부터 시작
+        roundNumber.className = 'round-number' + (i === 0 ? ' prediction-label' : '');
+        const label = i === 0 ? latest + 1 : latest - (i - 1);
+        roundNumber.textContent = label;
         roundNumber.style.height = '19px'; // 벽돌 높이와 동일하게 조정
         roundNumber.style.display = 'flex';
         roundNumber.style.alignItems = 'center';
@@ -254,24 +282,24 @@ function createBricks() {
     createRoundNumbers();
     
     // 15행(회차), 45열(번호)
-    const startRound = 1170; // 1170회부터 시작
+    const latest = lottoData.drawNumber;
+    const winningMap = mergeWinningNumbersMap();
+    const winRedPalette = ['#cc2200', '#cc5500', '#9a3412', '#c2410c'];
     const numRows = 15;
     const numCols = 45;
     
-    // 1행: 1~45번 초록색 바탕의 벽돌 생성
+    // 1행: 다음 회차 예측용 파란 벽돌 (앱과 동일: 5의 배수만 번호 표시)
     for (let c = 0; c < numCols; c++) {
         const number = c + 1;
         
-        // 셀 생성
         const cell = document.createElement('div');
         cell.style.gridRow = 1;
         cell.style.gridColumn = c + 1;
         
-        // 초록색 바탕의 벽돌 생성
         const brick = document.createElement('div');
         brick.className = 'brick header-brick';
-        brick.textContent = number;
-        brick.style.backgroundColor = '#2ecc71'; // 초록색
+        brick.dataset.number = String(number);
+        brick.textContent = number % 5 === 0 ? String(number) : '';
         brick.style.fontWeight = 'bold';
         brick.style.justifyContent = 'center';
         brick.style.alignItems = 'center';
@@ -281,35 +309,41 @@ function createBricks() {
         brickContainer.appendChild(cell);
     }
     
-    // 2행~15행: 기존 로직대로 벽돌 생성
+    // 2행~15행: 역대 당첨번호 — 당첨 셀 빨강/주황, 나머지 어두운 배경
     for (let r = 1; r < numRows; r++) {
-        const currentRound = startRound - r + 1; // 1행이 1170회이므로 2행은 1169회가 되도록 조정
-        const winningNumbers = defaultWinningNumbers[currentRound] || [];
+        const currentRound = latest - (r - 1);
+        const key = String(currentRound);
+        let winningNumbers = winningMap[key];
+        if ((!winningNumbers || !winningNumbers.length) && currentRound === latest && Array.isArray(lottoData.winningNumbers)) {
+            winningNumbers = lottoData.winningNumbers;
+        }
+        if (!winningNumbers) winningNumbers = [];
         
         for (let c = 0; c < numCols; c++) {
             const number = c + 1;
-            const isWinning = winningNumbers.includes(number);
+            const isWinning = Array.isArray(winningNumbers) && winningNumbers.includes(number);
             
-            // 빈 셀 생성
             const cell = document.createElement('div');
             cell.style.gridRow = r + 1;
             cell.style.gridColumn = c + 1;
             
-            // 벽돌 생성
             const brick = document.createElement('div');
-            brick.className = 'brick';
-            brick.textContent = number;
+            brick.textContent = String(number);
             brick.dataset.row = r;
             brick.dataset.col = c;
             
             if (isWinning) {
-                // 당첨번호인 경우
+                brick.className = 'brick brick-win';
                 brick.dataset.durability = 1;
-                brick.style.backgroundColor = '#ff4444'; // 빨간색
+                brick.dataset.maxDurability = '1';
+                brick.style.backgroundColor = winRedPalette[number % winRedPalette.length];
+                brick.style.color = '#ffffff';
             } else {
-                // 일반 번호인 경우
+                brick.className = 'brick brick-dark';
                 brick.dataset.durability = 2;
-                brick.style.backgroundColor = '#666666'; // 회색
+                brick.dataset.maxDurability = '2';
+                brick.style.backgroundColor = '';
+                brick.style.color = '';
             }
             
             brick.style.width = '100%';
@@ -318,7 +352,6 @@ function createBricks() {
             brick.style.alignItems = 'center';
             brick.style.justifyContent = 'center';
             brick.style.fontSize = '10px';
-            brick.style.color = 'white';
             cell.appendChild(brick);
             brickContainer.appendChild(cell);
         }
@@ -832,10 +865,10 @@ function checkSingleBallCollision(collidingEntity, ballRect, ballIndexInGodMode 
             ballRect.right >= brickRect.left &&
             ballRect.left <= brickRect.right) {
 
-            // 첫 번째 줄 벽돌 (녹색, 'header-brick' 클래스) 처리
+            // 첫 번째 줄 벽돌 (예측 파란 줄, 'header-brick' 클래스) 처리
             if (brick.classList.contains('header-brick')) {
                 gameState.ballsLostToFirstRow++;
-                const brickNumberText = brick.textContent;
+                const brickNumberText = (brick.textContent && brick.textContent.trim()) || brick.dataset.number || '';
                 if (brickNumberText) {
                     gameState.headerBrickHitStats[brickNumberText] = (gameState.headerBrickHitStats[brickNumberText] || 0) + 1;
                 }
@@ -929,6 +962,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const playAgain = document.getElementById('result-play-again');
     if (playAgain) {
         playAgain.addEventListener('click', hideResultPanelAndRestart);
+    }
+
+    const resetBtn = document.getElementById('resetButton');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function () {
+            resetGame();
+            ensureMainBallInPlayArea();
+        });
+    }
+    const godBtn = document.getElementById('godModeButton');
+    if (godBtn) {
+        godBtn.addEventListener('click', toggleGodMode);
     }
 });
 
@@ -1127,77 +1172,3 @@ function nextRound() {
     // 벽돌 재생성
     initBricks();
 } 
-
-// 무적모드에서 공 45개 생성
-function toggleGodMode() {
-    // 게임이 시작되지 않았으면 게임 시작
-    if (!gameState.gameStarted) {
-        startGame();
-    }
-    
-    gameState.godMode = !gameState.godMode;
-    const godModeButton = document.getElementById('godModeButton');
-    const paddle = document.getElementById('paddle');
-    const bottomWall = document.getElementById('bottomWall');
-    
-    if (gameState.godMode) {
-        // 무적모드 ON
-        godModeButton.textContent = '무적모드 ON';
-        godModeButton.style.backgroundColor = '#ff4444';
-        
-        // 패들 숨기고 하단 벽 표시
-        if (paddle) paddle.style.display = 'none';
-        if (bottomWall) bottomWall.style.display = 'block';
-        
-        // 기존 공들 제거 (초기 정적 공 포함)
-        document.querySelectorAll('.ball').forEach(el => el.remove());
-        const staticBall = document.getElementById('ball');
-        if (staticBall) staticBall.remove();
-        
-        // 공 45개 생성 (하단에 일렬로)
-        gameState.balls = [];
-        for (let i = 0; i < gameState.totalBalls; i++) {
-            const ball = createBall(i, gameState.totalBalls);
-            if (ball) {
-                gameState.balls.push(ball);
-            }
-        }
-        
-        // 공이 움직이지 않으면 시작
-        gameState.ballMoving = true;
-        gameState.gameStarted = true; // 명시적으로 시작 상태 설정
-        if (gameState.animationId) {
-            cancelAnimationFrame(gameState.animationId);
-        }
-        gameLoop();
-        
-        // 게임 상태 메시지 표시
-        const statusElement = document.getElementById('gameStatus');
-        if (statusElement) {
-            statusElement.textContent = '무적모드가 활성화되었습니다! 공 45개 생성!';
-            setTimeout(() => {
-                statusElement.textContent = '';
-            }, 2000);
-        }
-        
-        // 초기 통계 패널 표시
-        updateBallRemovalStats();
-    } else {
-        // 무적모드 OFF
-        godModeButton.textContent = '무적모드';
-        godModeButton.style.backgroundColor = '';
-        
-        // 패들 표시하고 하단 벽 숨기기
-        if (paddle) paddle.style.display = 'block';
-        if (bottomWall) bottomWall.style.display = 'none';
-        
-        // 게임 상태 메시지 표시
-        const statusElement = document.getElementById('gameStatus');
-        if (statusElement) {
-            statusElement.textContent = '무적모드가 비활성화되었습니다.';
-            setTimeout(() => {
-                statusElement.textContent = '';
-            }, 2000);
-        }
-    }
-}

@@ -8,11 +8,24 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
+        :root {
+            --bg-navy: #050510;
+            --panel-navy: #0a1220;
+            --neon-cyan: #00ccff;
+            --text-muted: #8daab8;
+            --brick-dark: #1a2233;
+            --brick-blue: #0044cc;
+            --play-bg: #060b14;
+        }
+
         body {
             margin: 0;
             padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            font-family: 'Arial', sans-serif;
+            background: var(--bg-navy);
+            background-image:
+                radial-gradient(ellipse 100% 80% at 50% -15%, rgba(0, 204, 255, 0.07), transparent 55%),
+                linear-gradient(180deg, #050510 0%, #0a0f18 100%);
+            font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Arial', sans-serif;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -20,25 +33,47 @@
         }
 
         .game-wrapper {
-            background: #2c3e50;
+            background: var(--panel-navy);
             padding: 20px;
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 204, 255, 0.12);
             position: relative;
+            border: 1px solid rgba(0, 204, 255, 0.22);
+        }
+
+        .game-info {
+            width: 100%;
+            margin-bottom: 14px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: rgba(0, 20, 40, 0.55);
+            border: 1px solid rgba(0, 204, 255, 0.2);
+        }
+
+        .game-info p {
+            margin: 0;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            color: var(--text-muted);
+        }
+
+        .game-info p strong {
+            color: var(--neon-cyan);
+            font-weight: 700;
         }
 
         .header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 20px;
-            color: white;
-            font-size: 18px;
+            margin-bottom: 16px;
+            color: #e8f4f8;
+            font-size: 16px;
         }
 
         .game-container {
             width: 720px;
             height: 520px;
-            background: #1a1a1a;
+            background: var(--play-bg);
             position: relative;
             border-radius: 10px;
             overflow: visible;
@@ -46,6 +81,7 @@
             padding: 0;
             box-sizing: border-box;
             margin-left: 50px;
+            border: 1px solid rgba(0, 204, 255, 0.15);
         }
 
         .round-display {
@@ -73,15 +109,22 @@
 
         .round-number {
             height: 20px;
-            font-size: 12px;
-            color: white;
+            font-size: 11px;
+            color: #e2e8f0;
             text-align: right;
             padding-right: 5px;
             line-height: 20px;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 30, 50, 0.65);
             border-radius: 3px;
             margin: 1px 0;
             font-weight: bold;
+            border: 1px solid rgba(0, 204, 255, 0.12);
+        }
+
+        .round-number.prediction-label {
+            color: #fff;
+            background: rgba(0, 68, 204, 0.35);
+            border-color: rgba(0, 204, 255, 0.35);
         }
 
         .game-area {
@@ -90,7 +133,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: #1a1a1a;
+            background: var(--play-bg);
         }
 
         .play-area {
@@ -99,7 +142,7 @@
             right: 0;
             bottom: 0;
             height: 200px;
-            background: #1a1a1a;
+            background: var(--play-bg);
             border-top: none;
         }
 
@@ -113,7 +156,7 @@
             grid-template-columns: repeat(45, 1fr);
             grid-template-rows: repeat(15, 1fr);
             gap: 1px;
-            background: #1a1a1a;
+            background: #030810;
             margin-top: 0;
             border-bottom: none;
         }
@@ -128,20 +171,27 @@
             align-items: center;
             justify-content: center;
             font-size: 8px;
-            color: white;
-            background-color: #666666;
-            transition: background-color 0.3s;
+            color: rgba(255, 255, 255, 0.92);
+            background-color: var(--brick-dark);
+            transition: background-color 0.2s, opacity 0.2s;
             cursor: default;
             user-select: none;
             margin: 0;
             padding: 0;
-            outline: 1px solid #333;
+            outline: 1px solid rgba(0, 204, 255, 0.12);
         }
 
-        .header-brick {
-            background-color: #3498db !important;
-            color: white;
+        .brick.brick-dark {
+            background-color: var(--brick-dark);
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .brick.header-brick {
+            background-color: var(--brick-blue) !important;
+            color: #fff;
             font-weight: bold;
+            outline: 1px solid rgba(0, 204, 255, 0.45);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
         }
 
         #ball {
@@ -159,39 +209,51 @@
         #paddle {
             width: 80px;
             height: 10px;
-            background-color: #4CAF50;
+            background: linear-gradient(180deg, #1e3a5f, #0f172a);
+            border: 1px solid rgba(0, 204, 255, 0.4);
             position: absolute;
             left: 50%;
             bottom: 15px;
             transform: translateX(-50%);
             border-radius: 5px;
             z-index: 10;
+            box-shadow: 0 0 12px rgba(0, 204, 255, 0.2);
         }
 
         .controls {
             display: flex;
             justify-content: center;
-            gap: 10px;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
         }
 
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            border: none;
-            border-radius: 5px;
+        .controls .toolbar-btn {
+            padding: 12px 22px;
+            font-size: 15px;
+            font-weight: 600;
+            border: 1px solid rgba(0, 204, 255, 0.45);
+            border-radius: 10px;
             cursor: pointer;
-            background: #3498db;
-            color: white;
-            transition: background 0.3s;
+            background: rgba(0, 30, 55, 0.9);
+            color: #e8f4f8;
+            transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
         }
 
-        button:hover:not(:disabled) {
-            background: #2980b9;
+        .controls .toolbar-btn:hover:not(:disabled) {
+            background: rgba(0, 60, 90, 0.95);
+            box-shadow: 0 0 18px rgba(0, 204, 255, 0.2);
+            transform: translateY(-1px);
         }
 
-        button:disabled {
-            background: #95a5a6;
+        .controls .toolbar-btn:disabled {
+            opacity: 0.45;
             cursor: not-allowed;
+        }
+
+        .controls .toolbar-btn--primary {
+            border-color: rgba(0, 204, 255, 0.55);
         }
 
         .number-grid {
@@ -199,9 +261,10 @@
             grid-template-columns: repeat(45, 1fr);
             gap: 1px;
             margin-bottom: 10px;
-            padding: 5px;
-            background: #34495e;
-            border-radius: 5px;
+            padding: 6px;
+            background: rgba(0, 20, 40, 0.5);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 204, 255, 0.15);
         }
 
         .number-cell {
@@ -210,8 +273,8 @@
             align-items: center;
             justify-content: center;
             font-size: 8px;
-            color: white;
-            background: #2c3e50;
+            color: rgba(255, 255, 255, 0.75);
+            background: rgba(10, 18, 32, 0.9);
         }
 
         .winning-info {
@@ -252,10 +315,11 @@
             display: flex;
             justify-content: space-around;
             align-items: center;
-            background: #34495e;
+            background: rgba(0, 25, 45, 0.55);
             padding: 15px;
             border-radius: 10px;
             margin-bottom: 20px;
+            border: 1px solid rgba(0, 204, 255, 0.12);
         }
 
         .stat-item {
@@ -272,7 +336,7 @@
         .stat-value {
             font-size: 20px;
             font-weight: bold;
-            color: #f39c12;
+            color: var(--neon-cyan);
         }
 
         .prediction-section {
@@ -312,10 +376,11 @@
             display: none;
             margin-top: 20px;
             padding: 20px;
-            background: #34495e;
+            background: rgba(0, 25, 45, 0.65);
             border-radius: 12px;
             text-align: center;
             color: #ecf0f1;
+            border: 1px solid rgba(0, 204, 255, 0.18);
         }
 
         .result-panel-title {
@@ -409,11 +474,13 @@
 
             .controls {
                 flex-direction: column;
-                align-items: center;
+                align-items: stretch;
             }
 
-            button {
-                width: 200px;
+            .controls .toolbar-btn {
+                width: 100%;
+                max-width: 280px;
+                margin: 0 auto;
             }
         }
     </style>
@@ -424,6 +491,11 @@
             <div class="score">점수: <span id="score">0</span></div>
             <div class="lives">남은 공: <span id="lives">3</span></div>
             <div class="level">단계: <span id="level">1</span></div>
+        </div>
+
+        <div class="game-info">
+            <p><strong>각 벽돌은 역대 로또 실제 당첨번호!</strong></p>
+            <p><strong>파란벽돌을 깨서 다음 회차를 예측해보세요!</strong></p>
         </div>
         
         <div id="numberGrid" class="number-grid">
@@ -444,16 +516,14 @@
             <div class="play-area">
                 <div id="ball"></div>
                 <div id="paddle"></div>
-                <div id="bottomWall" style="display: none; position: absolute; bottom: 0; left: 0; width: 100%; height: 20px; background-color: #3498db;"></div>
+                <div id="bottomWall" style="display: none; position: absolute; bottom: 0; left: 0; width: 100%; height: 20px; background: linear-gradient(180deg, rgba(0,68,204,0.85), rgba(0,40,90,0.95)); border-top: 1px solid rgba(0,204,255,0.35);"></div>
             </div>
         </div>
         
         <div class="controls">
-            <button id="startButton">시작</button>
-            <button id="pauseButton" disabled>일시정지</button>
-            <button id="resetButton">다시시작</button>
-            <button id="godModeButton">무적모드</button>
-            <div id="gameStatus" style="color: white; margin-top: 10px; height: 20px;"></div>
+            <button type="button" id="resetButton" class="toolbar-btn toolbar-btn--primary">🔄 다시하기</button>
+            <button type="button" id="godModeButton" class="toolbar-btn">무적모드</button>
+            <div id="gameStatus" style="color: rgba(0,204,255,0.9); margin-top: 6px; width: 100%; text-align: center; min-height: 20px; font-size: 0.85rem;"></div>
         </div>
 
         <div id="result-panel" class="result-panel" aria-live="polite">
@@ -465,6 +535,7 @@
         </div>
     </div>
     
+    <script src="../js/lotto-data.js"></script>
     <script src="../js/brick-game.js"></script>
 </body>
 </html>
