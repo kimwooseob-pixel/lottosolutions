@@ -134,9 +134,49 @@
         }
         
         .button-grid.game-section {
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            max-width: 100%;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            width: 100%;
             margin: 0 auto 20px auto;
+        }
+
+        .game-card {
+            background: linear-gradient(180deg, #0a1220 0%, #0c1626 100%);
+            border: 1px solid rgba(0, 229, 255, 0.5);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(0, 229, 255, 0.12) inset;
+            min-height: 140px;
+        }
+
+        .game-card .button-icon {
+            font-size: 1.7rem;
+            margin-bottom: 8px;
+        }
+
+        .game-card .button-title {
+            font-size: 1.05rem;
+        }
+
+        .game-card .button-description {
+            font-size: 0.82rem;
+            line-height: 1.35;
+        }
+
+        .game-card--coming {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .coming-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #031018;
+            background: var(--neon-cyan);
+            border-radius: 999px;
+            padding: 3px 8px;
+            box-shadow: 0 0 14px rgba(0, 229, 255, 0.45);
         }
         
         .button-grid.prediction-tools {
@@ -474,7 +514,7 @@
             }
             
             .button-grid.game-section {
-                grid-template-columns: 1fr 1fr 1fr;
+                grid-template-columns: 1fr;
                 max-width: 100%;
             }
             
@@ -507,7 +547,7 @@
             }
             
             .button-grid.game-section {
-                grid-template-columns: 1fr 1fr 1fr;
+                grid-template-columns: 1fr;
                 max-width: 100%;
             }
             
@@ -580,16 +620,23 @@
         
         <div class="section-title">게임 · 도구</div>
         <div class="button-grid game-section">
-            <a class="nav-button game-button game-button-small brick-link" href="pages/brick-game.html">
+            <a class="nav-button game-card" href="pages/brick-game.html">
                 <div class="button-icon">🧱</div>
-                <span class="button-title">벽돌 깨기 게임</span>
-                <span class="button-description">회차별 벽돌을 깨며 번호 감각 익히기</span>
+                <span class="button-title">로또 벽돌게임</span>
+                <span class="button-description">벽돌 파괴로 번호 예측</span>
             </a>
 
-            <a class="nav-button random-button game-button-small" href="pages/random-numbers.html">
-                <div class="button-icon">🎲</div>
-                <span class="button-title">랜덤 번호 뽑기</span>
-                <span class="button-description">원클릭으로 6개 번호 무작위 추첨</span>
+            <a class="nav-button game-card game-card--coming" href="pages/wheel-game.html" aria-disabled="true">
+                <span class="coming-badge">준비중</span>
+                <div class="button-icon">🎯</div>
+                <span class="button-title">로또 원판게임</span>
+                <span class="button-description">원판 회전으로 번호 예측</span>
+            </a>
+
+            <a class="nav-button game-card" href="pages/random-numbers.html">
+                <div class="button-icon">🎱</div>
+                <span class="button-title">로또 번호뽑기</span>
+                <span class="button-description">AI 추첨기 번호 예측</span>
             </a>
         </div>
 
