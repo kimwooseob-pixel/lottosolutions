@@ -1,5 +1,5 @@
 // 벽돌깨기 게임 JavaScript
-// Firebase RTDB: 읽기 전용 (currentDraw, winningNumbers/{회차})
+// Firebase RTDB: currentDraw / winningNumbers 읽기 + predictions 쓰기
 
 // 게임 상태
 const gameState = {
@@ -263,6 +263,81 @@ function attachBrickCurrentDrawListener() {
             createBricks();
         })();
     });
+}
+
+/** 파란 1행 충돌 통계 → 정렬된 예측 번호 6개 (6개 미만이면 null) */
+function getBrickPredictionNumbersFromHeaderStats() {
+    const entries = Object.entries(gameState.headerBrickHitStats)
+        .map(function ([k, v]) {
+            const n = parseInt(String(k).trim(), 10);
+            const hits = typeof v === 'number' ? v : parseInt(v, 10) || 0;
+            return Number.isFinite(n) && n >= 1 && n <= 45 && hits > 0
+                ? { n: n, hits: hits }
+                : null;
+        })
+        .filter(Boolean);
+    if (entries.length < 6) return null;
+    let picked;
+    if (entries.length === 6) {
+        picked = entries.map(function (e) {
+            return e.n;
+        });
+    } else {
+        entries.sort(function (a, b) {
+            if (b.hits !== a.hits) return b.hits - a.hits;
+            return a.n - b.n;
+        });
+        picked = entries.slice(0, 6).map(function (e) {
+            return e.n;
+        });
+    }
+    picked.sort(function (a, b) {
+        return a - b;
+    });
+    return picked;
+}
+
+/** predictions/{pushId} — 앱과 동일 필드 (source: lotto_brick, round 숫자) */
+function saveBrickPredictionToFirebase() {
+    const numbers = getBrickPredictionNumbersFromHeaderStats();
+    if (!numbers) return;
+
+    const userUid = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('userUid') : null;
+    const loggedInUser = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('loggedInUser') : null;
+    if (!userUid || !loggedInUser) {
+        alert('로그인이 필요합니다.');
+        location.href = '../index.html?openLogin=1';
+        return;
+    }
+
+    const round = lottoData.drawNumber + 1;
+    if (!Number.isFinite(round)) return;
+
+    initBrickFirebase();
+    if (typeof firebase === 'undefined' || !firebase.apps.length) {
+        console.warn('[brick-game] 예측 저장: Firebase를 사용할 수 없습니다.');
+        return;
+    }
+
+    firebase
+        .database()
+        .ref('predictions')
+        .push()
+        .set({
+            userId: userUid,
+            nickname: loggedInUser,
+            numbers: numbers,
+            round: round,
+            source: 'lotto_brick',
+            timestamp: Date.now(),
+        })
+        .then(function () {
+            console.log('[brick-game] 예측 저장 완료', numbers, round);
+        })
+        .catch(function (err) {
+            console.error('[brick-game] 예측 저장 실패:', err);
+            alert('예측 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+        });
 }
 
 /** 기본 당첨 맵 + LOTTO_DATA + Firebase(회차별 오버레이) 병합 */
@@ -1191,6 +1266,8 @@ function showScoreTable() {
     if (gameState.gameOver) return;
 
     gameState.gameOver = true;
+
+    saveBrickPredictionToFirebase();
 
     if (gameState.animationId) {
         cancelAnimationFrame(gameState.animationId);
