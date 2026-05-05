@@ -41,7 +41,10 @@ const gameState = {
     currentRound: 1,
     totalBalls: 45, // 무적모드 공 개수
     removedBalls: 0, // 무적모드에서 사라진 공 개수
-    gameOver: false
+    gameOver: false,
+    /** 파란 예측 줄에서 깨진(선택된) 번호 1~45 — createBricks 시 유지 */
+    pickedHeaderNumbers: {},
+    brickPredictCompletePopupShown: false
 };
 
 // 무적모드 토글 함수
@@ -495,7 +498,7 @@ function createBricks() {
     const numRows = 15;
     const numCols = 45;
     
-    // 1행: 다음 회차 예측용 파란 벽돌 (앱과 동일: 5의 배수만 번호 표시)
+    // 1행: 다음 회차 예측용 파란 벽돌 (앱과 동일: 5의 배수만 번호 표시) — 깨진 칸은 선택 표시만 유지
     for (let c = 0; c < numCols; c++) {
         const number = c + 1;
         
@@ -504,13 +507,27 @@ function createBricks() {
         cell.style.gridColumn = c + 1;
         
         const brick = document.createElement('div');
-        brick.className = 'brick header-brick';
         brick.dataset.number = String(number);
-        brick.textContent = number % 5 === 0 ? String(number) : '';
-        brick.style.fontWeight = 'bold';
-        brick.style.justifyContent = 'center';
-        brick.style.alignItems = 'center';
-        brick.style.display = 'flex';
+        if (gameState.pickedHeaderNumbers[number]) {
+            brick.className = 'brick header-brick--picked';
+            brick.textContent = String(number);
+            brick.style.fontWeight = 'bold';
+            brick.style.fontSize = '10px';
+            brick.style.justifyContent = 'center';
+            brick.style.alignItems = 'center';
+            brick.style.display = 'flex';
+            brick.style.backgroundColor = '#ffb300';
+            brick.style.color = '#1a1a2e';
+            brick.style.outline = '2px solid #fff9c4';
+            brick.style.boxShadow = 'inset 0 0 0 1px rgba(0,0,0,0.12)';
+        } else {
+            brick.className = 'brick header-brick';
+            brick.textContent = number % 5 === 0 ? String(number) : '';
+            brick.style.fontWeight = 'bold';
+            brick.style.justifyContent = 'center';
+            brick.style.alignItems = 'center';
+            brick.style.display = 'flex';
+        }
         
         cell.appendChild(brick);
         brickContainer.appendChild(cell);
@@ -770,6 +787,16 @@ function resetGame() {
     gameState.level = 1;
     gameState.gameOver = false; // 게임 오버 플래그 초기화
     gameState.headerBrickHitStats = {}; // 첫 번째 줄 벽돌 충돌 통계 초기화
+    gameState.pickedHeaderNumbers = {};
+    gameState.brickPredictCompletePopupShown = false;
+    gameState.balls = [];
+    gameState.removedBalls = 0;
+
+    document.querySelectorAll('.ball').forEach(function (el) {
+        el.remove();
+    });
+    const bottomWall = document.getElementById('bottomWall');
+    if (bottomWall) bottomWall.style.display = 'none';
     
     // 무적모드 버튼 상태 초기화
     const godModeButton = document.getElementById('godModeButton');
@@ -819,6 +846,8 @@ function resetGame() {
         gameState.animationId = null;
     }
     
+    ensureMainBallInPlayArea();
+
     // Start a new game loop
     gameLoop();
 }
@@ -1059,11 +1088,44 @@ function checkBrickCollision() {
     }
 }
 
+/** 파란 예측 줄 충돌 시: 선택 처리(재생성 시에도 유지), 6개 시 예측 완성 알림 */
+function registerHeaderBrickBroken(brick) {
+    const n = parseInt(brick.dataset.number, 10);
+    if (!Number.isFinite(n) || n < 1 || n > 45) return;
+    if (gameState.pickedHeaderNumbers[n]) return;
+
+    gameState.pickedHeaderNumbers[n] = true;
+    gameState.headerBrickHitStats[String(n)] = (gameState.headerBrickHitStats[String(n)] || 0) + 1;
+
+    brick.classList.remove('header-brick');
+    brick.classList.add('header-brick--picked');
+    brick.textContent = String(n);
+    brick.style.backgroundColor = '#ffb300';
+    brick.style.color = '#1a1a2e';
+    brick.style.outline = '2px solid #fff9c4';
+    brick.style.fontWeight = 'bold';
+    brick.style.fontSize = '10px';
+    brick.style.boxShadow = 'inset 0 0 0 1px rgba(0,0,0,0.12)';
+
+    const picked = Object.keys(gameState.pickedHeaderNumbers).map(function (k) {
+        return parseInt(k, 10);
+    }).filter(Number.isFinite).sort(function (a, b) {
+        return a - b;
+    });
+    if (picked.length >= 6 && !gameState.brickPredictCompletePopupShown) {
+        gameState.brickPredictCompletePopupShown = true;
+        alert('예측 완성!\n선택한 번호 6개: ' + picked.join(', '));
+    }
+}
+
 // 단일 공과 벽돌의 충돌 처리
 function checkSingleBallCollision(collidingEntity, ballRect, ballIndexInGodMode = -1) {
     const bricks = document.querySelectorAll('.brick');
 
     for (const brick of bricks) {
+        if (brick.classList.contains('header-brick--picked')) {
+            continue;
+        }
         const brickRect = brick.getBoundingClientRect();
 
         // 공과 벽돌의 충돌 감지
@@ -1075,10 +1137,8 @@ function checkSingleBallCollision(collidingEntity, ballRect, ballIndexInGodMode 
             // 첫 번째 줄 벽돌 (예측 파란 줄, 'header-brick' 클래스) 처리
             if (brick.classList.contains('header-brick')) {
                 gameState.ballsLostToFirstRow++;
-                const brickNumberText = (brick.textContent && brick.textContent.trim()) || brick.dataset.number || '';
-                if (brickNumberText) {
-                    gameState.headerBrickHitStats[brickNumberText] = (gameState.headerBrickHitStats[brickNumberText] || 0) + 1;
-                }
+                registerHeaderBrickBroken(brick);
+                const brickNumberText = brick.dataset.number || '';
                 console.log(`첫 번째 줄 벽돌(${brickNumberText})과 충돌! 사라진 공 개수: ${gameState.ballsLostToFirstRow}, 통계:`, gameState.headerBrickHitStats);
 
                 if (gameState.godMode && ballIndexInGodMode !== -1) {
@@ -1188,7 +1248,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         attachBrickCurrentDrawListener();
         initGame();
-        toggleGodMode();
     })();
 });
 
