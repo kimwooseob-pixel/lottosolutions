@@ -60,16 +60,16 @@ function getBallSize() {
 
 /** 공을 패들 바로 위(2px 간격)에 정지 배치 */
 function placeBallOnPaddle() {
-    const playArea = document.querySelector('.play-area');
+    const gameContainer = document.querySelector('.game-container');
     const paddle = document.getElementById('paddle');
     const ball = document.getElementById('ball');
-    if (!playArea || !paddle || !ball) return;
+    if (!gameContainer || !paddle || !ball) return;
 
     const ballSize = getBallSize();
     const paddleRect = paddle.getBoundingClientRect();
-    const playRect = playArea.getBoundingClientRect();
-    const paddleTop = paddleRect.top - playRect.top;
-    const paddleLeft = paddleRect.left - playRect.left;
+    const containerRect = gameContainer.getBoundingClientRect();
+    const paddleTop = paddleRect.top - containerRect.top;
+    const paddleLeft = paddleRect.left - containerRect.left;
     const paddleWidth = paddleRect.width || parseFloat(paddle.style.width) || BASE_PADDLE_WIDTH;
     const ballTop = paddleTop - ballSize - 10;
 
@@ -1058,8 +1058,9 @@ function moveBall() {
 
     const gameContainer = document.querySelector('.game-container');
     const paddle = document.getElementById('paddle');
+    const brickContainer = document.getElementById('brickContainer');
     const ball = document.getElementById('ball');
-    if (!gameContainer || !paddle || !ball) return;
+    if (!gameContainer || !paddle || !brickContainer || !ball) return;
 
     const ballSize = getBallSize();
     const maxX = gameContainer.clientWidth - ballSize;
@@ -1113,18 +1114,25 @@ function moveBall() {
         return;
     }
 
-    // 벽돌 충돌 체크 (DOM rect 기준)
-    const ballRectNow = ball.getBoundingClientRect();
-    document.querySelectorAll('.brick, .header-brick').forEach((brick) => {
+    // 벽돌 충돌 체크 (game-container 기준 offset 좌표 통일)
+    const ballLeft = gameState.ballX;
+    const ballTop = gameState.ballY;
+    const ballRight = ballLeft + ballSize;
+    const ballBottom = ballTop + ballSize;
+    document.querySelectorAll('#brickContainer .brick, #brickContainer .header-brick').forEach((brick) => {
         if (brick.classList.contains('header-brick--picked')) return;
 
-        const brickRect = brick.getBoundingClientRect();
+        const host = brick.parentElement || brick;
+        const brickLeft = brickContainer.offsetLeft + host.offsetLeft;
+        const brickTop = brickContainer.offsetTop + host.offsetTop;
+        const brickRight = brickLeft + host.offsetWidth;
+        const brickBottom = brickTop + host.offsetHeight;
 
         // 충돌 감지
-        if (ballRectNow.right > brickRect.left &&
-            ballRectNow.left < brickRect.right &&
-            ballRectNow.bottom > brickRect.top &&
-            ballRectNow.top < brickRect.bottom) {
+        if (ballRight > brickLeft &&
+            ballLeft < brickRight &&
+            ballBottom > brickTop &&
+            ballTop < brickBottom) {
 
             if (brick.classList.contains('header-brick')) {
                 // 파란 벽돌
@@ -1470,9 +1478,9 @@ function showScoreTable() {
 function ensureMainBallInPlayArea() {
     let ball = document.getElementById('ball');
     if (ball) return;
-    const playArea = document.querySelector('.play-area');
+    const gameContainer = document.querySelector('.game-container');
     const paddle = document.getElementById('paddle');
-    if (!playArea || !paddle) return;
+    if (!gameContainer || !paddle) return;
     ball = document.createElement('div');
     ball.id = 'ball';
     ball.style.width = '10px';
@@ -1481,7 +1489,7 @@ function ensureMainBallInPlayArea() {
     ball.style.borderRadius = '50%';
     ball.style.position = 'absolute';
     ball.style.zIndex = '10';
-    playArea.insertBefore(ball, paddle);
+    gameContainer.appendChild(ball);
     ball.style.left = gameState.ballX + 'px';
     ball.style.top = gameState.ballY + 'px';
     ball.style.bottom = 'auto';
