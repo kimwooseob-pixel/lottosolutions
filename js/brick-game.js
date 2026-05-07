@@ -94,6 +94,40 @@ function setLaunchHintVisible(visible) {
     hint.style.display = visible ? 'block' : 'none';
 }
 
+function updatePaddleFromClientX(clientX) {
+    const gameContainer = document.querySelector('.game-container');
+    const paddle = document.getElementById('paddle');
+    if (!gameContainer || !paddle) return;
+    const rect = gameContainer.getBoundingClientRect();
+    const paddleWidth = paddle.offsetWidth || parseFloat(paddle.style.width) || BASE_PADDLE_WIDTH;
+    let nextLeft = clientX - rect.left - paddleWidth / 2;
+    nextLeft = Math.max(0, Math.min(rect.width - paddleWidth, nextLeft));
+    gameState.paddleX = nextLeft;
+    paddle.style.left = `${nextLeft}px`;
+    paddle.style.transform = 'none';
+    if (!gameState.ballMoving) {
+        placeBallOnPaddle();
+    }
+}
+
+function setupPaddleControlEvents() {
+    const gameContainer = document.querySelector('.game-container');
+    if (!gameContainer) return;
+    gameContainer.addEventListener('mousemove', function (e) {
+        updatePaddleFromClientX(e.clientX);
+    });
+    gameContainer.addEventListener('touchstart', function (e) {
+        if (e.touches && e.touches[0]) {
+            updatePaddleFromClientX(e.touches[0].clientX);
+        }
+    }, { passive: true });
+    gameContainer.addEventListener('touchmove', function (e) {
+        if (e.touches && e.touches[0]) {
+            updatePaddleFromClientX(e.touches[0].clientX);
+        }
+    }, { passive: true });
+}
+
 function animatePaddleWidth(targetWidth, durationMs) {
     const paddle = document.getElementById('paddle');
     const gameContainer = document.querySelector('.game-container');
@@ -1079,12 +1113,28 @@ function moveBall() {
         return;
     }
 
-    // 벽돌 충돌 체크
-    const beforeDY = gameState.ballDY;
-    checkSingleBallCollision(ball, ball.getBoundingClientRect());
-    if (beforeDY === gameState.ballDY) {
-        // 단순 규칙: 벽돌에 닿으면 Y 반전
-        // (checkSingleBallCollision 내부에서 이미 반전되었으면 중복 반전하지 않음)
+    // 벽돌 충돌 체크 (DOM rect 기준)
+    const ballRectNow = ball.getBoundingClientRect();
+    const bricks = document.querySelectorAll('.brick');
+    for (const brick of bricks) {
+        if (brick.classList.contains('header-brick--picked')) continue;
+        const brickRect = brick.getBoundingClientRect();
+        const overlap =
+            ballRectNow.bottom >= brickRect.top &&
+            ballRectNow.top <= brickRect.bottom &&
+            ballRectNow.right >= brickRect.left &&
+            ballRectNow.left <= brickRect.right;
+        if (!overlap) continue;
+
+        if (brick.classList.contains('header-brick')) {
+            registerHeaderBrickBroken(brick);
+        } else {
+            brick.remove();
+            gameState.score += 10;
+            updateScore();
+        }
+        gameState.ballDY *= -1;
+        break;
     }
 }
 
@@ -1311,6 +1361,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (brickContainer) {
             brickContainer.addEventListener('click', launchBallTowardClick);
         }
+        setupPaddleControlEvents();
     }
 
     wireToolbar();
