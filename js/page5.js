@@ -742,11 +742,14 @@ async function updateDrawLabel() {
 
 // --- page5.html RTDB 랭킹 대시보드 (읽기 전용) ---
 (function () {
-    const SOURCE_LABELS = {
-        horeum: '호름예측',
-        brick: '벽돌게임',
-        dart: '로또다트'
-    };
+    const HISTORY_TAB_DEFS = [
+        { key: 'all', label: '전체' },
+        { key: 'horeum', label: '🌊 호름예측' },
+        { key: 'brick', label: '🧱 벽돌게임' },
+        { key: 'dart', label: '🎯 로또다트' },
+        { key: 'picker', label: '🎱 번호뽑기' }
+    ];
+    let activeHistoryTab = 'all';
 
     /** 예측 회차 키 (winningNumbers 맵 조회용) — round 우선, 없으면 drawNo */
     function getPredictionRoundKey(p) {
@@ -764,6 +767,7 @@ async function updateDrawLabel() {
     function getSourceCategory(source) {
         if (source === 'lotto_brick') return 'brick';
         if (source === 'lotto_dart') return 'dart';
+        if (source === 'lotto_picker') return 'picker';
         return 'horeum';
     }
 
@@ -884,77 +888,84 @@ async function updateDrawLabel() {
         });
     }
 
-    function renderMyHistoryGrouped(myList, mine, winningMap) {
-        myList.innerHTML = '';
-        const byCat = { horeum: [], brick: [], dart: [] };
+    function renderMyHistoryTabButtons(mine, onChange) {
+        const tabsWrap = document.getElementById('my-history-tabs');
+        if (!tabsWrap) return;
+        const counts = { all: mine.length, horeum: 0, brick: 0, dart: 0, picker: 0 };
         mine.forEach(function (p) {
             const cat = getSourceCategory(p.source);
-            byCat[cat].push(p);
+            if (counts[cat] != null) counts[cat] += 1;
         });
-        ['horeum', 'brick', 'dart'].forEach(function (cat) {
-            const items = byCat[cat];
-            items.sort(function (a, b) {
-                return (b.timestamp || 0) - (a.timestamp || 0);
+        tabsWrap.innerHTML = '';
+        HISTORY_TAB_DEFS.forEach(function (tab) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'history-tab' + (activeHistoryTab === tab.key ? ' is-active' : '');
+            btn.innerHTML =
+                '<span class="history-tab-label">' +
+                tab.label +
+                '</span><span class="history-tab-count">' +
+                (counts[tab.key] || 0) +
+                '</span>';
+            btn.addEventListener('click', function () {
+                activeHistoryTab = tab.key;
+                onChange(activeHistoryTab);
             });
-            const block = document.createElement('div');
-            block.className = 'history-source-block';
-            const head = document.createElement('div');
-            head.className = 'history-source-head';
-            const h3 = document.createElement('h3');
-            h3.className = 'history-source-title';
-            h3.textContent = SOURCE_LABELS[cat];
-            const cntEl = document.createElement('span');
-            cntEl.className = 'history-source-count';
-            cntEl.textContent = '총 ' + items.length + '건';
-            head.appendChild(h3);
-            head.appendChild(cntEl);
-            const rowsWrap = document.createElement('div');
-            rowsWrap.className = 'history-source-rows';
-            if (items.length === 0) {
-                const emp = document.createElement('p');
-                emp.className = 'empty-hint';
-                emp.style.margin = '0';
-                emp.textContent = '내역 없음';
-                rowsWrap.appendChild(emp);
+            tabsWrap.appendChild(btn);
+        });
+    }
+
+    function renderMyHistoryList(myList, mine, winningMap, tabKey) {
+        myList.innerHTML = '';
+        const summaryEl = document.getElementById('my-history-summary');
+        const filtered = mine.filter(function (p) {
+            if (tabKey === 'all') return true;
+            return getSourceCategory(p.source) === tabKey;
+        });
+        filtered.sort(function (a, b) {
+            return (b.timestamp || 0) - (a.timestamp || 0);
+        });
+        if (summaryEl) summaryEl.textContent = '총 ' + filtered.length + '건';
+        if (filtered.length === 0) {
+            const emp = document.createElement('p');
+            emp.className = 'empty-hint';
+            emp.textContent = '내역 없음';
+            myList.appendChild(emp);
+            return;
+        }
+        filtered.forEach(function (p) {
+            const row = document.createElement('div');
+            row.className = 'history-row history-row--mine';
+            const main = document.createElement('div');
+            main.className = 'history-row-main';
+            const rk = getPredictionRoundKey(p);
+            const drawLabel = document.createElement('span');
+            drawLabel.className = 'history-draw';
+            drawLabel.textContent = rk != null ? rk + '회' : '—';
+            const dateEl = document.createElement('span');
+            dateEl.className = 'history-meta-date';
+            dateEl.textContent = formatPredDate(p.timestamp);
+            const balls = document.createElement('div');
+            balls.className = 'ball-row';
+            appendRankBalls(balls, p.numbers, 'pred');
+            main.appendChild(drawLabel);
+            main.appendChild(dateEl);
+            main.appendChild(balls);
+            const status = document.createElement('span');
+            status.className = 'history-status';
+            const wk = rk != null ? String(rk) : '';
+            const wnums = winningMap[wk];
+            if (!wk || !wnums || wnums.length === 0) {
+                status.classList.add('history-status--wait');
+                status.textContent = '대기중';
             } else {
-                items.forEach(function (p) {
-                    const row = document.createElement('div');
-                    row.className = 'history-row history-row--mine';
-                    const main = document.createElement('div');
-                    main.className = 'history-row-main';
-                    const rk = getPredictionRoundKey(p);
-                    const drawLabel = document.createElement('span');
-                    drawLabel.className = 'history-draw';
-                    drawLabel.textContent = rk != null ? rk + '회' : '—';
-                    const dateEl = document.createElement('span');
-                    dateEl.className = 'history-meta-date';
-                    dateEl.textContent = formatPredDate(p.timestamp);
-                    const balls = document.createElement('div');
-                    balls.className = 'ball-row';
-                    appendRankBalls(balls, p.numbers, 'pred');
-                    main.appendChild(drawLabel);
-                    main.appendChild(dateEl);
-                    main.appendChild(balls);
-                    const status = document.createElement('span');
-                    status.className = 'history-status';
-                    const wk = rk != null ? String(rk) : '';
-                    const wnums = winningMap[wk];
-                    if (!wk || !wnums || wnums.length === 0) {
-                        status.classList.add('history-status--wait');
-                        status.textContent = '대기중';
-                    } else {
-                        const m = countMatches(p.numbers, wnums);
-                        status.classList.add('history-status--hit');
-                        status.textContent = m + '개 일치';
-                    }
-                    row.appendChild(main);
-                    row.appendChild(status);
-                    rowsWrap.appendChild(row);
-                });
+                const m = countMatches(p.numbers, wnums);
+                status.classList.add('history-status--hit');
+                status.textContent = m + '개 일치';
             }
-            block.appendChild(head);
-            block.appendChild(rowsWrap);
-            myList.appendChild(block);
+            row.appendChild(main);
+            row.appendChild(status);
+            myList.appendChild(row);
         });
     }
 
@@ -1020,13 +1031,21 @@ async function updateDrawLabel() {
                 const myUid = sessionStorage.getItem('userUid');
                 if (!myUid) {
                     myList.innerHTML = '';
+                    const tabsWrap = document.getElementById('my-history-tabs');
+                    const summaryEl = document.getElementById('my-history-summary');
+                    if (tabsWrap) tabsWrap.innerHTML = '';
+                    if (summaryEl) summaryEl.textContent = '';
                     const p = document.createElement('p');
                     p.className = 'empty-hint';
                     p.textContent = '로그인 후 나의 예측 내역이 표시됩니다.';
                     myList.appendChild(p);
                 } else {
                     const mine = preds.filter(p => p.userId === myUid);
-                    renderMyHistoryGrouped(myList, mine, winningMap);
+                    const rerenderMine = function (tabKey) {
+                        renderMyHistoryTabButtons(mine, rerenderMine);
+                        renderMyHistoryList(myList, mine, winningMap, tabKey || activeHistoryTab);
+                    };
+                    rerenderMine(activeHistoryTab);
                 }
             }
 

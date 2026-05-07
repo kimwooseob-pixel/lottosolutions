@@ -494,29 +494,59 @@ function getBrickPredictionNumbersFromHeaderStats() {
     return picked;
 }
 
+function hidePredictionCompleteModal() {
+    const overlay = document.getElementById('predictCompleteModal');
+    if (!overlay) return;
+    overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden', 'true');
+}
+
+function showPredictionCompleteModal(numbers) {
+    const overlay = document.getElementById('predictCompleteModal');
+    const ballsWrap = document.getElementById('predictCompleteBalls');
+    if (!overlay || !ballsWrap) {
+        alert('예측 완성!\n선택한 번호 6개: ' + numbers.join(', '));
+        return;
+    }
+    ballsWrap.innerHTML = '';
+    numbers.forEach(function (n) {
+        const el = document.createElement('span');
+        el.className = 'predict-ball';
+        el.textContent = String(n);
+        ballsWrap.appendChild(el);
+    });
+    overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden', 'false');
+}
+
 /** predictions/{pushId} — 앱과 동일 필드 (source: lotto_brick, round 숫자) */
-function saveBrickPredictionToFirebase() {
+function saveBrickPredictionToFirebase(options) {
+    const opts = options || {};
+    const redirectOnMissingAuth = opts.redirectOnMissingAuth !== false;
+    const redirectTo = opts.redirectTo || '';
     const numbers = getBrickPredictionNumbersFromHeaderStats();
-    if (!numbers) return;
+    if (!numbers) return Promise.resolve(false);
 
     const userUid = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('userUid') : null;
     const loggedInUser = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('loggedInUser') : null;
     if (!userUid || !loggedInUser) {
         alert('로그인이 필요합니다.');
-        location.href = '../index.html?openLogin=1';
-        return;
+        if (redirectOnMissingAuth) {
+            location.href = '../index.html?openLogin=1';
+        }
+        return Promise.resolve(false);
     }
 
     const round = lottoData.drawNumber + 1;
-    if (!Number.isFinite(round)) return;
+    if (!Number.isFinite(round)) return Promise.resolve(false);
 
     initBrickFirebase();
     if (typeof firebase === 'undefined' || !firebase.apps.length) {
         console.warn('[brick-game] 예측 저장: Firebase를 사용할 수 없습니다.');
-        return;
+        return Promise.resolve(false);
     }
 
-    firebase
+    return firebase
         .database()
         .ref('predictions')
         .push()
@@ -530,10 +560,15 @@ function saveBrickPredictionToFirebase() {
         })
         .then(function () {
             console.log('[brick-game] 예측 저장 완료', numbers, round);
+            if (redirectTo) {
+                location.href = redirectTo;
+            }
+            return true;
         })
         .catch(function (err) {
             console.error('[brick-game] 예측 저장 실패:', err);
             alert('예측 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+            return false;
         });
 }
 
@@ -1018,6 +1053,7 @@ function resetPaddle() {
 
 // 게임 초기화
 function resetGame() {
+    hidePredictionCompleteModal();
     gameState.gameStarted = false;
     gameState.gamePaused = false;
     gameState.godMode = false; // 무적모드 초기화
@@ -1428,7 +1464,7 @@ function registerHeaderBrickBroken(brick) {
     });
     if (picked.length >= 6 && !gameState.brickPredictCompletePopupShown) {
         gameState.brickPredictCompletePopupShown = true;
-        alert('예측 완성!\n선택한 번호 6개: ' + picked.join(', '));
+        showPredictionCompleteModal(picked);
     }
 }
 
@@ -1549,6 +1585,24 @@ document.addEventListener('DOMContentLoaded', function() {
         const godBtn = document.getElementById('godModeButton');
         if (godBtn) {
             godBtn.addEventListener('click', toggleGodMode);
+        }
+        const saveBtn = document.getElementById('predictSaveButton');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', function () {
+                saveBrickPredictionToFirebase({
+                    redirectOnMissingAuth: false,
+                    redirectTo: 'page5.html'
+                }).then(function (ok) {
+                    if (ok) hidePredictionCompleteModal();
+                });
+            });
+        }
+        const retryBtn = document.getElementById('predictRetryButton');
+        if (retryBtn) {
+            retryBtn.addEventListener('click', function () {
+                hidePredictionCompleteModal();
+                resetGame();
+            });
         }
         const playArea = document.querySelector('.play-area');
         if (playArea) {
