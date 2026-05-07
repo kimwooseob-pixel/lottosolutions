@@ -492,7 +492,8 @@ function createBricks() {
     createRoundNumbers();
     
     // 15행(회차), 45열(번호)
-    const latest = lottoData.drawNumber;
+    const latestNum = typeof lottoData.drawNumber === 'number' ? lottoData.drawNumber : parseInt(lottoData.drawNumber, 10);
+    const latest = Number.isFinite(latestNum) ? latestNum : lottoData.drawNumber;
     const winningMap = mergeWinningNumbersMap();
     const winRedPalette = ['#cc2200', '#cc5500', '#9a3412', '#c2410c'];
     const numRows = 15;
@@ -698,7 +699,16 @@ function updateBallRemovalStats() {
 // 게임 초기화
 function initGame() {
     console.log('게임 초기화 시작...');
-    
+
+    // 항상 단일 메인 공만 유지 (다중 .ball 잔존 방지)
+    document.querySelectorAll('.ball').forEach(function (el) {
+        el.remove();
+    });
+    gameState.balls = [];
+    gameState.removedBalls = 0;
+
+    ensureMainBallInPlayArea();
+
     // 게임 요소 초기화
     const ball = document.getElementById('ball');
     const paddle = document.getElementById('paddle');
@@ -732,6 +742,7 @@ function initGame() {
         gameState.ballDX = 4;
         gameState.ballDY = -4;
     }
+    gameState.gameStarted = false;
     gameState.ballMoving = false;
     gameState.paddleX = 320;
     
@@ -845,11 +856,8 @@ function resetGame() {
         cancelAnimationFrame(gameState.animationId);
         gameState.animationId = null;
     }
-    
-    ensureMainBallInPlayArea();
 
-    // Start a new game loop
-    gameLoop();
+    ensureMainBallInPlayArea();
 }
 
 // 게임 일시정지/재개
@@ -1225,6 +1233,12 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM이 로드되었습니다. 게임을 초기화합니다.');
 
     function wireToolbar() {
+        const startBtn = document.getElementById('startButton');
+        if (startBtn) {
+            startBtn.addEventListener('click', function () {
+                startGame();
+            });
+        }
         const resetBtn = document.getElementById('resetButton');
         if (resetBtn) {
             resetBtn.addEventListener('click', function () {
@@ -1243,6 +1257,8 @@ document.addEventListener('DOMContentLoaded', function() {
     void (async function () {
         try {
             await loadBrickFirebaseState();
+            const latestNum = typeof lottoData.drawNumber === 'number' ? lottoData.drawNumber : parseInt(lottoData.drawNumber, 10);
+            if (Number.isFinite(latestNum)) lottoData.drawNumber = latestNum;
         } catch (e) {
             console.warn('[brick-game] Firebase 동기화 실패, 로컬 회차/LOTTO_DATA 사용', e);
         }
