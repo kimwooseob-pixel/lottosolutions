@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로또 원판게임 (로또다트)</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        :root {
+            --bg-navy: #050510;
+            --panel-navy: #0a1220;
+            --neon-cyan: #00e5ff;
+            --text-muted: #8daab8;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px 20px 96px;
+            background: var(--bg-navy);
+            background-image:
+                radial-gradient(ellipse 100% 80% at 50% -15%, rgba(0, 204, 255, 0.07), transparent 55%),
+                linear-gradient(180deg, #050510 0%, #0a0f18 100%);
+            font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Arial', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            color: #e8f4f8;
+        }
+
+        .game-wrapper {
+            background: var(--panel-navy);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 204, 255, 0.12);
+            border: 1px solid rgba(0, 204, 255, 0.22);
+            max-width: 480px;
+            width: 100%;
+        }
+
+        .game-info {
+            margin-bottom: 14px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: rgba(0, 20, 40, 0.55);
+            border: 1px solid rgba(0, 204, 255, 0.2);
+        }
+
+        .game-info p {
+            margin: 0;
+            font-size: 0.82rem;
+            line-height: 1.55;
+            color: var(--text-muted);
+        }
+
+        .game-info strong {
+            color: var(--neon-cyan);
+            font-weight: 700;
+        }
+
+        .round-banner {
+            text-align: center;
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #dff9ff;
+            margin-bottom: 12px;
+            letter-spacing: 0.02em;
+        }
+
+        .wheel-stage-wrap {
+            position: relative;
+            width: 100%;
+            max-width: 360px;
+            margin: 0 auto 18px;
+            aspect-ratio: 1;
+        }
+
+        .wheel-pointer {
+            position: absolute;
+            left: 50%;
+            top: 4px;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 14px solid transparent;
+            border-right: 14px solid transparent;
+            border-bottom: 22px solid #00e5ff;
+            filter: drop-shadow(0 3px 8px rgba(0, 229, 255, 0.55));
+            z-index: 5;
+        }
+
+        .wheel-ring {
+            position: absolute;
+            inset: 10px;
+            border-radius: 50%;
+            border: 3px solid rgba(0, 229, 255, 0.35);
+            box-shadow:
+                inset 0 0 24px rgba(0, 40, 80, 0.5),
+                0 0 20px rgba(0, 229, 255, 0.15);
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        #wheelRot {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: rotate(0deg);
+            transform-origin: center center;
+            will-change: transform;
+        }
+
+        #wheelCanvas {
+            width: 100%;
+            height: 100%;
+            max-width: 340px;
+            max-height: 340px;
+            border-radius: 50%;
+            display: block;
+        }
+
+        .picked-section {
+            margin-bottom: 14px;
+        }
+
+        .picked-label {
+            font-size: 0.78rem;
+            color: #90a8bc;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .picked-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            min-height: 40px;
+        }
+
+        .lot-ball {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.9rem;
+            background: linear-gradient(145deg, #69e7ff, #00a8cc);
+            color: #0a1628;
+            box-shadow: 0 3px 10px rgba(0, 188, 212, 0.35);
+        }
+
+        .lot-ball--empty {
+            background: rgba(20, 35, 55, 0.9);
+            color: rgba(255, 255, 255, 0.2);
+            box-shadow: none;
+            border: 1px dashed rgba(0, 229, 255, 0.2);
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: stretch;
+        }
+
+        .toolbar-btn {
+            padding: 14px 22px;
+            font-size: 1rem;
+            font-weight: 700;
+            border: 1px solid rgba(0, 229, 255, 0.35);
+            border-radius: 14px;
+            cursor: pointer;
+            background: #0f1a2d;
+            color: #e8f4f8;
+            transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+        }
+
+        .toolbar-btn:hover:not(:disabled) {
+            background: #14233c;
+            box-shadow: 0 0 18px rgba(0, 204, 255, 0.2);
+        }
+
+        .toolbar-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .toolbar-btn--primary {
+            background: linear-gradient(180deg, #53e8ff, #00b8d4);
+            color: #042636;
+            border-color: rgba(83, 232, 255, 0.9);
+        }
+
+        .toolbar-btn--primary:hover:not(:disabled) {
+            filter: brightness(1.05);
+        }
+
+        .toolbar-btn--secondary {
+            border-color: rgba(102, 160, 210, 0.6);
+            background: linear-gradient(180deg, #172338, #101b2d);
+        }
+
+        #wheelStatus {
+            text-align: center;
+            font-size: 0.85rem;
+            color: rgba(0, 229, 255, 0.85);
+            min-height: 22px;
+        }
+
+        .predict-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 10, 22, 0.78);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1200;
+            padding: 16px;
+        }
+
+        .predict-modal-overlay.show {
+            display: flex;
+        }
+
+        .predict-modal {
+            width: min(520px, 95vw);
+            background: linear-gradient(180deg, #111d35, #0b1428);
+            border: 1px solid rgba(0, 229, 255, 0.35);
+            border-radius: 18px;
+            box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+            padding: 22px 18px 18px;
+            text-align: center;
+        }
+
+        .predict-modal-title {
+            margin: 0 0 14px;
+            font-size: 1.3rem;
+            color: #dff9ff;
+        }
+
+        .predict-ball-row {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .predict-ball {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: #0f1a2d;
+            background: linear-gradient(145deg, #8cecff, #00bcd4);
+            box-shadow: 0 4px 10px rgba(0, 188, 212, 0.38);
+        }
+
+        .predict-modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .predict-modal-btn {
+            min-width: 140px;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            padding: 11px 16px;
+            font-size: 0.96rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .predict-modal-btn--save {
+            color: #03202a;
+            background: linear-gradient(180deg, #53e8ff, #00c3de);
+            border-color: rgba(83, 232, 255, 0.88);
+        }
+
+        .predict-modal-btn--retry {
+            color: #e3edf5;
+            background: linear-gradient(180deg, #21324f, #17243d);
+            border-color: rgba(109, 144, 185, 0.5);
+        }
+
+        .bottom-tabbar {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 500;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            background: #0a1220;
+            border-top: 1px solid rgba(0, 229, 255, 0.22);
+            box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.35);
+        }
+
+        .tab-item {
+            padding: 10px 4px 12px;
+            text-decoration: none;
+            color: #90a8bc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            min-height: 62px;
+            transition: color 0.2s, background-color 0.2s;
+        }
+
+        .tab-item .tab-icon {
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .tab-item--active {
+            color: #00e5ff;
+            background: rgba(0, 229, 255, 0.08);
+            text-shadow: 0 0 10px rgba(0, 229, 255, 0.45);
+        }
+
+        .tab-item:hover {
+            color: #c1d3e3;
+            background: rgba(255, 255, 255, 0.04);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-wrapper">
+        <div class="game-info">
+            <p><strong>1부터 45까지</strong>가 적힌 원판이 돌아갑니다. 상단 포인터가 가리키는 번호가 뽑힙니다.</p>
+            <p><strong>같은 번호는 다시 나오지 않습니다.</strong> 6번 돌려 예측 번호를 완성해 보세요.</p>
+        </div>
+
+        <div class="round-banner" id="wheelRoundLabel">—회차 예측</div>
+
+        <div class="wheel-stage-wrap" aria-label="로또 원판">
+            <div class="wheel-pointer" aria-hidden="true"></div>
+            <div class="wheel-ring"></div>
+            <div id="wheelRot">
+                <canvas id="wheelCanvas" width="340" height="340" aria-label="번호 원판"></canvas>
+            </div>
+        </div>
+
+        <div class="picked-section">
+            <div class="picked-label">선택된 번호 (6개)</div>
+            <div class="picked-row" id="pickedBalls"></div>
+        </div>
+
+        <div class="controls">
+            <button type="button" id="spinBtn" class="toolbar-btn toolbar-btn--primary">🎯 원판 돌리기</button>
+            <button type="button" id="wheelResetBtn" class="toolbar-btn toolbar-btn--secondary">🔄 처음부터</button>
+            <div id="wheelStatus">원판을 돌려 번호 6개를 모아 보세요.</div>
+        </div>
+    </div>
+
+    <div id="wheelCompleteModal" class="predict-modal-overlay" aria-hidden="true">
+        <div class="predict-modal">
+            <h2 class="predict-modal-title">🎉 원판 예측 완성!</h2>
+            <div id="wheelCompleteBalls" class="predict-ball-row"></div>
+            <div class="predict-modal-actions">
+                <button type="button" id="wheelSaveBtn" class="predict-modal-btn predict-modal-btn--save">💾 저장하기</button>
+                <button type="button" id="wheelRetryBtn" class="predict-modal-btn predict-modal-btn--retry">🔄 다시하기</button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-tabbar" aria-label="하단 메뉴">
+        <a class="tab-item" href="brick-game.html">
+            <span class="tab-icon">🧱</span>
+            <span>벽돌게임</span>
+        </a>
+        <a class="tab-item tab-item--active" href="wheel-game.html">
+            <span class="tab-icon">🎯</span>
+            <span>로또다트</span>
+        </a>
+        <a class="tab-item" href="random-numbers.html">
+            <span class="tab-icon">🎱</span>
+            <span>번호뽑기</span>
+        </a>
+        <a class="tab-item" href="page5.html">
+            <span class="tab-icon">❤️</span>
+            <span>나의번호</span>
+        </a>
+        <a class="tab-item" href="page5.html">
+            <span class="tab-icon">📊</span>
+            <span>통계</span>
+        </a>
+    </nav>
+
+    <script src="../js/wheel-game.js"></script>
+</body>
+</html>

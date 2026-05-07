@@ -634,8 +634,7 @@
                 <span class="button-description">벽돌 파괴로 번호 예측</span>
             </a>
 
-            <a class="nav-button game-card game-card--coming" href="pages/wheel-game.html" aria-disabled="true">
-                <span class="coming-badge">준비중</span>
+            <a class="nav-button game-card" href="pages/wheel-game.html">
                 <div class="button-icon">🎯</div>
                 <span class="button-title">로또 원판게임</span>
                 <span class="button-description">원판 회전으로 번호 예측</span>
@@ -768,13 +767,41 @@
             appId: "1:616782090306:web:688c710998dfce8e4d5ddb"
         };
         
-        // Firebase 초기화
-        firebase.initializeApp(firebaseConfig);
+        // Firebase 초기화 (중복 초기화 방지)
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         
         // Firebase 초기화 및 참조
         const database = firebase.database();
         const usersRef = database.ref('users');
-        const authRef = database.ref('auth/users');
+
+        /**
+         * RTDB에 .indexOn 없이도 동작하도록, users 아래를 한 번 읽어 id로 사용자 검색
+         * (기존 orderByChild('id') 쿼리는 인덱스 미설정 시 실패할 수 있음)
+         */
+        function findUserByLoginId(loginId) {
+            return database.ref('users').once('value').then(function (snapshot) {
+                if (!snapshot.exists()) return null;
+                var found = null;
+                snapshot.forEach(function (child) {
+                    var v = child.val();
+                    if (v && v.id === loginId) {
+                        found = { key: child.key, val: v };
+                        return true;
+                    }
+                });
+                return found;
+            });
+        }
+
+        function firebaseErrorToMessage(err) {
+            if (!err) return '알 수 없는 오류';
+            var code = err.code || '';
+            if (code === 'PERMISSION_DENIED') return '데이터베이스 접근이 거부되었습니다. 관리자에게 문의해 주세요.';
+            if (code === 'UNAVAILABLE' || code === 'NETWORK_ERROR') return '네트워크 오류입니다. 연결을 확인해 주세요.';
+            return err.message || String(err);
+        }
         
         // 기존 자바스크립트 코드가 여기에 위치해야 합니다
         document.getElementById('adminBtn').addEventListener('click', function() {
@@ -1014,8 +1041,8 @@
         
         // 회원가입 처리
         document.getElementById('registerBtn').addEventListener('click', function() {
-            const id = document.getElementById('signupId').value;
-            const email = document.getElementById('signupEmail').value;
+            const id = document.getElementById('signupId').value.trim();
+            const email = document.getElementById('signupEmail').value.trim();
             const pw = document.getElementById('signupPw').value;
             const pwConfirm = document.getElementById('signupPwConfirm').value;
             
@@ -1037,23 +1064,18 @@
                 return;
             }
 
-            // ID 중복 검사 먼저 수행
-            database.ref('auth/users').orderByChild('id').equalTo(id).once('value')
-                .then((snapshot) => {
-                    if (snapshot.exists()) {
+            findUserByLoginId(id)
+                .then(function (existing) {
+                    if (existing) {
                         throw new Error('이미 사용 중인 아이디입니다.');
                     }
-                    
-                    // 새 사용자 데이터 생성
-                    const newUserRef = database.ref('users').push();
-                    const userId = newUserRef.key;
-                    const currentTime = Date.now();
-                    
-                    // 사용자 데이터 구조 통일
-                    const userData = {
+                    var newUserRef = database.ref('users').push();
+                    var userId = newUserRef.key;
+                    var currentTime = Date.now();
+                    var userData = {
                         id: id,
                         email: email,
-                        password: pw,  // 실제 프로덕션에서는 암호화되어야 함
+                        password: pw,
                         nickname: id,
                         joinDate: currentTime,
                         lastLogin: currentTime,
@@ -1064,28 +1086,24 @@
                             lastLogin: currentTime
                         }
                     };
-
-                    // users 경로에만 데이터 저장 (중복 저장 제거)
-                    return database.ref(`users/${userId}`).set(userData);
+                    return database.ref('users/' + userId).set(userData);
                 })
-                .then(() => {
+                .then(function () {
                     alert('회원가입이 완료되었습니다. 로그인해주세요.');
                     document.getElementById('signupModal').style.display = 'none';
                     document.getElementById('loginModal').style.display = 'flex';
-                    
-                    // 입력 필드 초기화
                     document.getElementById('signupId').value = '';
                     document.getElementById('signupEmail').value = '';
                     document.getElementById('signupPw').value = '';
                     document.getElementById('signupPwConfirm').value = '';
                 })
-                .catch((error) => {
-                    if (error.message === '이미 사용 중인 아이디입니다.') {
+                .catch(function (error) {
+                    if (error && error.message === '이미 사용 중인 아이디입니다.') {
                         alert(error.message);
-                    } else {
-                        console.error('회원가입 오류:', error);
-                        alert('회원가입 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+                        return;
                     }
+                    console.error('회원가입 오류:', error);
+                    alert('회원가입 중 오류가 발생했습니다.\n' + firebaseErrorToMessage(error));
                 });
         });
         
@@ -1097,7 +1115,7 @@
 
         // 로그인 처리
         document.getElementById('loginBtn').addEventListener('click', function() {
-            const id = document.getElementById('loginId').value;
+            const id = document.getElementById('loginId').value.trim();
             const pw = document.getElementById('loginPw').value;
             
             if (!id || !pw) {
@@ -1105,45 +1123,36 @@
                 return;
             }
             
-            // 아이디로 사용자 찾기
-            database.ref('users').orderByChild('id').equalTo(id).once('value')
-                .then((snapshot) => {
-                    if (!snapshot.exists()) {
+            findUserByLoginId(id)
+                .then(function (found) {
+                    if (!found) {
                         alert('등록되지 않은 아이디입니다.');
-                        return;
+                        return Promise.reject({ _authUi: true });
                     }
-
-                    // 첫 번째 일치하는 사용자
-                    const userId = Object.keys(snapshot.val())[0];
-                    const userData = snapshot.val()[userId];
-
-                    if (userData.password !== pw) {
+                    if (found.val.password !== pw) {
                         alert('비밀번호가 일치하지 않습니다.');
-                        return;
+                        return Promise.reject({ _authUi: true });
                     }
-
-                    // 로그인 성공
-                    sessionStorage.setItem('loggedInUser', userData.id);
-                    sessionStorage.setItem('userUid', userId);
-                    const currentTime = Date.now();
-
-                    // 마지막 로그인 시간 업데이트 (users와 profile 모두 업데이트)
-                    const updates = {
+                    sessionStorage.setItem('loggedInUser', found.val.id);
+                    sessionStorage.setItem('userUid', found.key);
+                    var currentTime = Date.now();
+                    var updates = {
                         lastLogin: currentTime,
                         'profile/lastLogin': currentTime
                     };
-                    return database.ref(`users/${userId}`).update(updates);
+                    return database.ref('users/' + found.key).update(updates);
                 })
-                .then(() => {
+                .then(function () {
                     document.getElementById('loginModal').style.display = 'none';
                     document.getElementById('userBar').style.display = 'flex';
-                    const user = sessionStorage.getItem('loggedInUser');
+                    var user = sessionStorage.getItem('loggedInUser');
                     document.getElementById('userWelcome').textContent = user + '님';
                     if (applyPostLoginRedirectIfNeeded()) return;
                 })
-                .catch((error) => {
+                .catch(function (error) {
+                    if (error && error._authUi) return;
                     console.error('로그인 오류:', error);
-                    alert('로그인 중 오류가 발생했습니다.');
+                    alert('로그인 중 오류가 발생했습니다.\n' + firebaseErrorToMessage(error));
                 });
         });
         
