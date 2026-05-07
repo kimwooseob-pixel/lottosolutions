@@ -951,6 +951,7 @@ function resetGame() {
 }
 
 function launchBallTowardClick(event) {
+    console.log('클릭 감지됨');
     if (gameState.ballMoving) return;
     if (gameState.gameOver) return;
     
@@ -1386,6 +1387,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const gameContainer = document.querySelector('.game-container');
         if (gameContainer) {
             gameContainer.addEventListener('click', launchBallTowardClick);
+        }
+        const brickContainer = document.getElementById('brickContainer');
+        if (brickContainer) {
+            brickContainer.addEventListener('click', launchBallTowardClick);
         }
     }
 
