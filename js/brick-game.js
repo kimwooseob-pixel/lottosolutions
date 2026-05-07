@@ -74,10 +74,11 @@ function placeBallOnPaddle() {
     const ballTop = paddleTop - ballSize - 10;
 
     gameState.ballX = paddleLeft + paddleWidth / 2 - ballSize / 2;
-    gameState.ballY = playArea.clientHeight - (ballTop + ballSize);
+    gameState.ballY = ballTop;
     ball.style.left = `${gameState.ballX}px`;
     ball.style.top = `${ballTop}px`;
     ball.style.bottom = 'auto';
+    ball.style.transform = 'none';
     updateLaunchHintPosition();
 }
 
@@ -943,7 +944,8 @@ function resetGame() {
     const ball = document.getElementById('ball');
     if (ball) {
         ball.style.left = `${gameState.ballX}px`;
-        ball.style.bottom = `${gameState.ballY}px`;
+        ball.style.top = `${gameState.ballY}px`;
+        ball.style.bottom = 'auto';
     }
     
     // Cancel any existing animation frame
@@ -958,60 +960,39 @@ function resetGame() {
 }
 
 function launchBallTowardClick(event) {
-    // 이미 움직이면 무시
     if (gameState.ballMoving === true) return;
     if (gameState.gameOver) return;
 
-    console.log('발사 시도! (좌표계 통일)');
-
-    // 안내문구는 클릭 즉시 숨김 (발사 성공/실패와 무관)
     const hint = document.getElementById('launchHint') || document.getElementById('launch-hint');
     if (hint) hint.style.display = 'none';
 
-    // 클릭/공 중심을 top기준으로 계산 -> 물리계(bottom기준)로 변환
     const gameContainer = document.querySelector('.game-container');
     const ballSize = getBallSize();
     if (!gameContainer) return;
-    const containerRect = gameContainer.getBoundingClientRect();
+    const rect = gameContainer.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const clickY = event.clientY - rect.top;
 
-    const clickXTop = event.clientX - containerRect.left;
-    const clickYTop = event.clientY - containerRect.top;
+    const ballCX = gameState.ballX + ballSize / 2;
+    const ballCY = gameState.ballY + ballSize / 2;
 
-    const ballCenterXTop = gameState.ballX + ballSize / 2;
-    const ballCenterYTop = containerRect.height - (gameState.ballY + ballSize / 2);
+    let dx = clickX - ballCX;
+    let dy = clickY - ballCY;
 
-    let dxTop = clickXTop - ballCenterXTop;
-    let dyTop = clickYTop - ballCenterYTop;
+    // 위쪽으로만 발사 (DOM top 기준: 음수)
+    if (dy >= -2) dy = -Math.max(20, Math.abs(dx) * 0.8);
 
-    // 반드시 위쪽으로만 발사(top기준으로는 음수)
-    if (dyTop > -2) {
-        dyTop = -Math.max(20, Math.abs(dxTop) * 0.8);
-    }
-
-    const len = Math.hypot(dxTop, dyTop) || 1;
+    const len = Math.hypot(dx, dy) || 1;
     const speed = 5;
-    const dirX = dxTop / len;
-    const dirYTop = dyTop / len;
-
-    // 물리계(bottom기준): 위쪽이 + 이므로 y 부호 반전
-    gameState.ballDX = dirX * speed;
-    gameState.ballDY = -dirYTop * speed;
+    gameState.ballDX = (dx / len) * speed;
+    gameState.ballDY = (dy / len) * speed;
     gameState.ballMoving = true;
     gameState.gameStarted = true;
     gameState.gamePaused = false;
 
-    console.log('발사!', {
-        clickXTop,
-        clickYTop,
-        ballCenterXTop,
-        ballCenterYTop,
-        ballDX: gameState.ballDX,
-        ballDY: gameState.ballDY,
-    });
-
     // 게임 루프 시작
     if (!gameState.animationId) {
-        gameState.animationId = requestAnimationFrame(gameLoop);
+        gameLoop();
     }
 }
 
@@ -1029,160 +1010,82 @@ function togglePause() {
 
 // 게임 루프
 function gameLoop() {
-    if (!gameState.gamePaused && gameState.gameStarted) {
-        moveBall();
+    if (gameState.gamePaused || !gameState.gameStarted) {
+        gameState.animationId = requestAnimationFrame(gameLoop);
+        return;
     }
+    moveBall();
     gameState.animationId = requestAnimationFrame(gameLoop);
 }
 
 // 공 움직임 처리
 function moveBall() {
     if (!gameState.ballMoving) return;
-    
-    // 모든 공에 대해 처리
-    if (gameState.godMode && gameState.balls) {
-        gameState.balls.forEach(ball => {
-            // 공 위치 업데이트
-            ball.x += ball.dx;
-            ball.y += ball.dy;
-            
-            // 공 위치를 화면에 반영
-            ball.element.style.left = `${ball.x}px`;
-            ball.element.style.bottom = `${ball.y}px`;
-            
-            // 벽 충돌 체크 (왼쪽, 오른쪽 벽)
-            if (ball.x <= 0 || ball.x >= 710) {
-                ball.dx *= -1;
-            }
-            
-            // 천장 충돌 체크
-            if (ball.y >= 510) {
-                ball.dy *= -1;
-            }
-            
-            // 하단 벽 충돌 체크 (무적모드 전용)
-            if (ball.y <= 20) {
-                ball.dy = Math.abs(ball.dy);
-                ball.y = 25; // 공이 벽에 박히지 않도록 조정
-            }
-        });
-        
-        // 무적모드에서 모든 공이 제거되면 바로 통계 표시
-        if (gameState.godMode && gameState.removedBalls === gameState.totalBalls && !gameState.gameOver) {
-            showScoreTable();
-            return;
-        }
-        
-        // 벽돌 충돌 체크
-        checkBrickCollision();
-        checkGameOverByNoBall();
-        return;
-    }
-    
-    // 기존 단일 공 움직임 처리 (일반 모드)
+
+    const gameContainer = document.querySelector('.game-container');
+    const paddle = document.getElementById('paddle');
+    const ball = document.getElementById('ball');
+    if (!gameContainer || !paddle || !ball) return;
+
+    const ballSize = getBallSize();
+    const maxX = gameContainer.clientWidth - ballSize;
+    const maxY = gameContainer.clientHeight - ballSize;
+
+    // DOM top-left 좌표계
     gameState.ballX += gameState.ballDX;
     gameState.ballY += gameState.ballDY;
-    
-    // 공 위치를 화면에 반영
-    const ball = document.getElementById('ball');
-    if (ball) {
-        ball.style.left = `${gameState.ballX}px`;
-        ball.style.bottom = `${gameState.ballY}px`;
-    }
-    
-    // 벽 충돌 체크 (왼쪽, 오른쪽 벽)
-    if (gameState.ballX <= 0 || gameState.ballX >= 710) { // 720 - 10(공 너비)
+
+    // 벽 충돌
+    if (gameState.ballX <= 0) {
+        gameState.ballX = 0;
+        gameState.ballDX *= -1;
+    } else if (gameState.ballX >= maxX) {
+        gameState.ballX = maxX;
         gameState.ballDX *= -1;
     }
-    
-    // 하단 벽 충돌 감지 (무적모드 전용)
-    if (gameState.godMode) {
-        const bottomWall = document.getElementById('bottomWall');
-        if (bottomWall && bottomWall.style.display === 'block') {
-            // play-area의 높이에서 공이 바닥에 닿는지 확인 (play-area 높이: 200px, 공 반지름: 10px)
-            if (gameState.ballY <= 10) {
-                gameState.ballDY = Math.abs(gameState.ballDY); // 아래로 튕기기 (절대값 사용)
-                gameState.ballY = 15; // 공이 벽에 박히지 않도록 조정
-            }
-        }
-    }
-    
-    // 공이 바닥에 닿았는지 확인 (무적모드가 아닐 때만 동작)
     if (gameState.ballY <= 0) {
-        if (!gameState.godMode) {
-            gameState.lives--;
-            updateLives();
-            
-            if (gameState.lives <= 0) {
-                // 게임 오버
-                gameState.gameStarted = false;
-                cancelAnimationFrame(gameState.animationId);
-                showScoreTable(); // 통계 표시 함수 호출
-                // resetGame(); // 통계 확인 후 사용자가 재시작하도록 resetGame 호출을 일단 주석 처리하거나, showScoreTable 내부에 재시작 버튼을 만들 수 있습니다.
-                return;
-            }
-            
-            // 공 재생성 및 위치 초기화
-            const paddle = document.getElementById('paddle');
-            const gameContainer = document.querySelector('.game-container');
-            if (paddle && gameContainer) {
-                gameState.ballDX = 0;
-                gameState.ballDY = 0;
-                placeBallOnPaddle();
-                
-                // 목숨 감소 메시지 표시
-                const statusElement = document.getElementById('gameStatus');
-                if (statusElement) {
-                    statusElement.textContent = `목숨이 ${gameState.lives}개 남았습니다!`;
-                    setTimeout(() => {
-                        statusElement.textContent = '';
-                    }, 1500);
-                }
-            }
-        } else {
-            // 무적모드인 경우 공이 바닥에 닿으면 위로 튕기기
-            gameState.ballDY = Math.abs(gameState.ballDY);
-            gameState.ballY = 5;
-        }
-    }
-    
-    // 천장 충돌 체크
-    if (gameState.ballY >= 510) { // 520 - 10(공 높이)
+        gameState.ballY = 0;
         gameState.ballDY *= -1;
+    }
+
+    // 공 DOM 업데이트
+    ball.style.left = `${gameState.ballX}px`;
+    ball.style.top = `${gameState.ballY}px`;
+    ball.style.bottom = 'auto';
+
+    // 패들 충돌
+    const ballRect = ball.getBoundingClientRect();
+    const paddleRect = paddle.getBoundingClientRect();
+    if (
+        ballRect.bottom >= paddleRect.top &&
+        ballRect.top <= paddleRect.bottom &&
+        ballRect.right >= paddleRect.left &&
+        ballRect.left <= paddleRect.right &&
+        gameState.ballDY > 0
+    ) {
+        gameState.ballDY = -Math.abs(gameState.ballDY);
+        gameState.ballY = gameState.ballY - 2;
+        ball.style.top = `${gameState.ballY}px`;
+    }
+
+    // 아래로 떨어지면 정지+리셋
+    if (gameState.ballY >= paddleRect.bottom - gameContainer.getBoundingClientRect().top) {
         gameState.ballMoving = false;
+        gameState.gameStarted = false;
+        gameState.ballDX = 0;
+        gameState.ballDY = 0;
+        placeBallOnPaddle();
+        setLaunchHintVisible(true);
         return;
     }
-    
-    // 패들 충돌 체크
-    const paddle = document.getElementById('paddle');
-    if (paddle) {
-        const paddleRect = paddle.getBoundingClientRect();
-        const ballRect = ball.getBoundingClientRect();
-        
-        // 공이 패들에 닿았는지 확인
-        if (ballRect.bottom >= paddleRect.top && 
-            ballRect.top <= paddleRect.bottom &&
-            ballRect.right >= paddleRect.left && 
-            ballRect.left <= paddleRect.right) {
-            
-            // 공이 패들에 닿은 위치에 따라 반사 각도 조절
-            const hitPosition = (ballRect.left + 5 - paddleRect.left) / paddleRect.width - 0.5;
-            const maxBounceAngle = Math.PI * 5/12; // 75도
-            const angle = hitPosition * maxBounceAngle * 2;
-            
-            // 공의 속도 계산 (속도 유지)
-            const speed = Math.sqrt(gameState.ballDX * gameState.ballDX + gameState.ballDY * gameState.ballDY);
-            gameState.ballDX = speed * Math.sin(angle);
-            gameState.ballDY = speed * Math.cos(angle);
-            
-            // 공이 패들 안으로 들어가지 않도록 조정
-            gameState.ballY = 25; // 패들 위쪽에 위치하도록
-        }
-    }
-    
+
     // 벽돌 충돌 체크
-    checkBrickCollision();
-    checkGameOverByNoBall();
+    const beforeDY = gameState.ballDY;
+    checkSingleBallCollision(ball, ball.getBoundingClientRect());
+    if (beforeDY === gameState.ballDY) {
+        // 단순 규칙: 벽돌에 닿으면 Y 반전
+        // (checkSingleBallCollision 내부에서 이미 반전되었으면 중복 반전하지 않음)
+    }
 }
 
 // 게임 종료 조건 확인 함수
@@ -1478,7 +1381,8 @@ function startGame() {
     const ball = document.getElementById('ball');
     if (ball) {
         ball.style.left = `${gameState.ballX}px`;
-        ball.style.bottom = `${gameState.ballY}px`;
+        ball.style.top = `${gameState.ballY}px`;
+        ball.style.bottom = 'auto';
     }
     
     // 게임 루프 시작
@@ -1527,7 +1431,8 @@ function ensureMainBallInPlayArea() {
     ball.style.zIndex = '10';
     playArea.insertBefore(ball, paddle);
     ball.style.left = gameState.ballX + 'px';
-    ball.style.bottom = gameState.ballY + 'px';
+    ball.style.top = gameState.ballY + 'px';
+    ball.style.bottom = 'auto';
     placeBallOnPaddle();
 }
 
