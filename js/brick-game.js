@@ -41,6 +41,7 @@ const gameState = {
     currentRound: 1,
     totalBalls: 45, // 무적모드 공 개수
     removedBalls: 0, // 무적모드에서 사라진 공 개수
+    tempBalls: [],
     gameOver: false,
     /** 파란 예측 줄에서 깨진(선택된) 번호 1~45 — createBricks 시 유지 */
     pickedHeaderNumbers: {},
@@ -51,6 +52,15 @@ const BASE_PADDLE_WIDTH = 240;
 const PADDLE_EXPANDED_RATIO = 1;
 const PADDLE_ANIM_MS = 1000;
 let paddleAnimFrameId = null;
+let tempBallSeq = 0;
+
+function pickSpecialRedEffect() {
+    const u = Math.random();
+    if (u < 0.25) return 'explode3';
+    if (u < 0.5) return 'explode2';
+    if (u < 0.75) return 'split2';
+    return 'split4';
+}
 
 function getBallSize() {
     const ball = document.getElementById('ball');
@@ -92,6 +102,81 @@ function setLaunchHintVisible(visible) {
     const hint = document.getElementById('launchHint');
     if (!hint) return;
     hint.style.display = visible ? 'block' : 'none';
+}
+
+function clearTempBalls() {
+    document.querySelectorAll('.temp-ball').forEach(function (el) {
+        el.remove();
+    });
+    gameState.tempBalls = [];
+}
+
+function spawnTemporarySplitBalls(count, originX, originY) {
+    const gameContainer = document.querySelector('.game-container');
+    if (!gameContainer) return;
+    if (!Array.isArray(gameState.tempBalls)) gameState.tempBalls = [];
+    const speed = Math.max(4, Math.hypot(gameState.ballDX, gameState.ballDY) || 5);
+    for (let i = 0; i < count; i++) {
+        const angle = (-60 + (120 / Math.max(1, count - 1)) * i) * (Math.PI / 180);
+        const el = document.createElement('div');
+        el.className = 'temp-ball';
+        el.style.left = `${originX}px`;
+        el.style.top = `${originY}px`;
+        gameContainer.appendChild(el);
+        gameState.tempBalls.push({
+            id: `tb_${Date.now()}_${tempBallSeq++}`,
+            x: originX,
+            y: originY,
+            dx: Math.cos(angle) * speed,
+            dy: -Math.abs(Math.sin(angle) * speed),
+            expiresAt: Date.now() + 2000,
+            element: el
+        });
+    }
+}
+
+function removeBrickByEffect(brick) {
+    if (!brick || brick.classList.contains('header-brick') || brick.classList.contains('header-brick--picked')) {
+        return;
+    }
+    brick.remove();
+    gameState.score += 10;
+}
+
+function destroyNeighbors3x3(centerBrick) {
+    const row = parseInt(centerBrick.dataset.row, 10);
+    const col = parseInt(centerBrick.dataset.col, 10);
+    if (!Number.isFinite(row) || !Number.isFinite(col)) return;
+    const targets = document.querySelectorAll('.brick');
+    targets.forEach(function (b) {
+        if (b.classList.contains('header-brick') || b.classList.contains('header-brick--picked')) return;
+        const r = parseInt(b.dataset.row, 10);
+        const c = parseInt(b.dataset.col, 10);
+        if (!Number.isFinite(r) || !Number.isFinite(c)) return;
+        if (Math.abs(r - row) <= 1 && Math.abs(c - col) <= 1) {
+            removeBrickByEffect(b);
+        }
+    });
+}
+
+function handleBrickCollisionEffect(brick, hitX, hitY) {
+    if (brick.classList.contains('header-brick')) {
+        registerHeaderBrickBroken(brick);
+        return;
+    }
+    const effect = brick.dataset.effect || '';
+    if (effect === 'explode3' || effect === 'explode2') {
+        destroyNeighbors3x3(brick);
+    } else if (effect === 'split2') {
+        removeBrickByEffect(brick);
+        spawnTemporarySplitBalls(2, hitX, hitY);
+    } else if (effect === 'split4') {
+        removeBrickByEffect(brick);
+        spawnTemporarySplitBalls(3, hitX, hitY);
+    } else {
+        removeBrickByEffect(brick);
+    }
+    updateScore();
 }
 
 function updatePaddleFromClientX(clientX) {
@@ -685,6 +770,9 @@ function createBricks() {
                 brick.className = 'brick brick-win';
                 brick.dataset.durability = 1;
                 brick.dataset.maxDurability = '1';
+                const effect = pickSpecialRedEffect();
+                brick.dataset.effect = effect;
+                brick.classList.add(`brick-special-${effect}`);
                 brick.style.backgroundColor = winRedPalette[number % winRedPalette.length];
                 brick.style.color = '#ffffff';
             } else {
@@ -828,6 +916,7 @@ function initGame() {
     document.querySelectorAll('.ball').forEach(function (el) {
         el.remove();
     });
+    clearTempBalls();
     gameState.balls = [];
     gameState.removedBalls = 0;
 
@@ -933,6 +1022,7 @@ function resetGame() {
     document.querySelectorAll('.ball').forEach(function (el) {
         el.remove();
     });
+    clearTempBalls();
     const bottomWall = document.getElementById('bottomWall');
     if (bottomWall) bottomWall.style.display = 'none';
     
@@ -1119,7 +1209,9 @@ function moveBall() {
     const ballTop = gameState.ballY;
     const ballRight = ballLeft + ballSize;
     const ballBottom = ballTop + ballSize;
+    let hitMain = false;
     document.querySelectorAll('#brickContainer .brick, #brickContainer .header-brick').forEach((brick) => {
+        if (hitMain) return;
         if (brick.classList.contains('header-brick--picked')) return;
 
         const host = brick.parentElement || brick;
@@ -1133,18 +1225,73 @@ function moveBall() {
             ballLeft < brickRight &&
             ballBottom > brickTop &&
             ballTop < brickBottom) {
-
-            if (brick.classList.contains('header-brick')) {
-                // 파란 벽돌
-                registerHeaderBrickBroken(brick);
-            } else {
-                // 일반 벽돌 제거
-                brick.remove();
-            }
-            // 공 방향 반전
+            handleBrickCollisionEffect(brick, ballLeft, ballTop);
             gameState.ballDY *= -1;
+            hitMain = true;
         }
     });
+
+    // 임시 분열 공 업데이트 (2초 후 자동 제거)
+    if (Array.isArray(gameState.tempBalls) && gameState.tempBalls.length > 0) {
+        const now = Date.now();
+        const containerRect = gameContainer.getBoundingClientRect();
+        const paddleRect2 = paddle.getBoundingClientRect();
+        const maxX2 = gameContainer.clientWidth - ballSize;
+        const maxY2 = gameContainer.clientHeight - ballSize;
+        gameState.tempBalls = gameState.tempBalls.filter(function (tb) {
+            if (!tb || !tb.element) return false;
+            if (now >= tb.expiresAt) {
+                tb.element.remove();
+                return false;
+            }
+            tb.x += tb.dx;
+            tb.y += tb.dy;
+            if (tb.x <= 0 || tb.x >= maxX2) tb.dx *= -1;
+            if (tb.y <= 0) tb.dy *= -1;
+            if (tb.y >= maxY2) {
+                tb.element.remove();
+                return false;
+            }
+            const tRect = {
+                left: containerRect.left + tb.x,
+                right: containerRect.left + tb.x + ballSize,
+                top: containerRect.top + tb.y,
+                bottom: containerRect.top + tb.y + ballSize,
+            };
+            if (
+                tRect.bottom >= paddleRect2.top &&
+                tRect.top <= paddleRect2.bottom &&
+                tRect.right >= paddleRect2.left &&
+                tRect.left <= paddleRect2.right &&
+                tb.dy > 0
+            ) {
+                tb.dy = -Math.abs(tb.dy);
+            }
+            let hitTemp = false;
+            document.querySelectorAll('#brickContainer .brick, #brickContainer .header-brick').forEach((brick) => {
+                if (hitTemp) return;
+                if (brick.classList.contains('header-brick--picked')) return;
+                const host = brick.parentElement || brick;
+                const brickLeft = brickContainer.offsetLeft + host.offsetLeft;
+                const brickTop = brickContainer.offsetTop + host.offsetTop;
+                const brickRight = brickLeft + host.offsetWidth;
+                const brickBottom = brickTop + host.offsetHeight;
+                if (
+                    tb.x + ballSize > brickLeft &&
+                    tb.x < brickRight &&
+                    tb.y + ballSize > brickTop &&
+                    tb.y < brickBottom
+                ) {
+                    handleBrickCollisionEffect(brick, tb.x, tb.y);
+                    tb.dy *= -1;
+                    hitTemp = true;
+                }
+            });
+            tb.element.style.left = `${tb.x}px`;
+            tb.element.style.top = `${tb.y}px`;
+            return true;
+        });
+    }
 }
 
 // 게임 종료 조건 확인 함수
@@ -1470,6 +1617,7 @@ function showScoreTable() {
     gameState.ballMoving = false;
 
     document.querySelectorAll('.ball').forEach(el => el.remove());
+    clearTempBalls();
     if (gameState.balls) gameState.balls = [];
 
     updateScore();

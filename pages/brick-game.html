@@ -189,6 +189,22 @@
             color: rgba(255, 255, 255, 0.4);
         }
 
+        .brick-special-explode3 {
+            background: linear-gradient(180deg, #cc2200, #8f1200) !important;
+        }
+
+        .brick-special-explode2 {
+            background: linear-gradient(180deg, #cc5500, #9a3c00) !important;
+        }
+
+        .brick-special-split2 {
+            background: linear-gradient(180deg, #888800, #5f5f00) !important;
+        }
+
+        .brick-special-split4 {
+            background: linear-gradient(180deg, #0b7c2a, #045019) !important;
+        }
+
         .brick.header-brick {
             background-color: var(--brick-blue) !important;
             color: #fff;
@@ -212,6 +228,17 @@
             top: 0;
             transform: none;
             z-index: 10;
+        }
+
+        .temp-ball {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            position: absolute;
+            background: #d8f6ff;
+            box-shadow: 0 0 8px rgba(140, 236, 255, 0.85);
+            z-index: 11;
+            pointer-events: none;
         }
 
         #paddle {
