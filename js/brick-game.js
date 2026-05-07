@@ -54,6 +54,12 @@ const PADDLE_ANIM_MS = 1000;
 let paddleAnimFrameId = null;
 let tempBallSeq = 0;
 
+function safeRemoveElement(el) {
+    if (!el) return;
+    el.style.display = 'none';
+    el.remove();
+}
+
 function pickSpecialRedEffect() {
     const u = Math.random();
     if (u < 0.25) return 'explode3';
@@ -110,8 +116,7 @@ function clearTempBalls() {
         return;
     }
     gameState.tempBalls.forEach(function (tb) {
-        if (tb && tb.timerId) clearTimeout(tb.timerId);
-        if (tb && tb.element) tb.element.remove();
+        if (tb && tb.element) safeRemoveElement(tb.element);
     });
     gameState.tempBalls = [];
 }
@@ -136,15 +141,6 @@ function spawnTemporarySplitBalls(count, originX, originY) {
             dy: -Math.abs(Math.sin(angle) * speed),
             element: el
         };
-        tb.timerId = setTimeout(function () {
-            const idx = gameState.tempBalls.findIndex(function (x) { return x.id === tb.id; });
-            if (idx !== -1) {
-                const target = gameState.tempBalls[idx];
-                if (target.timerId) clearTimeout(target.timerId);
-                if (target.element) target.element.remove();
-                gameState.tempBalls.splice(idx, 1);
-            }
-        }, 2000);
         gameState.tempBalls.push(tb);
     }
 }
@@ -928,7 +924,8 @@ function initGame() {
 
     // 항상 단일 메인 공만 유지 (다중 .ball 잔존 방지)
     document.querySelectorAll('.ball').forEach(function (el) {
-        el.remove();
+        if (el.id === 'ball') return;
+        safeRemoveElement(el);
     });
     clearTempBalls();
     gameState.balls = [];
@@ -1035,7 +1032,8 @@ function resetGame() {
     gameState.removedBalls = 0;
 
     document.querySelectorAll('.ball').forEach(function (el) {
-        el.remove();
+        if (el.id === 'ball') return;
+        safeRemoveElement(el);
     });
     clearTempBalls();
     const bottomWall = document.getElementById('bottomWall');
@@ -1259,8 +1257,7 @@ function moveBall() {
             if (tb.x <= 0 || tb.x >= maxX2) tb.dx *= -1;
             if (tb.y <= 0) tb.dy *= -1;
             if (tb.y >= maxY2) {
-                if (tb.timerId) clearTimeout(tb.timerId);
-                tb.element.remove();
+                safeRemoveElement(tb.element);
                 return false;
             }
             const tRect = {
@@ -1303,6 +1300,19 @@ function moveBall() {
             return true;
         });
     }
+
+    // 고아 분열 공 정리: 상태 배열에 없는 extra-ball 제거
+    const activeEls = new Set(
+        (gameState.tempBalls || [])
+            .map(function (tb) { return tb && tb.element ? tb.element : null; })
+            .filter(Boolean)
+    );
+    document.querySelectorAll('.ball').forEach(function (b) {
+        if (b.id === 'ball') return; // 메인 공 보호
+        if (!activeEls.has(b)) {
+            safeRemoveElement(b);
+        }
+    });
 }
 
 // 게임 종료 조건 확인 함수
@@ -1627,7 +1637,10 @@ function showScoreTable() {
     gameState.gameStarted = false;
     gameState.ballMoving = false;
 
-    document.querySelectorAll('.ball').forEach(el => el.remove());
+    document.querySelectorAll('.ball').forEach(el => {
+        if (el.id === 'ball') return;
+        safeRemoveElement(el);
+    });
     clearTempBalls();
     if (gameState.balls) gameState.balls = [];
 
