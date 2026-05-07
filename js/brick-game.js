@@ -60,20 +60,24 @@ function getBallSize() {
 
 /** 공을 패들 바로 위(2px 간격)에 정지 배치 */
 function placeBallOnPaddle() {
+    const playArea = document.querySelector('.play-area');
     const paddle = document.getElementById('paddle');
     const ball = document.getElementById('ball');
-    if (!paddle || !ball) return;
+    if (!playArea || !paddle || !ball) return;
 
     const ballSize = getBallSize();
-    const paddleLeft = parseFloat(paddle.style.left) || gameState.paddleX || 0;
-    const paddleWidth = parseFloat(paddle.style.width) || paddle.offsetWidth || BASE_PADDLE_WIDTH;
-    const paddleBottom = parseFloat(paddle.style.bottom) || 20;
-    const paddleHeight = parseFloat(paddle.style.height) || paddle.offsetHeight || 10;
+    const paddleRect = paddle.getBoundingClientRect();
+    const playRect = playArea.getBoundingClientRect();
+    const paddleTop = paddleRect.top - playRect.top;
+    const paddleLeft = paddleRect.left - playRect.left;
+    const paddleWidth = paddleRect.width || parseFloat(paddle.style.width) || BASE_PADDLE_WIDTH;
+    const ballTop = paddleTop - ballSize - 10;
 
     gameState.ballX = paddleLeft + paddleWidth / 2 - ballSize / 2;
-    gameState.ballY = paddleBottom + paddleHeight + 2;
+    gameState.ballY = playArea.clientHeight - (ballTop + ballSize);
     ball.style.left = `${gameState.ballX}px`;
-    ball.style.bottom = `${gameState.ballY}px`;
+    ball.style.top = `${ballTop}px`;
+    ball.style.bottom = 'auto';
     updateLaunchHintPosition();
 }
 
@@ -826,6 +830,7 @@ function initGame() {
         gameState.ballDX = 0;
         gameState.ballDY = 0;
     }
+    gameState.gameOver = false;
     gameState.gameStarted = false;
     gameState.ballMoving = false;
     gameState.paddleX = 320;
@@ -917,7 +922,9 @@ function resetGame() {
     gameState.ballY = 300;
     gameState.ballDX = 0;
     gameState.ballDY = 0;
+    gameState.gameOver = false;
     gameState.ballMoving = false;
+    gameState.gameStarted = false;
     gameState.paddle.width = BASE_PADDLE_WIDTH;
     
     // Reset UI
@@ -951,52 +958,58 @@ function resetGame() {
 }
 
 function launchBallTowardClick(event) {
-    console.log('클릭 감지됨');
-    if (gameState.ballMoving) return;
+    // 이미 움직이면 무시
+    if (gameState.ballMoving === true) return;
     if (gameState.gameOver) return;
-    
-    const playArea = document.querySelector('.play-area');
-    if (!playArea) return;
-    
+
+    console.log('발사 시도!');
+
+    // 클릭 좌표
+    const playArea = document.getElementById('playArea') 
+                  || document.querySelector('.play-area')
+                  || document.querySelector('#brickContainer')
+                  || event.currentTarget;
+
     const rect = playArea.getBoundingClientRect();
     const clickX = event.clientX - rect.left;
     const clickY = event.clientY - rect.top;
-    
-    const ballSize = getBallSize();
-    const centerX = gameState.ballX + ballSize / 2;
-    const centerY = gameState.ballY + ballSize / 2;
-    
-    let dx = clickX - centerX;
-    let dy = clickY - centerY;
-    
+
+    // 공 위치
+    const ball = document.querySelector('.ball');
+    if (!ball) { console.log('공 없음'); return; }
+
+    const ballRect = ball.getBoundingClientRect();
+    const ballCX = ballRect.left - rect.left + ballRect.width / 2;
+    const ballCY = ballRect.top - rect.top + ballRect.height / 2;
+
+    // 방향 벡터
+    let dx = clickX - ballCX;
+    let dy = clickY - ballCY;
+
+    console.log('클릭:', clickX, clickY, '공:', ballCX, ballCY, '방향:', dx, dy);
+
+    // 반드시 위쪽으로 (dy 음수)
+    if (dy >= 0) dy = -Math.abs(dx) * 0.8 - 2;
+
     const len = Math.hypot(dx, dy) || 1;
-    let dirX = dx / len;
-    let dirY = dy / len;
-    
-    // 반드시 위쪽으로만 발사 (dy 음수여야 위로 감)
-    if (dirY > -0.3) dirY = -0.3;
-    
-    // 너무 수평이면 보정
-    const minVertical = 0.3;
-    if (Math.abs(dirY) < minVertical) {
-        dirY = -minVertical;
-    }
-    
-    // 정규화
-    const newLen = Math.hypot(dirX, dirY) || 1;
-    dirX = dirX / newLen;
-    dirY = dirY / newLen;
-    
-    const speed = 6;
-    gameState.ballDX = dirX * speed;
-    gameState.ballDY = dirY * speed; // 음수여야 위로 발사
+    const speed = 5;
+
+    gameState.ballDX = (dx / len) * speed;
+    gameState.ballDY = (dy / len) * speed;
+    gameState.ballMoving = true;
     gameState.gameStarted = true;
     gameState.gamePaused = false;
-    gameState.ballMoving = true;
-    
-    setLaunchHintVisible(false);
-    
-    if (!gameState.animationId) gameLoop();
+
+    console.log('발사!', gameState.ballDX, gameState.ballDY);
+
+    // 안내문구 숨김
+    const hint = document.getElementById('launch-hint') || document.getElementById('launchHint');
+    if (hint) hint.style.display = 'none';
+
+    // 게임 루프 시작
+    if (!gameState.animationId) {
+        gameState.animationId = requestAnimationFrame(gameLoop);
+    }
 }
 
 // 게임 일시정지/재개
