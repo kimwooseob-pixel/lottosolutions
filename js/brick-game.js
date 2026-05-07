@@ -1217,7 +1217,7 @@ function moveBall() {
         return;
     }
 
-    // 벽돌 충돌 체크 (game-container 기준 offset 좌표 통일)
+    // 벽돌 충돌 체크 (메인 공)
     const ballLeft = gameState.ballX;
     const ballTop = gameState.ballY;
     const ballRight = ballLeft + ballSize;
@@ -1238,11 +1238,25 @@ function moveBall() {
             ballLeft < brickRight &&
             ballBottom > brickTop &&
             ballTop < brickBottom) {
+            if (brick.classList.contains('header-brick')) {
+                // 파란 벽돌: 번호 선택 후 메인 공 소멸(패들 위 리셋)
+                registerHeaderBrickBroken(brick);
+                gameState.ballMoving = false;
+                gameState.ballDX = 0;
+                gameState.ballDY = 0;
+                gameState.balls = [];
+                placeBallOnPaddle();
+                setLaunchHintVisible(true);
+                hitMain = true;
+                return;
+            }
+            // 일반/특수 벽돌: 효과 동일 발동
             handleBrickCollisionEffect(brick, ballLeft, ballTop);
             gameState.ballDY *= -1;
             hitMain = true;
         }
     });
+    if (!gameState.ballMoving) return;
 
     // 임시 분열 공 업데이트 (2초 후 자동 제거)
     if (Array.isArray(gameState.tempBalls) && gameState.tempBalls.length > 0) {
@@ -1252,6 +1266,7 @@ function moveBall() {
         const maxY2 = gameContainer.clientHeight - ballSize;
         gameState.tempBalls = gameState.tempBalls.filter(function (tb) {
             if (!tb || !tb.element) return false;
+            let keep = true;
             tb.x += tb.dx;
             tb.y += tb.dy;
             if (tb.x <= 0 || tb.x >= maxX2) tb.dx *= -1;
@@ -1290,11 +1305,20 @@ function moveBall() {
                     tb.y + ballSize > brickTop &&
                     tb.y < brickBottom
                 ) {
-                    handleBrickCollisionEffect(brick, tb.x, tb.y);
-                    tb.dy *= -1;
+                    if (brick.classList.contains('header-brick')) {
+                        // 파란 벽돌: 분열 공은 번호 선택 후 완전 소멸
+                        registerHeaderBrickBroken(brick);
+                        safeRemoveElement(tb.element);
+                        keep = false;
+                    } else {
+                        // 일반/특수 벽돌: 분열 공도 동일 특수효과 발동
+                        handleBrickCollisionEffect(brick, tb.x, tb.y);
+                        tb.dy *= -1;
+                    }
                     hitTemp = true;
                 }
             });
+            if (!keep) return false;
             tb.element.style.left = `${tb.x}px`;
             tb.element.style.top = `${tb.y}px`;
             return true;
