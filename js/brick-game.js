@@ -1001,9 +1001,12 @@ function launchBallTowardClick(event) {
 
     const len = Math.hypot(dx, dy) || 1;
     const speed = 5;
+    const dirX = dx / len;
+    const dirYTop = dy / len; // DOM(top) 기준: 위쪽은 음수
 
-    gameState.ballDX = (dx / len) * speed;
-    gameState.ballDY = (dy / len) * speed;
+    // 게임 물리계는 bottom 기준(위쪽이 +)이므로 Y축 부호를 뒤집는다.
+    gameState.ballDX = dirX * speed;
+    gameState.ballDY = (-dirYTop) * speed;
     gameState.ballMoving = true;
     gameState.gameStarted = true;
     gameState.gamePaused = false;
