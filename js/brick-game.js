@@ -47,17 +47,82 @@ const gameState = {
     brickPredictCompletePopupShown: false
 };
 
+const BASE_PADDLE_WIDTH = 80;
+const PADDLE_EXPANDED_RATIO = 0.8;
+const PADDLE_ANIM_MS = 2000;
+let paddleAnimFrameId = null;
+
+function getBallSize() {
+    const ball = document.getElementById('ball');
+    if (!ball) return 10;
+    return ball.offsetWidth || parseInt(ball.style.width, 10) || 10;
+}
+
+/** 공을 패들 바로 위(2px 간격)에 정지 배치 */
+function placeBallOnPaddle() {
+    const paddle = document.getElementById('paddle');
+    const ball = document.getElementById('ball');
+    if (!paddle || !ball) return;
+
+    const ballSize = getBallSize();
+    const paddleLeft = parseFloat(paddle.style.left) || gameState.paddleX || 0;
+    const paddleWidth = parseFloat(paddle.style.width) || paddle.offsetWidth || BASE_PADDLE_WIDTH;
+    const paddleBottom = parseFloat(paddle.style.bottom) || 20;
+    const paddleHeight = parseFloat(paddle.style.height) || paddle.offsetHeight || 10;
+
+    gameState.ballX = paddleLeft + paddleWidth / 2 - ballSize / 2;
+    gameState.ballY = paddleBottom + paddleHeight + 2;
+    ball.style.left = `${gameState.ballX}px`;
+    ball.style.bottom = `${gameState.ballY}px`;
+}
+
+function animatePaddleWidth(targetWidth, durationMs) {
+    const paddle = document.getElementById('paddle');
+    const gameContainer = document.querySelector('.game-container');
+    if (!paddle || !gameContainer) return;
+    if (paddleAnimFrameId) {
+        cancelAnimationFrame(paddleAnimFrameId);
+        paddleAnimFrameId = null;
+    }
+
+    const startWidth = parseFloat(paddle.style.width) || paddle.offsetWidth || BASE_PADDLE_WIDTH;
+    const startLeft = parseFloat(paddle.style.left) || gameState.paddleX || 0;
+    const centerX = startLeft + startWidth / 2;
+    const clampedTarget = Math.max(BASE_PADDLE_WIDTH, Math.min(targetWidth, gameContainer.offsetWidth - 20));
+    const startAt = performance.now();
+
+    const tick = function (now) {
+        const t = Math.min(1, (now - startAt) / durationMs);
+        const ease = 1 - Math.pow(1 - t, 3);
+        const w = startWidth + (clampedTarget - startWidth) * ease;
+        const left = centerX - w / 2;
+
+        paddle.style.width = `${w}px`;
+        paddle.style.left = `${left}px`;
+        paddle.style.transform = 'none';
+        gameState.paddle.width = w;
+        gameState.paddleX = left;
+
+        if (!gameState.ballMoving) {
+            placeBallOnPaddle();
+        }
+        if (t < 1) {
+            paddleAnimFrameId = requestAnimationFrame(tick);
+        } else {
+            paddleAnimFrameId = null;
+        }
+    };
+
+    paddleAnimFrameId = requestAnimationFrame(tick);
+}
+
 // 무적모드 토글 함수
 function toggleGodMode() {
-    // 게임이 시작되지 않았으면 게임 시작
-    if (!gameState.gameStarted) {
-        startGame();
-    }
-    
     gameState.godMode = !gameState.godMode;
     const godModeButton = document.getElementById('godModeButton');
     const paddle = document.getElementById('paddle');
     const bottomWall = document.getElementById('bottomWall');
+    const gameContainer = document.querySelector('.game-container');
     
     if (gameState.godMode) {
         // 무적모드 ON
@@ -65,42 +130,23 @@ function toggleGodMode() {
             godModeButton.textContent = '무적모드 ON';
             godModeButton.style.backgroundColor = '#ff4444';
         }
-        
-        // 패들 숨기고 하단 벽 표시
-        if (paddle) paddle.style.display = 'none';
-        if (bottomWall) bottomWall.style.display = 'block';
-        
-        // 기존 공들 제거 (초기 정적 공 포함)
-        document.querySelectorAll('.ball').forEach(el => el.remove());
-        const staticBall = document.getElementById('ball');
-        if (staticBall) staticBall.remove();
-        
-        // 공 45개 생성 (하단에 일렬로)
+        if (paddle) paddle.style.display = 'block';
+        if (bottomWall) bottomWall.style.display = 'none';
         gameState.balls = [];
-        for (let i = 0; i < gameState.totalBalls; i++) {
-            const ball = createBall(i, gameState.totalBalls);
-            if (ball) {
-                gameState.balls.push(ball);
-            }
+
+        if (gameContainer) {
+            const target = gameContainer.offsetWidth * PADDLE_EXPANDED_RATIO;
+            animatePaddleWidth(target, PADDLE_ANIM_MS);
         }
-        
-        // 공이 움직이지 않으면 시작
-        gameState.ballMoving = true;
-        gameState.gameStarted = true; // 명시적으로 시작 상태 설정
-        if (gameState.animationId) {
-            cancelAnimationFrame(gameState.animationId);
-        }
-        gameLoop();
         
         // 게임 상태 메시지 표시
         const statusElement = document.getElementById('gameStatus');
         if (statusElement) {
-            statusElement.textContent = '무적모드가 활성화되었습니다! 공 45개 생성!';
+            statusElement.textContent = '무적모드가 활성화되었습니다! 패들이 확장됩니다.';
             setTimeout(() => {
                 statusElement.textContent = '';
             }, 2000);
         }
-        updateBallRemovalStats();
     } else {
         // 무적모드 OFF
         if (godModeButton) {
@@ -108,9 +154,10 @@ function toggleGodMode() {
             godModeButton.style.backgroundColor = '';
         }
         
-        // 패들 표시하고 하단 벽 숨기기
+        // 패들 원래 크기로 복귀
         if (paddle) paddle.style.display = 'block';
         if (bottomWall) bottomWall.style.display = 'none';
+        animatePaddleWidth(BASE_PADDLE_WIDTH, PADDLE_ANIM_MS);
         
         // 게임 상태 메시지 표시
         const statusElement = document.getElementById('gameStatus');
@@ -728,23 +775,24 @@ function initGame() {
     ball.style.bottom = '300px';
     
     // 패들 초기 위치 설정
-    paddle.style.width = '80px';
+    paddle.style.width = `${BASE_PADDLE_WIDTH}px`;
     paddle.style.height = '10px';
     paddle.style.backgroundColor = '#ffffff';
     paddle.style.position = 'absolute';
     paddle.style.left = '320px';
     paddle.style.bottom = '20px';
+    paddle.style.transform = 'none';
     
     // 공 위치 초기화 (게임 시작 시에만)
     if (!gameState.godMode) {
-        gameState.ballX = 360;
-        gameState.ballY = 300;
-        gameState.ballDX = 4;
-        gameState.ballDY = -4;
+        gameState.ballDX = 0;
+        gameState.ballDY = 0;
     }
     gameState.gameStarted = false;
     gameState.ballMoving = false;
     gameState.paddleX = 320;
+    gameState.paddle.width = BASE_PADDLE_WIDTH;
+    placeBallOnPaddle();
     
     // 벽돌 생성
     createBricks();
@@ -820,15 +868,18 @@ function resetGame() {
     const paddle = document.getElementById('paddle');
     if (paddle) {
         paddle.style.display = 'block';
+        paddle.style.transform = 'none';
+        paddle.style.width = `${BASE_PADDLE_WIDTH}px`;
     }
     gameState.level = 1;
     
     // Reset ball position
     gameState.ballX = 360;
     gameState.ballY = 300;
-    gameState.ballDX = 4;
-    gameState.ballDY = -4;
+    gameState.ballDX = 0;
+    gameState.ballDY = 0;
     gameState.ballMoving = false;
+    gameState.paddle.width = BASE_PADDLE_WIDTH;
     
     // Reset UI
     updateScore();
@@ -858,6 +909,32 @@ function resetGame() {
     }
 
     ensureMainBallInPlayArea();
+    placeBallOnPaddle();
+}
+
+function launchBallTowardClick(event) {
+    if (!gameState.gameStarted || gameState.ballMoving) return;
+    if (gameState.gameOver) return;
+
+    const playArea = document.querySelector('.play-area');
+    if (!playArea) return;
+
+    const rect = playArea.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const clickYBottom = rect.height - (event.clientY - rect.top);
+    const ballSize = getBallSize();
+    const centerX = gameState.ballX + ballSize / 2;
+    const centerY = gameState.ballY + ballSize / 2;
+
+    let vx = clickX - centerX;
+    let vy = clickYBottom - centerY;
+    if (vy <= 0) vy = Math.abs(vy) + 1;
+
+    const len = Math.hypot(vx, vy) || 1;
+    const speed = 6;
+    gameState.ballDX = (vx / len) * speed;
+    gameState.ballDY = (vy / len) * speed;
+    gameState.ballMoving = true;
 }
 
 // 게임 일시정지/재개
@@ -971,12 +1048,9 @@ function moveBall() {
             const paddle = document.getElementById('paddle');
             const gameContainer = document.querySelector('.game-container');
             if (paddle && gameContainer) {
-                const playAreaHeight = 200;
-                const paddleHeight = 10;
-                gameState.ballX = (gameContainer.offsetWidth / 2) - 5;
-                gameState.ballY = playAreaHeight - paddleHeight - 15;
-                gameState.ballDX = 4 * (Math.random() > 0.5 ? 1 : -1);
-                gameState.ballDY = -4;
+                gameState.ballDX = 0;
+                gameState.ballDY = 0;
+                placeBallOnPaddle();
                 
                 // 목숨 감소 메시지 표시
                 const statusElement = document.getElementById('gameStatus');
@@ -1250,6 +1324,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (godBtn) {
             godBtn.addEventListener('click', toggleGodMode);
         }
+        const playArea = document.querySelector('.play-area');
+        if (playArea) {
+            playArea.addEventListener('click', launchBallTowardClick);
+        }
     }
 
     wireToolbar();
@@ -1288,7 +1366,7 @@ function startGame() {
     // 게임 상태 초기화
     gameState.gameStarted = true;
     gameState.gamePaused = false;
-    gameState.ballMoving = true;
+    gameState.ballMoving = false;
     gameState.score = 0;
     gameState.lives = 1;
     gameState.level = 1;
@@ -1297,17 +1375,14 @@ function startGame() {
     const paddle = document.getElementById('paddle');
     const gameContainer = document.querySelector('.game-container');
     if (paddle && gameContainer) {
-        const playAreaHeight = 200;
-        const paddleHeight = 10;
-        gameState.ballX = (gameContainer.offsetWidth / 2) - 5;
-        gameState.ballY = playAreaHeight - paddleHeight - 15;
-        gameState.ballDX = 4 * (Math.random() > 0.5 ? 1 : -1); // 랜덤한 방향으로
-        gameState.ballDY = -4;
+        gameState.ballDX = 0;
+        gameState.ballDY = 0;
+        placeBallOnPaddle();
         
         // 사용자에게 목숨 감소 알림
         const statusElement = document.getElementById('gameStatus');
         if (statusElement) {
-            statusElement.textContent = `목숨이 ${gameState.lives}개 남았습니다!`;
+            statusElement.textContent = '플레이 영역을 클릭해 공을 발사하세요!';
             setTimeout(() => {
                 statusElement.textContent = '';
             }, 1500);
@@ -1375,6 +1450,7 @@ function ensureMainBallInPlayArea() {
     playArea.insertBefore(ball, paddle);
     ball.style.left = gameState.ballX + 'px';
     ball.style.bottom = gameState.ballY + 'px';
+    placeBallOnPaddle();
 }
 
 // 게임 재시작
