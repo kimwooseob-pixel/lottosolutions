@@ -1191,6 +1191,32 @@ function gameLoop() {
     gameState.animationId = requestAnimationFrame(gameLoop);
 }
 
+/** 벽돌 AABB: 겹침 깊이가 가장 작은 면을 충돌면으로 보고 X 또는 Y 속도 반전 */
+function applyBrickCollisionBounceByMinOverlap(
+    ballLeft,
+    ballTop,
+    ballRight,
+    ballBottom,
+    brickLeft,
+    brickTop,
+    brickRight,
+    brickBottom,
+    onFlipX,
+    onFlipY
+) {
+    const overlapLeft = ballRight - brickLeft;
+    const overlapRight = brickRight - ballLeft;
+    const overlapTop = ballBottom - brickTop;
+    const overlapBottom = brickBottom - ballTop;
+    const minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
+    const eps = 1e-4;
+    if (Math.abs(minOverlap - overlapLeft) < eps || Math.abs(minOverlap - overlapRight) < eps) {
+        onFlipX();
+    } else {
+        onFlipY();
+    }
+}
+
 // 공 움직임 처리
 function moveBall() {
     if (!gameState.ballMoving) return;
@@ -1288,7 +1314,22 @@ function moveBall() {
             }
             // 일반/특수 벽돌: 효과 동일 발동
             handleBrickCollisionEffect(brick, ballLeft, ballTop);
-            gameState.ballDY *= -1;
+            applyBrickCollisionBounceByMinOverlap(
+                ballLeft,
+                ballTop,
+                ballRight,
+                ballBottom,
+                brickLeft,
+                brickTop,
+                brickRight,
+                brickBottom,
+                function () {
+                    gameState.ballDX *= -1;
+                },
+                function () {
+                    gameState.ballDY *= -1;
+                }
+            );
             hitMain = true;
         }
     });
@@ -1349,7 +1390,22 @@ function moveBall() {
                     } else {
                         // 일반/특수 벽돌: 분열 공도 동일 특수효과 발동
                         handleBrickCollisionEffect(brick, tb.x, tb.y);
-                        tb.dy *= -1;
+                        applyBrickCollisionBounceByMinOverlap(
+                            tb.x,
+                            tb.y,
+                            tb.x + ballSize,
+                            tb.y + ballSize,
+                            brickLeft,
+                            brickTop,
+                            brickRight,
+                            brickBottom,
+                            function () {
+                                tb.dx *= -1;
+                            },
+                            function () {
+                                tb.dy *= -1;
+                            }
+                        );
                     }
                     hitTemp = true;
                 }
@@ -1531,27 +1587,25 @@ function checkSingleBallCollision(collidingEntity, ballRect, ballIndexInGodMode 
                     gameState.score += 5;
                 }
 
-                // 공 반사 로직
-                const overlapX = Math.min(ballRect.right - brickRect.left, brickRect.right - ballRect.left);
-                const overlapY = Math.min(ballRect.bottom - brickRect.top, brickRect.bottom - ballRect.top);
-
-                if (gameState.godMode) {
-                    // 무적 모드: collidingEntity는 ballObject
-                    if (overlapX < overlapY) {
-                        collidingEntity.dx *= -1;
-                    } else {
-                        collidingEntity.dy *= -1;
+                // 공 반사: 겹침 깊이 최소면 기준 (메인·무적 공과 동일)
+                applyBrickCollisionBounceByMinOverlap(
+                    ballRect.left,
+                    ballRect.top,
+                    ballRect.right,
+                    ballRect.bottom,
+                    brickRect.left,
+                    brickRect.top,
+                    brickRect.right,
+                    brickRect.bottom,
+                    function () {
+                        if (gameState.godMode) collidingEntity.dx *= -1;
+                        else gameState.ballDX *= -1;
+                    },
+                    function () {
+                        if (gameState.godMode) collidingEntity.dy *= -1;
+                        else gameState.ballDY *= -1;
                     }
-                    // 위치 조정 및 DOM 업데이트는 moveBall에서 처리
-                } else {
-                    // 일반 모드: gameState의 ballDX/DY 사용
-                    if (overlapX < overlapY) {
-                        gameState.ballDX *= -1;
-                    } else {
-                        gameState.ballDY *= -1;
-                    }
-                    // 위치 조정 및 DOM 업데이트는 moveBall에서 처리
-                }
+                );
                 updateScore();
                 return 'bounced'; // 공이 반사되었음을 알리고, 이 공에 대한 추가 충돌 처리 중단
             }
