@@ -588,6 +588,9 @@ function createBricks() {
         
         const brick = document.createElement('div');
         brick.dataset.number = String(number);
+        brick.addEventListener('click', function (e) {
+            launchBallTowardClick(e);
+        });
         if (gameState.pickedHeaderNumbers[number]) {
             brick.className = 'brick header-brick--picked';
             brick.textContent = String(number);
@@ -635,6 +638,9 @@ function createBricks() {
             brick.textContent = String(number);
             brick.dataset.row = r;
             brick.dataset.col = c;
+            brick.addEventListener('click', function (e) {
+                launchBallTowardClick(e);
+            });
             
             if (isWinning) {
                 brick.className = 'brick brick-win';
