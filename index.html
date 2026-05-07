@@ -201,8 +201,25 @@
             align-self: stretch;
         }
 
-        .button-grid.prediction-tools .btn-small {
-            min-height: 0;
+        .button-grid.prediction-tools > .nav-button {
+            padding: 18px;
+            min-height: 140px;
+            font-size: 0.9rem;
+        }
+
+        .button-grid.prediction-tools > .nav-button .button-icon {
+            font-size: 1.7rem;
+            margin-bottom: 8px;
+        }
+
+        .button-grid.prediction-tools > .nav-button .button-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        .button-grid.prediction-tools > .nav-button .button-description {
+            font-size: 0.82rem;
+            line-height: 1.35;
         }
         
         .nav-button {
@@ -590,19 +607,19 @@
         <div class="section-title">번호 예측 도구</div>
         <div class="button-grid prediction-tools">
             <!-- 기존 로또 관련 버튼들 -->
-            <a class="nav-button btn-large" href="pages/page2.html">
+            <a class="nav-button" href="pages/page2.html">
                 <div class="button-icon">📊</div>
                 <span class="button-title">(당첨) 연습하기</span>
                 <span class="button-description">지난 회차 패턴으로 감 잡기</span>
             </a>
 
-            <button type="button" class="nav-button btn-small" id="btn-predict">
+            <button type="button" class="nav-button" id="btn-predict">
                 <div class="button-icon">🔮</div>
                 <span class="button-title">이번주 번호</span>
                 <span class="button-description">패턴 분석 그리드에서 6개 선택</span>
             </button>
 
-            <button type="button" class="nav-button btn-small" id="btn-ranking">
+            <button type="button" class="nav-button" id="btn-ranking">
                 <div class="button-icon">🏆</div>
                 <span class="button-title">랭킹표</span>
                 <span class="button-description">예측 순위·당첨 번호 한눈에</span>
