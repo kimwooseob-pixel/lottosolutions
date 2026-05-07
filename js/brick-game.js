@@ -928,40 +928,48 @@ function resetGame() {
 function launchBallTowardClick(event) {
     if (gameState.ballMoving) return;
     if (gameState.gameOver) return;
-
+    
     const playArea = document.querySelector('.play-area');
     if (!playArea) return;
-
+    
     const rect = playArea.getBoundingClientRect();
     const clickX = event.clientX - rect.left;
-    const clickYBottom = rect.height - (event.clientY - rect.top);
+    const clickY = event.clientY - rect.top;
+    
     const ballSize = getBallSize();
     const centerX = gameState.ballX + ballSize / 2;
     const centerY = gameState.ballY + ballSize / 2;
-
-    let vx = clickX - centerX;
-    let vy = clickYBottom - centerY;
-    if (vy <= 0) vy = Math.abs(vy) + 1;
-
-    const len = Math.hypot(vx, vy) || 1;
-    let dirX = vx / len;
-    let dirY = vy / len;
-    const minVertical = 0.35;
+    
+    let dx = clickX - centerX;
+    let dy = clickY - centerY;
+    
+    const len = Math.hypot(dx, dy) || 1;
+    let dirX = dx / len;
+    let dirY = dy / len;
+    
+    // 반드시 위쪽으로만 발사 (dy 음수여야 위로 감)
+    if (dirY > -0.3) dirY = -0.3;
+    
+    // 너무 수평이면 보정
+    const minVertical = 0.3;
     if (Math.abs(dirY) < minVertical) {
-        dirY = minVertical;
-        const maxX = Math.sqrt(1 - dirY * dirY);
-        dirX = Math.sign(dirX || 1) * maxX;
+        dirY = -minVertical;
     }
-
+    
+    // 정규화
+    const newLen = Math.hypot(dirX, dirY) || 1;
+    dirX = dirX / newLen;
+    dirY = dirY / newLen;
+    
     const speed = 6;
     gameState.ballDX = dirX * speed;
-    gameState.ballDY = dirY * speed;
+    gameState.ballDY = dirY * speed; // 음수여야 위로 발사
     gameState.gameStarted = true;
     gameState.gamePaused = false;
     gameState.ballMoving = true;
+    
     setLaunchHintVisible(false);
-    const statusElement = document.getElementById('gameStatus');
-    if (statusElement) statusElement.textContent = '';
+    
     if (!gameState.animationId) gameLoop();
 }
 
