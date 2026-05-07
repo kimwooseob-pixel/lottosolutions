@@ -16,6 +16,12 @@
             --brick-dark: #1a2233;
             --brick-blue: #0044cc;
             --play-bg: #060b14;
+            --brick-rows: 15;
+            --brick-row-gap: 1px;
+            --brick-top-offset: 20px;
+            --play-area-height: 200px;
+            --brick-row-height: 19px;
+            --round-label-width: 45px;
         }
 
         body {
@@ -72,7 +78,7 @@
             margin-bottom: 20px;
             padding: 0;
             box-sizing: border-box;
-            margin-left: 50px;
+            margin-left: 56px;
             border: 1px solid rgba(0, 204, 255, 0.15);
         }
 
@@ -86,31 +92,33 @@
 
         .round-header {
             position: absolute;
-            left: -50px;
-            top: 20px;  /* 상단 여백 조정 */
-            height: 300px;
-            width: 45px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            left: calc(-1 * (var(--round-label-width) + 8px));
+            top: var(--brick-top-offset);
+            height: calc((var(--brick-row-height) * var(--brick-rows)) + (var(--brick-row-gap) * (var(--brick-rows) - 1)));
+            width: var(--round-label-width);
+            display: grid;
+            grid-template-rows: repeat(var(--brick-rows), var(--brick-row-height));
+            gap: var(--brick-row-gap);
             padding: 0;
             z-index: 100;
-            gap: 0;
             pointer-events: none;
         }
 
         .round-number {
-            height: 20px;
+            height: var(--brick-row-height);
             font-size: 11px;
             color: #e2e8f0;
             text-align: right;
             padding-right: 5px;
-            line-height: 20px;
+            line-height: 1;
             background: rgba(0, 30, 50, 0.65);
             border-radius: 3px;
-            margin: 1px 0;
+            margin: 0;
             font-weight: bold;
             border: 1px solid rgba(0, 204, 255, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
         }
 
         .round-number.prediction-label {
@@ -133,24 +141,27 @@
             left: 0;
             right: 0;
             bottom: 0;
-            height: 200px;
+            height: var(--play-area-height);
             background: var(--play-bg);
             border-top: none;
         }
 
         #brickContainer {
-            position: relative;
+            position: absolute;
             width: 100%;
-            height: 320px;
+            top: var(--brick-top-offset);
+            left: 0;
+            right: 0;
+            height: calc((var(--brick-row-height) * var(--brick-rows)) + (var(--brick-row-gap) * (var(--brick-rows) - 1)));
             padding: 0;
             box-sizing: border-box;
             display: grid;
             grid-template-columns: repeat(45, 1fr);
-            grid-template-rows: repeat(15, 1fr);
-            gap: 1px;
+            grid-template-rows: repeat(var(--brick-rows), var(--brick-row-height));
+            gap: var(--brick-row-gap);
             background: #030810;
-            margin-top: 0;
             border-bottom: none;
+            overflow: visible;
         }
 
         .brick {

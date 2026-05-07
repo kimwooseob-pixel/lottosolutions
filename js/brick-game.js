@@ -522,7 +522,6 @@ function createRoundNumbers() {
         roundNumber.className = 'round-number' + (i === 0 ? ' prediction-label' : '');
         const label = i === 0 ? latest + 1 : latest - (i - 1);
         roundNumber.textContent = label;
-        roundNumber.style.height = '19px'; // 벽돌 높이와 동일하게 조정
         roundNumber.style.display = 'flex';
         roundNumber.style.alignItems = 'center';
         roundNumber.style.justifyContent = 'flex-end';
@@ -535,19 +534,40 @@ function createBricks() {
     const brickContainer = document.getElementById('brickContainer');
     if (!brickContainer) return;
     brickContainer.innerHTML = '';
-    
+
+    const gameContainer = document.querySelector('.game-container');
+    const numRows = 15;
+    const rowGap = 1;
+    const topOffset = 20;
+    const playAreaHeight = 200;
+    const availableHeight = gameContainer
+        ? gameContainer.clientHeight - topOffset - playAreaHeight
+        : 300;
+    const rowHeight = Math.max(16, Math.floor((availableHeight - rowGap * (numRows - 1)) / numRows));
+    const gridHeight = rowHeight * numRows + rowGap * (numRows - 1);
+
+    if (gameContainer) {
+        gameContainer.style.setProperty('--brick-row-height', `${rowHeight}px`);
+    }
+    const roundHeader = document.querySelector('.round-header');
+    if (roundHeader) {
+        roundHeader.style.height = `${gridHeight}px`;
+        roundHeader.style.top = `${topOffset}px`;
+    }
+
     // 벽돌 그리드 스타일 설정
     brickContainer.style.display = 'grid';
     brickContainer.style.gridTemplateColumns = 'repeat(45, 1fr)';
-    brickContainer.style.gridTemplateRows = 'repeat(15, 20px)';
-    brickContainer.style.gap = '1px';
+    brickContainer.style.gridTemplateRows = `repeat(${numRows}, ${rowHeight}px)`;
+    brickContainer.style.gap = `${rowGap}px`;
     brickContainer.style.position = 'absolute';
-    brickContainer.style.top = '20px';
+    brickContainer.style.top = `${topOffset}px`;
     brickContainer.style.left = '0';
     brickContainer.style.right = '0';
-    brickContainer.style.bottom = '200px';
-    brickContainer.style.overflow = 'hidden';
-    
+    brickContainer.style.height = `${gridHeight}px`;
+    brickContainer.style.bottom = 'auto';
+    brickContainer.style.overflow = 'visible';
+
     // 로또 회차 표시 생성
     createRoundNumbers();
     
@@ -556,7 +576,6 @@ function createBricks() {
     const latest = Number.isFinite(latestNum) ? latestNum : lottoData.drawNumber;
     const winningMap = mergeWinningNumbersMap();
     const winRedPalette = ['#cc2200', '#cc5500', '#9a3412', '#c2410c'];
-    const numRows = 15;
     const numCols = 45;
     
     // 1행: 다음 회차 예측용 파란 벽돌 (앱과 동일: 5의 배수만 번호 표시) — 깨진 칸은 선택 표시만 유지
