@@ -47,9 +47,9 @@ const gameState = {
     brickPredictCompletePopupShown: false
 };
 
-const BASE_PADDLE_WIDTH = 80;
-const PADDLE_EXPANDED_RATIO = 0.8;
-const PADDLE_ANIM_MS = 2000;
+const BASE_PADDLE_WIDTH = 240;
+const PADDLE_EXPANDED_RATIO = 1;
+const PADDLE_ANIM_MS = 1000;
 let paddleAnimFrameId = null;
 
 function getBallSize() {
@@ -128,7 +128,7 @@ function setupPaddleControlEvents() {
     }, { passive: true });
 }
 
-function animatePaddleWidth(targetWidth, durationMs) {
+function animatePaddleWidth(targetWidth, durationMs, alignLeft = false) {
     const paddle = document.getElementById('paddle');
     const gameContainer = document.querySelector('.game-container');
     if (!paddle || !gameContainer) return;
@@ -140,14 +140,14 @@ function animatePaddleWidth(targetWidth, durationMs) {
     const startWidth = parseFloat(paddle.style.width) || paddle.offsetWidth || BASE_PADDLE_WIDTH;
     const startLeft = parseFloat(paddle.style.left) || gameState.paddleX || 0;
     const centerX = startLeft + startWidth / 2;
-    const clampedTarget = Math.max(BASE_PADDLE_WIDTH, Math.min(targetWidth, gameContainer.offsetWidth - 20));
+    const clampedTarget = Math.max(BASE_PADDLE_WIDTH, Math.min(targetWidth, gameContainer.offsetWidth));
     const startAt = performance.now();
 
     const tick = function (now) {
         const t = Math.min(1, (now - startAt) / durationMs);
         const ease = 1 - Math.pow(1 - t, 3);
         const w = startWidth + (clampedTarget - startWidth) * ease;
-        const left = centerX - w / 2;
+        const left = alignLeft ? startLeft + (0 - startLeft) * ease : centerX - w / 2;
 
         paddle.style.width = `${w}px`;
         paddle.style.left = `${left}px`;
@@ -188,7 +188,7 @@ function toggleGodMode() {
 
         if (gameContainer) {
             const target = gameContainer.offsetWidth * PADDLE_EXPANDED_RATIO;
-            animatePaddleWidth(target, PADDLE_ANIM_MS);
+            animatePaddleWidth(target, PADDLE_ANIM_MS, true);
         }
         
         // 게임 상태 메시지 표시
@@ -1115,27 +1115,28 @@ function moveBall() {
 
     // 벽돌 충돌 체크 (DOM rect 기준)
     const ballRectNow = ball.getBoundingClientRect();
-    const bricks = document.querySelectorAll('.brick');
-    for (const brick of bricks) {
-        if (brick.classList.contains('header-brick--picked')) continue;
-        const brickRect = brick.getBoundingClientRect();
-        const overlap =
-            ballRectNow.bottom >= brickRect.top &&
-            ballRectNow.top <= brickRect.bottom &&
-            ballRectNow.right >= brickRect.left &&
-            ballRectNow.left <= brickRect.right;
-        if (!overlap) continue;
+    document.querySelectorAll('.brick, .header-brick').forEach((brick) => {
+        if (brick.classList.contains('header-brick--picked')) return;
 
-        if (brick.classList.contains('header-brick')) {
-            registerHeaderBrickBroken(brick);
-        } else {
-            brick.remove();
-            gameState.score += 10;
-            updateScore();
+        const brickRect = brick.getBoundingClientRect();
+
+        // 충돌 감지
+        if (ballRectNow.right > brickRect.left &&
+            ballRectNow.left < brickRect.right &&
+            ballRectNow.bottom > brickRect.top &&
+            ballRectNow.top < brickRect.bottom) {
+
+            if (brick.classList.contains('header-brick')) {
+                // 파란 벽돌
+                registerHeaderBrickBroken(brick);
+            } else {
+                // 일반 벽돌 제거
+                brick.remove();
+            }
+            // 공 방향 반전
+            gameState.ballDY *= -1;
         }
-        gameState.ballDY *= -1;
-        break;
-    }
+    });
 }
 
 // 게임 종료 조건 확인 함수
