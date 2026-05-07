@@ -74,6 +74,19 @@ function placeBallOnPaddle() {
     gameState.ballY = paddleBottom + paddleHeight + 2;
     ball.style.left = `${gameState.ballX}px`;
     ball.style.bottom = `${gameState.ballY}px`;
+    updateLaunchHintPosition();
+}
+
+function updateLaunchHintPosition() {
+    const hint = document.getElementById('launchHint');
+    if (!hint) return;
+    hint.style.left = `${gameState.ballX + getBallSize() / 2}px`;
+}
+
+function setLaunchHintVisible(visible) {
+    const hint = document.getElementById('launchHint');
+    if (!hint) return;
+    hint.style.display = visible ? 'block' : 'none';
 }
 
 function animatePaddleWidth(targetWidth, durationMs) {
@@ -793,6 +806,7 @@ function initGame() {
     gameState.paddleX = 320;
     gameState.paddle.width = BASE_PADDLE_WIDTH;
     placeBallOnPaddle();
+    setLaunchHintVisible(true);
     
     // 벽돌 생성
     createBricks();
@@ -887,9 +901,7 @@ function resetGame() {
     resetPaddle();
     
     // Update button states
-    const startBtn = document.getElementById('startButton');
     const pauseBtn = document.getElementById('pauseButton');
-    if (startBtn) startBtn.disabled = false;
     if (pauseBtn) {
         pauseBtn.disabled = true;
         pauseBtn.textContent = '일시정지';
@@ -910,10 +922,11 @@ function resetGame() {
 
     ensureMainBallInPlayArea();
     placeBallOnPaddle();
+    setLaunchHintVisible(true);
 }
 
 function launchBallTowardClick(event) {
-    if (!gameState.gameStarted || gameState.ballMoving) return;
+    if (gameState.ballMoving) return;
     if (gameState.gameOver) return;
 
     const playArea = document.querySelector('.play-area');
@@ -931,10 +944,25 @@ function launchBallTowardClick(event) {
     if (vy <= 0) vy = Math.abs(vy) + 1;
 
     const len = Math.hypot(vx, vy) || 1;
+    let dirX = vx / len;
+    let dirY = vy / len;
+    const minVertical = 0.35;
+    if (Math.abs(dirY) < minVertical) {
+        dirY = minVertical;
+        const maxX = Math.sqrt(1 - dirY * dirY);
+        dirX = Math.sign(dirX || 1) * maxX;
+    }
+
     const speed = 6;
-    gameState.ballDX = (vx / len) * speed;
-    gameState.ballDY = (vy / len) * speed;
+    gameState.ballDX = dirX * speed;
+    gameState.ballDY = dirY * speed;
+    gameState.gameStarted = true;
+    gameState.gamePaused = false;
     gameState.ballMoving = true;
+    setLaunchHintVisible(false);
+    const statusElement = document.getElementById('gameStatus');
+    if (statusElement) statusElement.textContent = '';
+    if (!gameState.animationId) gameLoop();
 }
 
 // 게임 일시정지/재개
@@ -1307,12 +1335,6 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM이 로드되었습니다. 게임을 초기화합니다.');
 
     function wireToolbar() {
-        const startBtn = document.getElementById('startButton');
-        if (startBtn) {
-            startBtn.addEventListener('click', function () {
-                startGame();
-            });
-        }
         const resetBtn = document.getElementById('resetButton');
         if (resetBtn) {
             resetBtn.addEventListener('click', function () {
@@ -1327,6 +1349,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const playArea = document.querySelector('.play-area');
         if (playArea) {
             playArea.addEventListener('click', launchBallTowardClick);
+        }
+        const gameContainer = document.querySelector('.game-container');
+        if (gameContainer) {
+            gameContainer.addEventListener('click', launchBallTowardClick);
         }
     }
 
@@ -1391,9 +1417,7 @@ function startGame() {
     
     // UI 업데이트
     updateScore();
-    const startBtn = document.getElementById('startButton');
     const pauseBtn = document.getElementById('pauseButton');
-    if (startBtn) startBtn.disabled = true;
     if (pauseBtn) pauseBtn.disabled = false;
     
     // 공 생성 및 위치 설정
