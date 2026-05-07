@@ -80,7 +80,7 @@ function placeBallOnPaddle() {
 function updateLaunchHintPosition() {
     const hint = document.getElementById('launchHint');
     if (!hint) return;
-    hint.style.left = `${gameState.ballX + getBallSize() / 2}px`;
+    hint.style.left = '50%';
 }
 
 function setLaunchHintVisible(visible) {

@@ -26,7 +26,7 @@
 
         body {
             margin: 0;
-            padding: 20px;
+            padding: 20px 20px 96px;
             background: var(--bg-navy);
             background-image:
                 radial-gradient(ellipse 100% 80% at 50% -15%, rgba(0, 204, 255, 0.07), transparent 55%),
@@ -227,40 +227,44 @@
         #launchHint {
             position: absolute;
             left: 50%;
-            bottom: 36px;
+            top: 50%;
             transform: translateX(-50%);
-            color: rgba(255, 255, 255, 0.72);
-            font-size: 12px;
-            letter-spacing: 0.01em;
+            color: #00e5ff;
+            font-size: 30px;
+            font-weight: 800;
+            letter-spacing: 0.02em;
             white-space: nowrap;
             pointer-events: none;
-            z-index: 12;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+            z-index: 250;
+            text-shadow: 0 0 10px rgba(0, 229, 255, 0.95), 0 0 24px rgba(0, 229, 255, 0.7), 0 2px 8px rgba(0, 0, 0, 0.8);
         }
 
         .controls {
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 14px;
+            gap: 22px;
             flex-wrap: wrap;
         }
 
         .controls .toolbar-btn {
-            padding: 12px 22px;
-            font-size: 15px;
-            font-weight: 600;
-            border: 1px solid rgba(0, 204, 255, 0.45);
-            border-radius: 10px;
+            padding: 16px 26px;
+            font-size: 17px;
+            font-weight: 700;
+            border: 1px solid rgba(0, 229, 255, 0.35);
+            border-radius: 14px;
             cursor: pointer;
-            background: rgba(0, 30, 55, 0.9);
+            background: #0f1a2d;
             color: #e8f4f8;
-            transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+            transition: background 0.2s, box-shadow 0.2s, transform 0.15s, filter 0.2s;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .controls .toolbar-btn:hover:not(:disabled) {
-            background: rgba(0, 60, 90, 0.95);
+            background: #14233c;
             box-shadow: 0 0 18px rgba(0, 204, 255, 0.2);
             transform: translateY(-1px);
         }
@@ -270,8 +274,66 @@
             cursor: not-allowed;
         }
 
-        .controls .toolbar-btn--primary {
-            border-color: rgba(0, 204, 255, 0.55);
+        #resetButton {
+            border-color: rgba(102, 160, 210, 0.6);
+            background: linear-gradient(180deg, #172338, #101b2d);
+        }
+
+        #godModeButton {
+            color: #2b1a00;
+            border-color: rgba(255, 203, 85, 0.8);
+            background: linear-gradient(180deg, #ffd86b, #f5b740);
+            box-shadow: 0 8px 18px rgba(245, 183, 64, 0.35);
+        }
+
+        #godModeButton:hover:not(:disabled) {
+            background: linear-gradient(180deg, #ffe089, #f7c55b);
+            box-shadow: 0 10px 22px rgba(245, 183, 64, 0.45);
+            filter: brightness(1.03);
+        }
+
+        .bottom-tabbar {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 500;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            background: #0a1220;
+            border-top: 1px solid rgba(0, 229, 255, 0.22);
+            box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.35);
+        }
+
+        .tab-item {
+            padding: 10px 4px 12px;
+            text-decoration: none;
+            color: #90a8bc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            min-height: 62px;
+            transition: color 0.2s, background-color 0.2s;
+        }
+
+        .tab-item .tab-icon {
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .tab-item--active {
+            color: #00e5ff;
+            background: rgba(0, 229, 255, 0.08);
+            text-shadow: 0 0 10px rgba(0, 229, 255, 0.45);
+        }
+
+        .tab-item:hover {
+            color: #c1d3e3;
+            background: rgba(255, 255, 255, 0.04);
         }
 
         .number-grid {
@@ -417,6 +479,13 @@
                 max-width: 280px;
                 margin: 0 auto;
             }
+
+            #launchHint {
+                font-size: 20px;
+                text-align: center;
+                white-space: normal;
+                padding: 0 12px;
+            }
         }
     </style>
 </head>
@@ -445,17 +514,40 @@
             <div class="play-area">
                 <div id="ball"></div>
                 <div id="paddle"></div>
-                <div id="launchHint">벽돌을 클릭하면 공이 발사됩니다</div>
+                <div id="launchHint">벽돌 영역을 탭해 공 발사</div>
                 <div id="bottomWall" style="display: none; position: absolute; bottom: 0; left: 0; width: 100%; height: 20px; background: linear-gradient(180deg, rgba(0,68,204,0.85), rgba(0,40,90,0.95)); border-top: 1px solid rgba(0,204,255,0.35);"></div>
             </div>
         </div>
         
         <div class="controls">
-            <button type="button" id="resetButton" class="toolbar-btn toolbar-btn--primary">🔄 다시하기</button>
-            <button type="button" id="godModeButton" class="toolbar-btn">무적모드</button>
+            <button type="button" id="resetButton" class="toolbar-btn">🔄 다시하기</button>
+            <button type="button" id="godModeButton" class="toolbar-btn">🛡️ 무적모드</button>
             <div id="gameStatus" style="color: rgba(0,204,255,0.9); margin-top: 6px; width: 100%; text-align: center; min-height: 20px; font-size: 0.85rem;"></div>
         </div>
     </div>
+
+    <nav class="bottom-tabbar" aria-label="하단 메뉴">
+        <a class="tab-item tab-item--active" href="brick-game.html">
+            <span class="tab-icon">🧱</span>
+            <span>벽돌게임</span>
+        </a>
+        <a class="tab-item" href="wheel-game.html">
+            <span class="tab-icon">🎯</span>
+            <span>로또다트</span>
+        </a>
+        <a class="tab-item" href="random-numbers.html">
+            <span class="tab-icon">🎱</span>
+            <span>번호뽑기</span>
+        </a>
+        <a class="tab-item" href="page5.html">
+            <span class="tab-icon">❤️</span>
+            <span>나의번호</span>
+        </a>
+        <a class="tab-item" href="page5.html">
+            <span class="tab-icon">📊</span>
+            <span>통계</span>
+        </a>
+    </nav>
     
     <!-- 회차/당첨: brick-game.js에서 RTDB 읽기 전용(currentDraw, winningNumbers/*) + LOTTO_DATA 폴백 -->
     <script src="../js/lotto-data.js"></script>
