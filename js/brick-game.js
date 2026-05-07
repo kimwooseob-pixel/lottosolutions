@@ -105,8 +105,13 @@ function setLaunchHintVisible(visible) {
 }
 
 function clearTempBalls() {
-    document.querySelectorAll('.temp-ball').forEach(function (el) {
-        el.remove();
+    if (!Array.isArray(gameState.tempBalls)) {
+        gameState.tempBalls = [];
+        return;
+    }
+    gameState.tempBalls.forEach(function (tb) {
+        if (tb && tb.timerId) clearTimeout(tb.timerId);
+        if (tb && tb.element) tb.element.remove();
     });
     gameState.tempBalls = [];
 }
@@ -119,19 +124,28 @@ function spawnTemporarySplitBalls(count, originX, originY) {
     for (let i = 0; i < count; i++) {
         const angle = (-60 + (120 / Math.max(1, count - 1)) * i) * (Math.PI / 180);
         const el = document.createElement('div');
-        el.className = 'temp-ball';
+        el.className = 'ball extra-ball temp-ball';
         el.style.left = `${originX}px`;
         el.style.top = `${originY}px`;
         gameContainer.appendChild(el);
-        gameState.tempBalls.push({
+        const tb = {
             id: `tb_${Date.now()}_${tempBallSeq++}`,
             x: originX,
             y: originY,
             dx: Math.cos(angle) * speed,
             dy: -Math.abs(Math.sin(angle) * speed),
-            expiresAt: Date.now() + 2000,
             element: el
-        });
+        };
+        tb.timerId = setTimeout(function () {
+            const idx = gameState.tempBalls.findIndex(function (x) { return x.id === tb.id; });
+            if (idx !== -1) {
+                const target = gameState.tempBalls[idx];
+                if (target.timerId) clearTimeout(target.timerId);
+                if (target.element) target.element.remove();
+                gameState.tempBalls.splice(idx, 1);
+            }
+        }, 2000);
+        gameState.tempBalls.push(tb);
     }
 }
 
@@ -934,6 +948,7 @@ function initGame() {
     // 공 초기 위치 설정
     ball.style.width = '10px';
     ball.style.height = '10px';
+    ball.classList.add('ball', 'main-ball');
     ball.style.backgroundColor = '#ffffff';
     ball.style.borderRadius = '50%';
     ball.style.position = 'absolute';
@@ -1233,22 +1248,18 @@ function moveBall() {
 
     // 임시 분열 공 업데이트 (2초 후 자동 제거)
     if (Array.isArray(gameState.tempBalls) && gameState.tempBalls.length > 0) {
-        const now = Date.now();
         const containerRect = gameContainer.getBoundingClientRect();
         const paddleRect2 = paddle.getBoundingClientRect();
         const maxX2 = gameContainer.clientWidth - ballSize;
         const maxY2 = gameContainer.clientHeight - ballSize;
         gameState.tempBalls = gameState.tempBalls.filter(function (tb) {
             if (!tb || !tb.element) return false;
-            if (now >= tb.expiresAt) {
-                tb.element.remove();
-                return false;
-            }
             tb.x += tb.dx;
             tb.y += tb.dy;
             if (tb.x <= 0 || tb.x >= maxX2) tb.dx *= -1;
             if (tb.y <= 0) tb.dy *= -1;
             if (tb.y >= maxY2) {
+                if (tb.timerId) clearTimeout(tb.timerId);
                 tb.element.remove();
                 return false;
             }
@@ -1631,6 +1642,7 @@ function ensureMainBallInPlayArea() {
     if (!gameContainer || !paddle) return;
     ball = document.createElement('div');
     ball.id = 'ball';
+    ball.className = 'ball main-ball';
     ball.style.width = '10px';
     ball.style.height = '10px';
     ball.style.backgroundColor = '#ffffff';
