@@ -964,6 +964,10 @@ function launchBallTowardClick(event) {
 
     console.log('발사 시도!');
 
+    // 안내문구는 클릭 즉시 숨김 (발사 성공/실패와 무관)
+    const hint = document.getElementById('launchHint') || document.getElementById('launch-hint');
+    if (hint) hint.style.display = 'none';
+
     // 클릭 좌표
     const playArea = document.getElementById('playArea') 
                   || document.querySelector('.play-area')
@@ -974,13 +978,17 @@ function launchBallTowardClick(event) {
     const clickX = event.clientX - rect.left;
     const clickY = event.clientY - rect.top;
 
-    // 공 위치
-    const ball = document.querySelector('.ball');
-    if (!ball) { console.log('공 없음'); return; }
-
-    const ballRect = ball.getBoundingClientRect();
-    const ballCX = ballRect.left - rect.left + ballRect.width / 2;
-    const ballCY = ballRect.top - rect.top + ballRect.height / 2;
+    // 공 위치 (실제 요소 우선: #ball)
+    const ball = document.getElementById('ball') || document.querySelector('#ball') || document.querySelector('.ball');
+    let ballCX = gameState.ballX;
+    let ballCY = gameState.ballY;
+    if (ball) {
+        const ballRect = ball.getBoundingClientRect();
+        ballCX = ballRect.left - rect.left + ballRect.width / 2;
+        ballCY = ballRect.top - rect.top + ballRect.height / 2;
+    } else {
+        console.log('공 DOM 없음 -> gameState 좌표 사용');
+    }
 
     // 방향 벡터
     let dx = clickX - ballCX;
@@ -1001,10 +1009,6 @@ function launchBallTowardClick(event) {
     gameState.gamePaused = false;
 
     console.log('발사!', gameState.ballDX, gameState.ballDY);
-
-    // 안내문구 숨김
-    const hint = document.getElementById('launch-hint') || document.getElementById('launchHint');
-    if (hint) hint.style.display = 'none';
 
     // 게임 루프 시작
     if (!gameState.animationId) {
