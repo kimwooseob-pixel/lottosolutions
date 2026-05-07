@@ -962,56 +962,52 @@ function launchBallTowardClick(event) {
     if (gameState.ballMoving === true) return;
     if (gameState.gameOver) return;
 
-    console.log('발사 시도!');
+    console.log('발사 시도! (좌표계 통일)');
 
     // 안내문구는 클릭 즉시 숨김 (발사 성공/실패와 무관)
     const hint = document.getElementById('launchHint') || document.getElementById('launch-hint');
     if (hint) hint.style.display = 'none';
 
-    // 클릭 좌표
-    const playArea = document.getElementById('playArea') 
-                  || document.querySelector('.play-area')
-                  || document.querySelector('#brickContainer')
-                  || event.currentTarget;
+    // 클릭/공 중심을 top기준으로 계산 -> 물리계(bottom기준)로 변환
+    const gameContainer = document.querySelector('.game-container');
+    const ballSize = getBallSize();
+    if (!gameContainer) return;
+    const containerRect = gameContainer.getBoundingClientRect();
 
-    const rect = playArea.getBoundingClientRect();
-    const clickX = event.clientX - rect.left;
-    const clickY = event.clientY - rect.top;
+    const clickXTop = event.clientX - containerRect.left;
+    const clickYTop = event.clientY - containerRect.top;
 
-    // 공 위치 (실제 요소 우선: #ball)
-    const ball = document.getElementById('ball') || document.querySelector('#ball') || document.querySelector('.ball');
-    let ballCX = gameState.ballX;
-    let ballCY = gameState.ballY;
-    if (ball) {
-        const ballRect = ball.getBoundingClientRect();
-        ballCX = ballRect.left - rect.left + ballRect.width / 2;
-        ballCY = ballRect.top - rect.top + ballRect.height / 2;
-    } else {
-        console.log('공 DOM 없음 -> gameState 좌표 사용');
+    const ballCenterXTop = gameState.ballX + ballSize / 2;
+    const ballCenterYTop = containerRect.height - (gameState.ballY + ballSize / 2);
+
+    let dxTop = clickXTop - ballCenterXTop;
+    let dyTop = clickYTop - ballCenterYTop;
+
+    // 반드시 위쪽으로만 발사(top기준으로는 음수)
+    if (dyTop > -2) {
+        dyTop = -Math.max(20, Math.abs(dxTop) * 0.8);
     }
 
-    // 방향 벡터
-    let dx = clickX - ballCX;
-    let dy = clickY - ballCY;
-
-    console.log('클릭:', clickX, clickY, '공:', ballCX, ballCY, '방향:', dx, dy);
-
-    // 반드시 위쪽으로 (dy 음수)
-    if (dy >= 0) dy = -Math.abs(dx) * 0.8 - 2;
-
-    const len = Math.hypot(dx, dy) || 1;
+    const len = Math.hypot(dxTop, dyTop) || 1;
     const speed = 5;
-    const dirX = dx / len;
-    const dirYTop = dy / len; // DOM(top) 기준: 위쪽은 음수
+    const dirX = dxTop / len;
+    const dirYTop = dyTop / len;
 
-    // 게임 물리계는 bottom 기준(위쪽이 +)이므로 Y축 부호를 뒤집는다.
+    // 물리계(bottom기준): 위쪽이 + 이므로 y 부호 반전
     gameState.ballDX = dirX * speed;
-    gameState.ballDY = (-dirYTop) * speed;
+    gameState.ballDY = -dirYTop * speed;
     gameState.ballMoving = true;
     gameState.gameStarted = true;
     gameState.gamePaused = false;
 
-    console.log('발사!', gameState.ballDX, gameState.ballDY);
+    console.log('발사!', {
+        clickXTop,
+        clickYTop,
+        ballCenterXTop,
+        ballCenterYTop,
+        ballDX: gameState.ballDX,
+        ballDY: gameState.ballDY,
+    });
 
     // 게임 루프 시작
     if (!gameState.animationId) {
